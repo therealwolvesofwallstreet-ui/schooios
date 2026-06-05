@@ -1,16 +1,37 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 interface AuthState {
   isLoggedIn: boolean;
-  userEmail: string;
+  userEmail: string | null;
+  role: "student" | "admin";
   login: (email: string) => void;
   logout: () => void;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
-  isLoggedIn: false, // Mặc định ban đầu chưa đăng nhập
-  userEmail: "",
-  
-  login: (email) => set({ isLoggedIn: true, userEmail: email }),
-  logout: () => set({ isLoggedIn: false, userEmail: "" }),
-}));
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
+      isLoggedIn: false,
+      userEmail: null,
+      role: "student",
+
+      // HÀM ĐĂNG NHẬP TỰ ĐỘNG PHÂN QUYỀN THEO EMAIL
+      login: (email) => {
+        const emailLower = email.toLowerCase();
+        
+        // Quy tắc: Nếu email có chữ "admin" hoặc "teacher" -> quyền admin, ngược lại -> student
+        const autoRole = emailLower.includes("admin") || emailLower.includes("teacher") ? "admin" : "student";
+        
+        set({ 
+          userEmail: email, 
+          isLoggedIn: true, 
+          role: autoRole // Hệ thống tự quyết định role, user không tự chọn được
+        });
+      },
+
+      logout: () => set({ userEmail: null, role: "student", isLoggedIn: false }),
+    }),
+    { name: "school-os-auth" }
+  )
+);

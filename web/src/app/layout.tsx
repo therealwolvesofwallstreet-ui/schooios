@@ -1,17 +1,24 @@
 "use client";
 
+import { Toaster } from "react-hot-toast";
 import "./globals.css";
 import { useState, useEffect } from "react";
 import { LayoutDashboard, FileText, Bell, User, ShieldAlert, LogIn, LogOut, HelpCircle } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useNotificationStore } from "@/store/useNotificationStore";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   
-  const { isLoggedIn, userEmail, login, logout } = useAuthStore();
+  // Lấy thêm thuộc tính 'role' từ kho phân quyền
+  const { isLoggedIn, userEmail, login, logout, role } = useAuthStore();
+  
+  // Tính toán số lượng thông báo chưa đọc để hiển thị badge
+  const { notifications } = useNotificationStore();
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -24,8 +31,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     { name: "Tài khoản", icon: User, path: "/profile" },
   ];
 
-  // Khai báo an toàn không dùng 'any' để TypeScript không bắt bẻ
-  // Khai báo an toàn tuyệt đối không dùng any
   useEffect(() => {
     if (typeof window !== "undefined") {
       (window as typeof window & { triggerLogoutModal?: () => void }).triggerLogoutModal = () => {
@@ -51,6 +56,38 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     router.push("/");
   };
 
+  // Cấu hình UI cho máy phóng Toast (Sang, xịn, mịn)
+  const premiumToastConfig = {
+    duration: 4000,
+    style: {
+      background: '#ffffff',
+      color: '#0f172a',
+      fontWeight: '600' as const,
+      fontSize: '14px',
+      borderRadius: '16px',
+      padding: '16px 24px',
+      border: '1px solid #e2e8f0',
+      boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05)',
+    },
+    success: {
+      iconTheme: {
+        primary: '#10b981',
+        secondary: '#ffffff',
+      },
+    },
+    error: {
+      style: {
+        background: '#fef2f2',
+        color: '#991b1b',
+        border: '1px solid #fecaca',
+      },
+      iconTheme: {
+        primary: '#ef4444',
+        secondary: '#ffffff',
+      },
+    },
+  };
+
   // 1. GIAO DIỆN CHƯA ĐĂNG NHẬP
   if (!isLoggedIn) {
     return (
@@ -70,7 +107,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Email hoặc Mã số học sinh *</label>
                 <input 
                   type="text" 
-                  placeholder="Ví dụ: dnnkhai hoặc student@school.edu.vn"
+                  placeholder="Ví dụ: dnnkhai hoặc admin@school.edu.vn"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 text-[14px]"
@@ -94,6 +131,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <span className="text-xs text-slate-400 font-medium">Phiên bản pilot nội bộ MVP 13 ngày</span>
             </div>
           </div>
+          
+          {/* MÁY PHÓNG THÔNG BÁO */}
+          <Toaster position="top-right" toastOptions={premiumToastConfig} />
         </body>
       </html>
     );
@@ -113,7 +153,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </div>
               <div>
                 <h1 className="font-bold text-lg text-slate-900 leading-none">SchoolOS</h1>
-                <span className="text-xs font-semibold text-blue-600 mt-1 block">Student Portal</span>
+                <span className="text-xs font-semibold text-blue-600 mt-1 block">
+                  {role === "admin" ? "Admin/Staff Portal" : "Student Portal"}
+                </span>
               </div>
             </div>
 
@@ -124,12 +166,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <Link
                     key={item.path}
                     href={item.path}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-[14px] transition-all ${
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-[14px] transition-all relative ${
                       isActive ? "bg-blue-50 text-blue-600 shadow-sm" : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
                     }`}
                   >
                     <item.icon size={18} />
-                    {item.name}
+                    <span className="flex-1">{item.name}</span>
+                    
+                    {/* BADGE ĐẾM SỐ THÔNG BÁO PC */}
+                    {item.name === "Thông báo" && unreadCount > 0 && (
+                      <span className="bg-red-500 text-white text-[10px] font-extrabold w-5 h-5 rounded-full flex items-center justify-center shadow-sm shadow-red-200 animate-pulse">
+                        {unreadCount}
+                      </span>
+                    )}
                   </Link>
                 );
               })}
@@ -141,8 +190,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             className="p-4 border-t border-slate-100 flex items-center gap-3 bg-slate-50 hover:bg-red-50/60 cursor-pointer m-4 rounded-xl transition-all group"
           >
             <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center font-bold text-orange-600 group-hover:bg-red-100 group-hover:text-red-600 transition-colors">K</div>
-            <div className="flex-1">
-              <h4 className="font-bold text-[13px] text-slate-800 group-hover:text-red-700">{userEmail || "dnnkhai"}</h4>
+            <div className="flex-1 min-w-0">
+              <h4 className="font-bold text-[13px] text-slate-800 group-hover:text-red-700 truncate">{userEmail || "dnnkhai"}</h4>
               <p className="text-[11px] text-slate-400 font-medium group-hover:text-red-400">Bấm để đăng xuất</p>
             </div>
           </div>
@@ -152,11 +201,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <header className="md:hidden bg-white border-b border-slate-200 p-4 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
             <ShieldAlert className="text-blue-600" size={24} />
-            <span className="font-bold text-slate-900">SchoolOS</span>
+            <span className="font-bold text-slate-900">
+              SchoolOS <span className="text-xs font-normal text-slate-400 ml-1">({role === "admin" ? "Admin" : "Student"})</span>
+            </span>
           </div>
           <div 
             onClick={() => setShowLogoutConfirm(true)}
-            className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center font-bold text-orange-600 text-xs cursor-pointer hover:bg-red-100"
+            className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center font-bold text-orange-600 text-xs cursor-pointer hover:bg-red-100 flex items-center justify-center transition-colors"
           >
             K
           </div>
@@ -181,7 +232,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   isActive ? "text-blue-600 font-bold" : "text-slate-400 font-medium"
                 }`}
               >
-                <item.icon size={20} />
+                <div className="relative">
+                  <item.icon size={20} />
+                  {item.name === "Thông báo" && unreadCount > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center shadow-sm animate-pulse">
+                      {unreadCount}
+                    </span>
+                  )}
+                </div>
                 <span className="text-[10px]">{item.name}</span>
               </Link>
             );
@@ -220,6 +278,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
         )}
 
+        {/* MÁY PHÓNG THÔNG BÁO CHO BÊN TRONG APP CHÍNH */}
+        <Toaster position="top-right" toastOptions={premiumToastConfig} />
       </body>
     </html>
   );
