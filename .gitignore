@@ -45,3 +45,5 @@ next-env.d.ts
 
 # ---- Claude Code local tooling (cấu hình máy cá nhân, đường dẫn tuyệt đối, không chia sẻ) ----
 .claude/
+
+.env.local
