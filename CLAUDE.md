@@ -2,7 +2,7 @@
 ## Overview
 - SchooIOS là hệ thống quản lý sự vụ học đường: tiếp nhận, phân loại, điều phối và theo dõi các báo cáo/sự cố trong trường học.
 - Role: Backend/Infra Lead (Nhánh: feature/backend)
-- MVP 7 ngày, team 2 người
+- MVP 13 ngày, team 2 người
 ## Tech Stack
 - Next.js 16.2.7 + React 19.2.4, App Router (TypeScript strict). LƯU Ý: Next.js 16 có breaking changes so với bản cũ — đọc `web/node_modules/next/dist/docs/` trước khi viết code Next.js.
 - ORM: Prisma | DB: Supabase PostgreSQL
