@@ -15,14 +15,14 @@ Một case đi trọn vòng đời không đứt mạch.
 ### Nền móng
 - [ ] P0: Git branch feature/backend tạo và push
 - [ ] P1: Supabase — tạo staging + prod project, lấy credentials
-- [ ] P2: Prisma schema migrate + seed data
+- [x] P2: Prisma schema migrate + seed data (9 models + hardening v2: caseCode, query-path indexes, immutable triggers, pg_trgm; is_sensitive + emergency Hybrid). Xem docs/DATA_MODEL.md
 
 ### Core API
 - [ ] P3: Auth API — login, logout, /me endpoint
 - [ ] P4: Cases API — create, list, get by ID
 - [ ] P5: Assignment + Workflow — state machine, assign
 - [ ] P6: Comments + Notifications
-- [ ] P7: Emergency lane + Dashboard aggregate
+- [ ] P7: Emergency lane + Dashboard aggregate (Kích hoạt luồng notify Admin khi is_emergency = true)
 
 ### Hardening & Deploy
 - [ ] P8: CI/CD GitHub Actions + deploy Vercel staging/prod

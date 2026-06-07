@@ -13,14 +13,16 @@
 - Database: Dùng cuid() cho ID, soft delete (deleted_at) cho cases.
 - Security: Không bao giờ trả password_hash trong response.
 - Audit: Mọi mutation PHẢI ghi AuditLog (immutable).
+**Privacy Design:** Model Case BẮT BUỘC có trường `is_sensitive` (Boolean, default: false) để ẩn các vụ việc nhạy cảm.
+- **Emergency Hybrid Workflow:** Model Case BẮT BUỘC tách biệt 2 trường: `student_flagged_emergency` (Boolean - ghi nhận việc học sinh bấm nút trên UI) và `is_emergency` (Boolean - cờ chính thức do STAFF/ADMIN/AI duyệt để trigger notification).
 ## Permissions & State
 - ## Permission rules (Public/Transparent Model)
 - STUDENT: 
-    - Xem tất cả các case (Công khai).
+    - Xem tất cả các case (Công khai), **NGOẠI TRỪ các case bị đánh dấu nhạy cảm (`is_sensitive = true`). Case nhạy cảm chỉ người tạo (created_by) và STAFF/ADMIN được xem.**
     - Chỉ được Sửa/Update case do mình tạo (created_by = userId).
     - Không được chỉnh sửa case của người khác.
-- STAFF: Xem case assigned_to=mình + case status NEW/TRIAGED (tất cả).
-- ADMIN: Xem tất cả.
+- STAFF: Xem case assigned_to=mình + case status NEW/TRIAGED. **Được quyền chủ động tự nhận (self-assign) các case đang ở trạng thái NEW/TRIAGED về cho mình xử lý.**
+- ADMIN: Xem tất cả. Có toàn quyền điều phối (assign cho người khác).
 - AUDITOR: Read-only toàn bộ.
 - State: NEW → TRIAGED → ASSIGNED → IN_PROGRESS → WAITING_FOR_USER → RESOLVED → CLOSED.
 ## Verification Workflow
