@@ -1,35 +1,34 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
-## Repository layout
-
-The repo root is mostly empty scaffolding. **All application code lives in `web/`** — a Next.js app. Run every command below from inside `web/`, not the repo root. The root `package.json` is empty; the real manifest is `web/package.json`.
-
-The active branch is `feature/backend`, but no backend exists yet — the project is currently a frontend-only Next.js scaffold awaiting backend work.
-
-## Commands (run from `web/`)
-
-- `npm run dev` — start the dev server
-- `npm run build` — production build
-- `npm run start` — serve the production build
-- `npm run lint` — ESLint (flat config in `web/eslint.config.mjs`)
-
-There is no test runner configured yet.
-
-## Critical: this is Next.js 16, not the Next.js you may know
-
-`web/package.json` pins **Next.js 16.2.7** and **React 19.2.4** — newer than most training data. APIs, conventions, and file structure may differ from what you expect, and deprecation notices matter.
-
-Before writing or changing any Next.js code, read the relevant guide in `web/node_modules/next/dist/docs/` (organized as `01-app/`, `02-pages/`, `03-architecture/`). This is the version-accurate source of truth and supersedes recalled API knowledge.
-
-## Architecture notes
-
-- **App Router** under `web/src/app/` (`layout.tsx` is the root layout, `page.tsx` the home route). No `pages/` directory.
-- **Tailwind CSS v4** via `@tailwindcss/postcss` (`web/postcss.config.mjs`). There is no `tailwind.config.*` file — v4 is configured through CSS, not JS config.
-- **Path alias**: `@/*` maps to `web/src/*` (see `web/tsconfig.json`).
-- TypeScript runs in `strict` mode.
-
-## Agent rules files
-
-`web/CLAUDE.md` imports `web/AGENTS.md`, which carries the same Next.js 16 warning above. Keep those in sync if the guidance changes.
+# SchooIOS — Backend/Infra Context
+## Overview
+- SchooIOS là hệ thống quản lý sự vụ học đường: tiếp nhận, phân loại, điều phối và theo dõi các báo cáo/sự cố trong trường học.
+- Role: Backend/Infra Lead (Nhánh: feature/backend)
+- MVP 7 ngày, team 2 người
+## Tech Stack
+- Next.js 14 App Router (TypeScript strict)
+- ORM: Prisma | DB: Supabase PostgreSQL
+- Auth: JWT (jose) | Storage: Supabase Storage
+- Deploy: Vercel
+## Core Rules — LUÔN TUÂN THỦ
+- Input validation: Dùng Zod cho mọi API request.
+- Database: Dùng cuid() cho ID, soft delete (deleted_at) cho cases.
+- Security: Không bao giờ trả password_hash trong response.
+- Audit: Mọi mutation PHẢI ghi AuditLog (immutable).
+## Permissions & State
+- ## Permission rules (Public/Transparent Model)
+- STUDENT: 
+    - Xem tất cả các case (Công khai).
+    - Chỉ được Sửa/Update case do mình tạo (created_by = userId).
+    - Không được chỉnh sửa case của người khác.
+- STAFF: Xem case assigned_to=mình + case status NEW/TRIAGED (tất cả).
+- ADMIN: Xem tất cả.
+- AUDITOR: Read-only toàn bộ.
+- State: NEW → TRIAGED → ASSIGNED → IN_PROGRESS → WAITING_FOR_USER → RESOLVED → CLOSED.
+## Verification Workflow
+- Sau mỗi route/feature: chạy `npx tsc --noEmit` và kiểm tra `scripts/test-all.sh`.
+- Commit sau mỗi step nhỏ thành công.
+## Routing
+- web/src/app/api/ — API routes
+- web/src/lib/ — logic (prisma, jwt, helpers)
+- web/prisma/ — schema, migrations
+- docs/tasks/ — task files chi tiết
+@docs/ROADMAP.md
