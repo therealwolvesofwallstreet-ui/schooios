@@ -38,7 +38,7 @@ export async function verifyJWT(token: string): Promise<AuthPayload | null> {
   const key = secretKey();
   if (!key) return null;
   try {
-    const { payload } = await jwtVerify(token, key);
+    const { payload } = await jwtVerify(token, key, { algorithms: ["HS256"] });
     if (typeof payload.sub !== "string") return null;
     return {
       sub: payload.sub,

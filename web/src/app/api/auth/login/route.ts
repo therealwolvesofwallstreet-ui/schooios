@@ -13,6 +13,14 @@ import { recordAudit } from "@/lib/audit";
 // Factory (KHÔNG dùng chung 1 instance): body của Response là stream, chỉ tiêu thụ được 1 lần.
 const invalid = () => NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
 
+// Khi định danh không tồn tại, vẫn chạy 1 bcrypt.compare giả để cân bằng thời gian phản hồi
+// (chống user-enumeration qua timing — đồng bộ với chủ trương "401 đồng nhất"). Cache 1 lần.
+let dummyHash: string | null = null;
+async function timingSafeMiss(password: string): Promise<void> {
+  if (!dummyHash) dummyHash = await bcrypt.hash("user-not-found-placeholder", 10);
+  await bcrypt.compare(password, dummyHash);
+}
+
 export async function POST(request: NextRequest) {
   try {
     let body: unknown;
@@ -36,7 +44,10 @@ export async function POST(request: NextRequest) {
 
     // opt-in passwordHash CHỈ để so khớp (prisma.ts omit toàn cục).
     const user = await prisma.user.findUnique({ where, omit: { passwordHash: false } });
-    if (!user) return invalid();
+    if (!user) {
+      await timingSafeMiss(parsed.data.password);
+      return invalid();
+    }
 
     const ok = await bcrypt.compare(parsed.data.password, user.passwordHash);
     if (!ok) return invalid();

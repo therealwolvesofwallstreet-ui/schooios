@@ -43,6 +43,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Current password is incorrect" }, { status: 401 });
     }
 
+    // Mật khẩu mới phải KHÁC mật khẩu cũ — nếu không, luồng ép-đổi-lần-đầu trở nên vô nghĩa.
+    const sameAsOld = await bcrypt.compare(parsed.data.newPassword, user.passwordHash);
+    if (sameAsOld) {
+      return NextResponse.json(
+        { error: "New password must be different from the current password" },
+        { status: 400 },
+      );
+    }
+
     const newHash = await bcrypt.hash(parsed.data.newPassword, 10);
     await prisma.user.update({
       where: { id: user.id },

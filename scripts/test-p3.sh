@@ -109,6 +109,12 @@ s=$(_split_status "$r"); b=$(_split_body "$r"); track "$b"
 expect_status "5. /me có cookie" 200 "$s"
 echo "$b" | grep -q '"sbd":"T3-0001"' && ok "5. /me trả đúng user" || no "5. /me không trả user mong đợi"
 
+# 5b) proxy chặn route khác khi mustChangePassword=true → 403 + code MUST_CHANGE_PASSWORD
+r=$(api_jar GET /api/cases)
+s=$(_split_status "$r"); b=$(_split_body "$r"); track "$b"
+expect_status "5b. proxy chặn route khác (ép đổi MK)" 403 "$s"
+echo "$b" | grep -q "MUST_CHANGE_PASSWORD" && ok "5b. có code MUST_CHANGE_PASSWORD" || no "5b. thiếu code MUST_CHANGE_PASSWORD"
+
 # 6) /me KHÔNG cookie → 401
 r=$(api_anon GET /api/auth/me)
 s=$(_split_status "$r"); track "$(_split_body "$r")"
@@ -118,6 +124,11 @@ expect_status "6. /me không cookie" 401 "$s"
 r=$(api_jar POST /api/auth/change-password '{"currentPassword":"WRONG","newPassword":"Test@123456"}')
 s=$(_split_status "$r"); track "$(_split_body "$r")"
 expect_status "7. change-password sai current" 401 "$s"
+
+# 7b) change-password đặt LẠI mật khẩu cũ (123456 → 123456) → 400
+r=$(api_jar POST /api/auth/change-password '{"currentPassword":"123456","newPassword":"123456"}')
+s=$(_split_status "$r"); track "$(_split_body "$r")"
+expect_status "7b. change-password trùng mật khẩu cũ" 400 "$s"
 
 # 8) change-password đúng (123456 → Test@123456) → 200
 r=$(api_jar POST /api/auth/change-password '{"currentPassword":"123456","newPassword":"Test@123456"}')
