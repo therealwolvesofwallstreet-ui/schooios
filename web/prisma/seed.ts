@@ -2,195 +2,133 @@ import { config } from "dotenv";
 config({ path: ".env.local" });
 config({ path: ".env" });
 
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import bcrypt from "bcryptjs";
 import { PrismaPg } from "@prisma/adapter-pg";
-import {
-  PrismaClient,
-  Role,
-  CaseStatus,
-  CasePriority,
-  NotificationType,
-  AuditAction,
-} from "../src/generated/prisma/client";
+import { PrismaClient, Role } from "../src/generated/prisma/client";
 
-// Seed dùng DIRECT_URL (session pooler 5432) cho an toàn với nhiều câu lệnh.
+// ─────────────────────────────────────────────────────────────────────────────
+// BOOTSTRAP seed — dữ liệu THẬT của trường (Trường THPT Chuyên Lý Tự Trọng).
+// Nguồn: docs/data/*.json. Idempotent. KHÔNG tạo case/student giả (case thật từ app).
+// students.json chứa PII (gitignored) → OPTIONAL: vắng thì bỏ qua students+enrollments.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const DATA = path.join(__dirname, "../../docs/data");
+const readJson = (f: string) => JSON.parse(fs.readFileSync(path.join(DATA, f), "utf8"));
+
 const adapter = new PrismaPg({ connectionString: process.env.DIRECT_URL });
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  const passwordHash = await bcrypt.hash("Password123!", 10);
+  const campus = readJson("campus.json");
+  const classesData = readJson("classes.json");
+  const schoolYear: string = classesData.meta?.schoolYear ?? "2025-2026";
 
-  // ── Users (idempotent theo email) ──
-  const [admin, staff, student] = await Promise.all([
-    prisma.user.upsert({ where: { email: "admin@schoo.ios" }, update: {}, create: { email: "admin@schoo.ios", passwordHash, name: "Quản trị viên", role: Role.ADMIN } }),
-    prisma.user.upsert({ where: { email: "staff@schoo.ios" }, update: {}, create: { email: "staff@schoo.ios", passwordHash, name: "Cán bộ phụ trách", role: Role.STAFF } }),
-    prisma.user.upsert({ where: { email: "student@schoo.ios" }, update: {}, create: { email: "student@schoo.ios", passwordHash, name: "Học sinh A", role: Role.STUDENT } }),
-    prisma.user.upsert({ where: { email: "student2@schoo.ios" }, update: {}, create: { email: "student2@schoo.ios", passwordHash, name: "Học sinh B", role: Role.STUDENT } }),
-    prisma.user.upsert({ where: { email: "auditor@schoo.ios" }, update: {}, create: { email: "auditor@schoo.ios", passwordHash, name: "Kiểm toán viên", role: Role.AUDITOR } }),
-  ]);
-
-  // ── Categories (idempotent theo name) ──
-  const catSpec = [
-    { name: "Cơ sở vật chất", defaultPriority: CasePriority.MEDIUM, defaultSensitive: false },
-    { name: "Bạo lực học đường", defaultPriority: CasePriority.HIGH, defaultSensitive: true },
-    { name: "Sức khỏe", defaultPriority: CasePriority.HIGH, defaultSensitive: true },
-    { name: "Học tập", defaultPriority: CasePriority.LOW, defaultSensitive: false },
-    { name: "Khác", defaultPriority: CasePriority.MEDIUM, defaultSensitive: false },
-  ];
-  const cat: Record<string, { id: string }> = {};
-  for (const c of catSpec) {
-    cat[c.name] = await prisma.category.upsert({ where: { name: c.name }, update: {}, create: c });
+  // ── 1. Categories (upsert by name) ──
+  for (const c of campus.categories) {
+    await prisma.category.upsert({
+      where: { name: c.name },
+      update: { defaultPriority: c.defaultPriority, defaultSensitive: c.defaultSensitive, description: c.note ?? null },
+      create: { name: c.name, defaultPriority: c.defaultPriority, defaultSensitive: c.defaultSensitive, description: c.note ?? null },
+    });
   }
 
-  // ── Cases: chỉ seed một lần (tránh trùng; KHÔNG xóa được audit/history vì trigger immutable) ──
-  const existing = await prisma.case.count();
-  if (existing > 0) {
-    console.log(`✔ Cases đã seed (${existing}). Bỏ qua phần case.`);
-    await summary();
-    return;
+  // ── 2. Buildings (upsert by code) ──
+  for (const b of campus.buildings) {
+    await prisma.building.upsert({
+      where: { code: b.code },
+      update: { name: b.name, type: b.type, note: b.note ?? null },
+      create: { code: b.code, name: b.name, type: b.type, note: b.note ?? null },
+    });
+  }
+  const buildings = await prisma.building.findMany({ select: { id: true, code: true } });
+  const buildingByCode = new Map(buildings.map((b) => [b.code, b.id]));
+
+  // ── 3. Locations (upsert by code; buildingCode → buildingId) ──
+  for (const l of campus.locations) {
+    const buildingId = l.buildingCode ? buildingByCode.get(l.buildingCode) ?? null : null;
+    await prisma.location.upsert({
+      where: { code: l.code },
+      update: { name: l.name, buildingId, floor: l.floor ?? null, type: l.type, note: l.note ?? null },
+      create: { code: l.code, name: l.name, buildingId, floor: l.floor ?? null, type: l.type, note: l.note ?? null },
+    });
   }
 
-  const now = new Date();
-  const daysAgo = (d: number) => new Date(now.getTime() - d * 86_400_000);
-
-  // 1) NEW — học sinh vừa báo, tự bấm khẩn cấp
-  await prisma.case.create({
-    data: {
-      title: "Đèn hành lang tầng 3 bị hỏng",
-      description: "Khu vực tối, học sinh dễ vấp ngã vào buổi tối.",
-      location: "Hành lang tầng 3, dãy A",
-      categoryId: cat["Cơ sở vật chất"].id,
-      priority: CasePriority.MEDIUM,
-      status: CaseStatus.NEW,
-      studentFlaggedEmergency: true,
-      createdById: student.id,
-      createdAt: daysAgo(1),
-      statusHistory: { create: [{ changedById: student.id, fromStatus: null, toStatus: CaseStatus.NEW, note: "Học sinh tạo báo cáo", createdAt: daysAgo(1) }] },
-    },
-  });
-
-  // 2) TRIAGED — đã phân loại
-  await prisma.case.create({
-    data: {
-      title: "Xin thêm tài liệu ôn tập môn Toán",
-      description: "Lớp 11A đề xuất bổ sung đề cương.",
-      location: "Phòng 301",
-      categoryId: cat["Học tập"].id,
-      priority: CasePriority.LOW,
-      status: CaseStatus.TRIAGED,
-      createdById: student.id,
-      createdAt: daysAgo(3),
-      statusHistory: {
-        create: [
-          { changedById: student.id, fromStatus: null, toStatus: CaseStatus.NEW, createdAt: daysAgo(3) },
-          { changedById: admin.id, fromStatus: CaseStatus.NEW, toStatus: CaseStatus.TRIAGED, note: "Phân loại Học tập", createdAt: daysAgo(2) },
-        ],
-      },
-    },
-  });
-
-  // 3) IN_PROGRESS — nhạy cảm, đã giao staff, có comment nội bộ
-  await prisma.case.create({
-    data: {
-      title: "Mâu thuẫn giữa hai học sinh trong giờ ra chơi",
-      description: "Cần xác minh và xử lý theo quy trình.",
-      location: "Sân trường",
-      categoryId: cat["Bạo lực học đường"].id,
-      priority: CasePriority.HIGH,
-      status: CaseStatus.IN_PROGRESS,
-      isSensitive: true,
-      isEmergency: true,
-      studentFlaggedEmergency: true,
-      createdById: student.id,
-      assignedToId: staff.id,
-      createdAt: daysAgo(5),
-      statusHistory: {
-        create: [
-          { changedById: student.id, fromStatus: null, toStatus: CaseStatus.NEW, createdAt: daysAgo(5) },
-          { changedById: admin.id, fromStatus: CaseStatus.NEW, toStatus: CaseStatus.TRIAGED, createdAt: daysAgo(5) },
-          { changedById: admin.id, fromStatus: CaseStatus.TRIAGED, toStatus: CaseStatus.ASSIGNED, note: "Giao cho cán bộ phụ trách", createdAt: daysAgo(4) },
-          { changedById: staff.id, fromStatus: CaseStatus.ASSIGNED, toStatus: CaseStatus.IN_PROGRESS, createdAt: daysAgo(4) },
-        ],
-      },
-      comments: {
-        create: [
-          { authorId: student.id, body: "Em mong nhà trường xử lý sớm ạ.", createdAt: daysAgo(4) },
-          { authorId: staff.id, body: "[Nội bộ] Đã mời hai bên lên làm việc, đang xác minh.", isInternal: true, createdAt: daysAgo(3) },
-        ],
-      },
-    },
-  });
-
-  // 4) RESOLVED — đã xử lý xong (resolvedAt)
-  await prisma.case.create({
-    data: {
-      title: "Vòi nước nhà vệ sinh tầng 2 rò rỉ",
-      description: "Gây trơn trượt và lãng phí nước.",
-      location: "WC tầng 2",
-      categoryId: cat["Cơ sở vật chất"].id,
-      priority: CasePriority.MEDIUM,
-      status: CaseStatus.RESOLVED,
-      createdById: student.id,
-      assignedToId: staff.id,
-      createdAt: daysAgo(10),
-      resolvedAt: daysAgo(7),
-      statusHistory: {
-        create: [
-          { changedById: student.id, fromStatus: null, toStatus: CaseStatus.NEW, createdAt: daysAgo(10) },
-          { changedById: admin.id, fromStatus: CaseStatus.NEW, toStatus: CaseStatus.ASSIGNED, createdAt: daysAgo(9) },
-          { changedById: staff.id, fromStatus: CaseStatus.ASSIGNED, toStatus: CaseStatus.IN_PROGRESS, createdAt: daysAgo(9) },
-          { changedById: staff.id, fromStatus: CaseStatus.IN_PROGRESS, toStatus: CaseStatus.RESOLVED, note: "Đã thay vòi", createdAt: daysAgo(7) },
-        ],
-      },
-    },
-  });
-
-  // 5) CLOSED — đã đóng (resolvedAt + closedAt)
-  await prisma.case.create({
-    data: {
-      title: "Đề nghị bổ sung quạt phòng học 205",
-      description: "Phòng nóng vào buổi chiều.",
-      location: "Phòng 205",
-      categoryId: cat["Khác"].id,
-      priority: CasePriority.LOW,
-      status: CaseStatus.CLOSED,
-      createdById: student.id,
-      assignedToId: staff.id,
-      createdAt: daysAgo(20),
-      resolvedAt: daysAgo(15),
-      closedAt: daysAgo(14),
-      statusHistory: {
-        create: [
-          { changedById: student.id, fromStatus: null, toStatus: CaseStatus.NEW, createdAt: daysAgo(20) },
-          { changedById: staff.id, fromStatus: CaseStatus.NEW, toStatus: CaseStatus.RESOLVED, createdAt: daysAgo(15) },
-          { changedById: admin.id, fromStatus: CaseStatus.RESOLVED, toStatus: CaseStatus.CLOSED, note: "Hoàn tất", createdAt: daysAgo(14) },
-        ],
-      },
-    },
-  });
-
-  // ── Notification + Audit log mẫu ──
-  const emergencyCase = await prisma.case.findFirst({ where: { isEmergency: true }, select: { id: true, caseCode: true } });
-  if (emergencyCase) {
-    await prisma.notification.create({
-      data: { userId: staff.id, caseId: emergencyCase.id, type: NotificationType.CASE_ASSIGNED, message: `Bạn được giao xử lý case ${emergencyCase.caseCode}.` },
+  // ── 4. Admins (upsert by email; mật khẩu từ env) ──
+  const adminPw = process.env.SEED_ADMIN_PASSWORD ?? "Admin@12345";
+  if (!process.env.SEED_ADMIN_PASSWORD) console.warn("⚠ SEED_ADMIN_PASSWORD chưa set — dùng mật khẩu mặc định 'Admin@12345' (đổi sau khi đăng nhập).");
+  const adminHash = await bcrypt.hash(adminPw, 10);
+  for (const a of campus.admins) {
+    await prisma.user.upsert({
+      where: { email: a.email },
+      update: { name: a.name, role: Role.ADMIN },
+      create: { email: a.email, name: a.name, role: Role.ADMIN, passwordHash: adminHash },
     });
-    await prisma.auditLog.create({
-      data: { actorId: admin.id, action: AuditAction.ASSIGN, entityType: "Case", entityId: emergencyCase.id, metadata: { before: { assignedTo: null }, after: { assignedTo: staff.id } } },
+  }
+
+  // ── 5. Classes (upsert by [name, schoolYear]) ──
+  for (const c of classesData.classes) {
+    await prisma.class.upsert({
+      where: { name_schoolYear: { name: c.name, schoolYear: c.schoolYear } },
+      update: { grade: c.grade ?? null, specialization: c.specialization ?? null },
+      create: { name: c.name, schoolYear: c.schoolYear, grade: c.grade ?? null, specialization: c.specialization ?? null },
     });
+  }
+  const classes = await prisma.class.findMany({ where: { schoolYear }, select: { id: true, name: true } });
+  const classByName = new Map(classes.map((c) => [c.name, c.id]));
+
+  // ── 6. Students (979) — OPTIONAL (PII, gitignored) ──
+  const studentsPath = path.join(DATA, "students.json");
+  if (!fs.existsSync(studentsPath)) {
+    console.warn("⚠ docs/data/students.json không có (PII/gitignored) — BỎ QUA students + enrollments.");
+  } else {
+    const students = JSON.parse(fs.readFileSync(studentsPath, "utf8")).students;
+    const studentHash = await bcrypt.hash("123456", 10); // hash 1 lần, dùng chung 979 HS (đổi sau lần đầu)
+    await prisma.user.createMany({
+      skipDuplicates: true,
+      data: students.map((s: any) => ({
+        sbd: s.sbd,
+        name: s.name,
+        role: Role.STUDENT,
+        dob: s.dob ? new Date(s.dob) : null,
+        gender: s.gender ?? null,
+        admissionYear: s.admissionYear ?? null,
+        passwordHash: studentHash,
+      })),
+    });
+
+    // ── 7. Enrollments (student ↔ class theo className) ──
+    const studentRows = await prisma.user.findMany({ where: { role: Role.STUDENT }, select: { id: true, sbd: true } });
+    const idBySbd = new Map(studentRows.map((u) => [u.sbd, u.id]));
+    const enrollData: { studentId: string; classId: string }[] = [];
+    const missingClass = new Set<string>();
+    for (const s of students) {
+      const studentId = idBySbd.get(s.sbd);
+      const classId = classByName.get(s.className);
+      if (studentId && classId) enrollData.push({ studentId, classId });
+      else if (!classId) missingClass.add(s.className);
+    }
+    if (missingClass.size) console.warn("⚠ className không khớp class:", [...missingClass].join(", "));
+    await prisma.enrollment.createMany({ skipDuplicates: true, data: enrollData });
   }
 
   await summary();
 }
 
 async function summary() {
-  const [users, categories, cases, comments, history, notifs, audits] = await Promise.all([
-    prisma.user.count(), prisma.category.count(), prisma.case.count(),
-    prisma.comment.count(), prisma.caseStatusHistory.count(), prisma.notification.count(), prisma.auditLog.count(),
+  const [categories, buildings, locations, admins, classes, students, enrollments] = await Promise.all([
+    prisma.category.count(),
+    prisma.building.count(),
+    prisma.location.count(),
+    prisma.user.count({ where: { role: Role.ADMIN } }),
+    prisma.class.count(),
+    prisma.user.count({ where: { role: Role.STUDENT } }),
+    prisma.enrollment.count(),
   ]);
-  const sample = await prisma.case.findMany({ select: { caseCode: true, status: true }, orderBy: { createdAt: "asc" } });
-  console.log("✔ Seed xong:", { users, categories, cases, comments, history, notifs, audits });
-  console.log("  caseCodes:", sample.map((c) => `${c.caseCode}(${c.status})`).join(", "));
+  console.log("✔ Bootstrap xong:", { categories, buildings, locations, admins, classes, students, enrollments });
 }
 
 main()

@@ -47,3 +47,9 @@ next-env.d.ts
 .claude/
 
 .env.local
+
+# ---- PII: dữ liệu cá nhân học sinh (họ tên + ngày sinh thật) — KHÔNG commit ----
+# campus.json (cơ sở vật chất) + classes.json (sĩ số) là dữ liệu tổng hợp, vẫn commit được.
+docs/data/students.json
+**/students*.json
+!docs/data/students.example.json

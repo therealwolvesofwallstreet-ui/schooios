@@ -15,7 +15,7 @@ Một case đi trọn vòng đời không đứt mạch.
 ### Nền móng
 - [ ] P0: Git branch feature/backend tạo và push
 - [ ] P1: Supabase — tạo staging + prod project, lấy credentials
-- [x] P2: Prisma schema migrate + seed data (9 models + hardening v2: caseCode, query-path indexes, immutable triggers, pg_trgm; is_sensitive + emergency Hybrid). Xem docs/DATA_MODEL.md
+- [x] P2: Prisma schema + nền móng dữ liệu THẬT (13 models: +Building/Location/Class/Enrollment; hardening: caseCode, query-path indexes, immutable triggers, pg_trgm; bootstrap THẬT Lý Tự Trọng — 12 buildings/96 locations/11 cat/3 admin/36 classes/979 students; case thật từ app, seed-dev tách riêng). Xem docs/DATA_MODEL.md + docs/CAMPUS.md
 
 ### Core API
 - [ ] P3: Auth API — login, logout, /me endpoint

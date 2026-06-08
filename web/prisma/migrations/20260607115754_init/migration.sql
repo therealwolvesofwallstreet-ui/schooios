@@ -3,12 +3,13 @@ CREATE SCHEMA IF NOT EXISTS "public";
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Prerequisites NOT modeled by Prisma (managed via raw SQL, won't cause drift):
---   • pg_trgm  : backs the GIN trigram indexes on cases.title / cases.description
---   • case_code_seq : backs Case.case_code default ('CASE-YYYY-00001'); MUST exist
+--   • pg_trgm        : backs the GIN trigram indexes on cases.title / cases.description
+--   • case_code_seq  : backs Case.case_code default ('CASE-YYYY-00001'); MUST exist
 --     before the "cases" table is created (the column DEFAULT calls nextval()).
 -- ─────────────────────────────────────────────────────────────────────────────
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 CREATE SEQUENCE IF NOT EXISTS case_code_seq;
+
 
 -- CreateEnum
 CREATE TYPE "Role" AS ENUM ('STUDENT', 'STAFF', 'ADMIN', 'AUDITOR');
@@ -25,13 +26,26 @@ CREATE TYPE "NotificationType" AS ENUM ('CASE_ASSIGNED', 'STATUS_CHANGED', 'COMM
 -- CreateEnum
 CREATE TYPE "AuditAction" AS ENUM ('CREATE', 'UPDATE', 'DELETE', 'ASSIGN', 'STATUS_CHANGE', 'LOGIN', 'LOGOUT', 'EMERGENCY_FLAG', 'SENSITIVE_FLAG');
 
+-- CreateEnum
+CREATE TYPE "Gender" AS ENUM ('MALE', 'FEMALE');
+
+-- CreateEnum
+CREATE TYPE "BuildingType" AS ENUM ('CLASSROOM', 'SPECIAL', 'FACILITY', 'OFFICE', 'OUTDOOR');
+
+-- CreateEnum
+CREATE TYPE "LocationType" AS ENUM ('CLASSROOM', 'FACILITY', 'OFFICE', 'OUTDOOR', 'OTHER');
+
 -- CreateTable
 CREATE TABLE "users" (
     "id" TEXT NOT NULL,
-    "email" TEXT NOT NULL,
+    "email" TEXT,
+    "sbd" TEXT,
     "password_hash" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "role" "Role" NOT NULL DEFAULT 'STUDENT',
+    "dob" DATE,
+    "gender" "Gender",
+    "admission_year" INTEGER,
     "is_active" BOOLEAN NOT NULL DEFAULT true,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
@@ -46,6 +60,7 @@ CREATE TABLE "cases" (
     "title" TEXT NOT NULL,
     "description" TEXT NOT NULL,
     "location" TEXT,
+    "location_id" TEXT,
     "category_id" TEXT NOT NULL,
     "priority" "CasePriority" NOT NULL DEFAULT 'MEDIUM',
     "status" "CaseStatus" NOT NULL DEFAULT 'NEW',
@@ -160,11 +175,70 @@ CREATE TABLE "refresh_tokens" (
     CONSTRAINT "refresh_tokens_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "buildings" (
+    "id" TEXT NOT NULL,
+    "code" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "type" "BuildingType" NOT NULL,
+    "note" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "buildings_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "locations" (
+    "id" TEXT NOT NULL,
+    "code" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "building_id" TEXT,
+    "floor" INTEGER,
+    "type" "LocationType" NOT NULL,
+    "note" TEXT,
+    "is_active" BOOLEAN NOT NULL DEFAULT true,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "locations_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "classes" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "school_year" TEXT NOT NULL,
+    "grade" INTEGER,
+    "specialization" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "classes_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "enrollments" (
+    "id" TEXT NOT NULL,
+    "student_id" TEXT NOT NULL,
+    "class_id" TEXT NOT NULL,
+    "is_active" BOOLEAN NOT NULL DEFAULT true,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "enrollments_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "users_sbd_key" ON "users"("sbd");
+
+-- CreateIndex
 CREATE INDEX "users_role_idx" ON "users"("role");
+
+-- CreateIndex
+CREATE INDEX "users_admission_year_idx" ON "users"("admission_year");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "cases_case_code_key" ON "cases"("case_code");
@@ -183,6 +257,9 @@ CREATE INDEX "cases_is_emergency_status_idx" ON "cases"("is_emergency", "status"
 
 -- CreateIndex
 CREATE INDEX "cases_category_id_idx" ON "cases"("category_id");
+
+-- CreateIndex
+CREATE INDEX "cases_location_id_idx" ON "cases"("location_id");
 
 -- CreateIndex
 CREATE INDEX "cases_deleted_at_idx" ON "cases"("deleted_at");
@@ -226,6 +303,30 @@ CREATE UNIQUE INDEX "refresh_tokens_token_hash_key" ON "refresh_tokens"("token_h
 -- CreateIndex
 CREATE INDEX "refresh_tokens_user_id_idx" ON "refresh_tokens"("user_id");
 
+-- CreateIndex
+CREATE UNIQUE INDEX "buildings_code_key" ON "buildings"("code");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "locations_code_key" ON "locations"("code");
+
+-- CreateIndex
+CREATE INDEX "locations_building_id_idx" ON "locations"("building_id");
+
+-- CreateIndex
+CREATE INDEX "classes_school_year_grade_idx" ON "classes"("school_year", "grade");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "classes_name_school_year_key" ON "classes"("name", "school_year");
+
+-- CreateIndex
+CREATE INDEX "enrollments_class_id_idx" ON "enrollments"("class_id");
+
+-- CreateIndex
+CREATE INDEX "enrollments_student_id_is_active_idx" ON "enrollments"("student_id", "is_active");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "enrollments_student_id_class_id_key" ON "enrollments"("student_id", "class_id");
+
 -- AddForeignKey
 ALTER TABLE "cases" ADD CONSTRAINT "cases_category_id_fkey" FOREIGN KEY ("category_id") REFERENCES "categories"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
@@ -234,6 +335,9 @@ ALTER TABLE "cases" ADD CONSTRAINT "cases_created_by_fkey" FOREIGN KEY ("created
 
 -- AddForeignKey
 ALTER TABLE "cases" ADD CONSTRAINT "cases_assigned_to_fkey" FOREIGN KEY ("assigned_to") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "cases" ADD CONSTRAINT "cases_location_id_fkey" FOREIGN KEY ("location_id") REFERENCES "locations"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "comments" ADD CONSTRAINT "comments_case_id_fkey" FOREIGN KEY ("case_id") REFERENCES "cases"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -265,11 +369,19 @@ ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_actor_id_fkey" FOREIGN KEY (
 -- AddForeignKey
 ALTER TABLE "refresh_tokens" ADD CONSTRAINT "refresh_tokens_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
+-- AddForeignKey
+ALTER TABLE "locations" ADD CONSTRAINT "locations_building_id_fkey" FOREIGN KEY ("building_id") REFERENCES "buildings"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "enrollments" ADD CONSTRAINT "enrollments_student_id_fkey" FOREIGN KEY ("student_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "enrollments" ADD CONSTRAINT "enrollments_class_id_fkey" FOREIGN KEY ("class_id") REFERENCES "classes"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
 -- ─────────────────────────────────────────────────────────────────────────────
 -- DB-level immutability: audit_logs & case_status_history are append-only.
--- Blocks UPDATE/DELETE at row level (INSERT still allowed). DDL is unaffected.
--- To backfill/correct rows later: DROP the relevant trigger, fix, then re-CREATE
--- it within the SAME migration. See prisma/migrations/README.md.
+-- Blocks UPDATE/DELETE at row level (INSERT allowed). DDL unaffected.
+-- Backfill procedure (drop → fix → recreate trigger): see prisma/migrations/README.md.
 -- ─────────────────────────────────────────────────────────────────────────────
 CREATE OR REPLACE FUNCTION prevent_mutation() RETURNS trigger AS $$
 BEGIN

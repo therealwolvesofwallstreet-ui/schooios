@@ -64,17 +64,43 @@ enum AuditAction {
   SENSITIVE_FLAG
 }
 
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum BuildingType {
+  CLASSROOM
+  SPECIAL
+  FACILITY
+  OFFICE
+  OUTDOOR
+}
+
+enum LocationType {
+  CLASSROOM
+  FACILITY
+  OFFICE
+  OUTDOOR
+  OTHER
+}
+
 // ────────────────────────────── Models ─────────────────────────────
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String   @map("password_hash")
-  name         String
-  role         Role     @default(STUDENT)
-  isActive     Boolean  @default(true) @map("is_active")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id            String    @id @default(cuid())
+  // Định danh: STAFF/ADMIN dùng email; STUDENT dùng sbd. Cả hai optional+unique (Postgres cho nhiều NULL).
+  email         String?   @unique
+  sbd           String?   @unique
+  passwordHash  String    @map("password_hash")
+  name          String
+  role          Role      @default(STUDENT)
+  dob           DateTime? @db.Date
+  gender        Gender?
+  admissionYear Int?      @map("admission_year")
+  isActive      Boolean   @default(true) @map("is_active")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
 
   createdCases  Case[]              @relation("CaseCreatedBy")
   assignedCases Case[]              @relation("CaseAssignedTo")
@@ -84,8 +110,10 @@ model User {
   auditLogs     AuditLog[]
   refreshTokens RefreshToken[]
   statusChanges CaseStatusHistory[]
+  enrollments   Enrollment[]
 
   @@index([role])
+  @@index([admissionYear])
   @@map("users")
 }
 
@@ -95,7 +123,8 @@ model Case {
   caseCode                String       @unique @default(dbgenerated("('CASE-' || to_char(CURRENT_DATE, 'YYYY') || '-' || lpad(nextval('case_code_seq')::text, 5, '0'))")) @map("case_code")
   title                   String
   description             String       @db.Text
-  location                String?
+  location                String?      // ghi chú địa điểm tự do (tùy chọn); địa điểm có cấu trúc dùng locationId
+  locationId              String?      @map("location_id")
   categoryId              String       @map("category_id")
   priority                CasePriority @default(MEDIUM)
   status                  CaseStatus   @default(NEW)
@@ -113,6 +142,7 @@ model Case {
   category      Category            @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   createdBy     User                @relation("CaseCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
   assignedTo    User?               @relation("CaseAssignedTo", fields: [assignedToId], references: [id], onDelete: SetNull)
+  locationRef   Location?           @relation(fields: [locationId], references: [id], onDelete: Restrict)
   comments      Comment[]
   attachments   Attachment[]
   statusHistory CaseStatusHistory[]
@@ -124,6 +154,7 @@ model Case {
   @@index([createdById, createdAt])
   @@index([isEmergency, status])
   @@index([categoryId])
+  @@index([locationId])
   @@index([deletedAt])
   // Trigram GIN cho ILIKE search. Extension pg_trgm tạo bằng raw SQL trong migration
   // (Prisma không quản extension nên không gây drift); index thì Prisma quản được.
@@ -247,4 +278,74 @@ model RefreshToken {
 
   @@index([userId])
   @@map("refresh_tokens")
+}
+
+// ───────────────────── Campus: Building / Location ─────────────────────
+
+model Building {
+  id        String       @id @default(cuid())
+  code      String       @unique // A, B, C, D, LIB, ADMIN, Trad-1, CANTEEN-1, GYM, POOL, PKG-STUDENT, PKG-TEACHER
+  name      String
+  type      BuildingType
+  note      String?
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
+
+  locations Location[]
+
+  @@map("buildings")
+}
+
+model Location {
+  id         String       @id @default(cuid())
+  code       String       @unique // A1.1, A1-WC-GV, ENTRY-1, GYM-1...
+  name       String
+  buildingId String?      @map("building_id") // null = khu chung không thuộc tòa (sân, cổng...)
+  floor      Int? // null nếu không có (vd LIB-WC nguồn ghi "2+")
+  type       LocationType
+  note       String?
+  isActive   Boolean      @default(true) @map("is_active")
+  createdAt  DateTime     @default(now()) @map("created_at")
+  updatedAt  DateTime     @updatedAt @map("updated_at")
+
+  building Building? @relation(fields: [buildingId], references: [id], onDelete: Restrict)
+  cases    Case[]
+
+  @@index([buildingId])
+  @@map("locations")
+}
+
+// ───────────────────── Lớp & ghi danh theo niên khóa ─────────────────────
+
+model Class {
+  id             String   @id @default(cuid())
+  name           String // "12A1A", "10A", "10A1"...
+  schoolYear     String   @map("school_year") // "2025-2026"
+  grade          Int? // 10 / 11 / 12
+  specialization String? // môn chuyên: "Toán", "Tin", "Pháp"...
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  enrollments Enrollment[]
+
+  @@unique([name, schoolYear])
+  @@index([schoolYear, grade])
+  @@map("classes")
+}
+
+// SBD cố định suốt đời, lớp đổi theo năm → tách Enrollment để lưu lịch sử lớp qua từng niên khóa.
+model Enrollment {
+  id        String   @id @default(cuid())
+  studentId String   @map("student_id")
+  classId   String   @map("class_id")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  student User  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  class   Class @relation(fields: [classId], references: [id], onDelete: Restrict)
+
+  @@unique([studentId, classId])
+  @@index([classId])
+  @@index([studentId, isActive])
+  @@map("enrollments")
 }
