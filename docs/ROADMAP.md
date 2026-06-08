@@ -19,7 +19,7 @@ Một case đi trọn vòng đời không đứt mạch.
 
 ### Core API
 - [x] P3: Auth API — login (HS bằng SBD, STAFF/ADMIN bằng email), logout, /me, change-password. **Bắt buộc đổi mật khẩu lần đầu** (cờ `mustChangePassword`, default true cho tài khoản seed). JWT (jose) trong 1 httpOnly cookie; proxy.ts gác /api + ép đổi MK. Hardening: pin alg HS256, timing-safe login, chặn đặt lại MK cũ, primitive `requireUser`. Test: `scripts/test-p3.sh` (20/20). Hoãn: rate-limit→P9, RefreshToken→P5.
-- [ ] P4: Cases API — create, list, get by ID
+- [x] P4: Cases API — POST create + GET list + GET detail. Quyền theo role (Public/Transparent: HS thấy công khai + case của mình; STAFF thấy assigned + NEW/TRIAGED; ADMIN/AUDITOR thấy tất; AUDITOR không tạo). caseCode DB tự sinh; Emergency Hybrid (chỉ `studentFlaggedEmergency`, `isEmergency` luôn false → P7); sensitivity escalate-only từ category; detail `findFirst`+roleWhere → 404 chống enumeration; comment `isInternal` ẩn với HS; `attachments` ẩn `filePath` (Signed URL→P6); audit CREATE qua `recordAudit`; `requireUser` (re-check isActive). Helper `caseWhereForRole`. Test: `scripts/test-p4.sh` (35/35). Hoãn: update/assign→P5.
 - [ ] P5: Assignment + Workflow — state machine, assign
 - [ ] P6: Comments + Notifications
 - [ ] P7: Emergency lane + Dashboard aggregate (Kích hoạt luồng notify Admin khi isEmergency = true)
