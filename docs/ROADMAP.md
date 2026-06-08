@@ -18,7 +18,7 @@ Một case đi trọn vòng đời không đứt mạch.
 - [x] P2: Prisma schema + nền móng dữ liệu THẬT (13 models: +Building/Location/Class/Enrollment; hardening: caseCode, query-path indexes, immutable triggers, pg_trgm; bootstrap THẬT Lý Tự Trọng — 12 buildings/96 locations/11 cat/3 admin/36 classes/979 students; case thật từ app, seed-dev tách riêng). Xem docs/DATA_MODEL.md + docs/CAMPUS.md
 
 ### Core API
-- [ ] P3: Auth API — login (HS bằng SBD, STAFF/ADMIN bằng email), logout, /me. **Bắt buộc đổi mật khẩu lần đầu** (cờ `mustChangePassword`, default true cho tài khoản seed): mật khẩu seed chỉ là tạm, admin/HS tự đặt sau lần đăng nhập đầu.
+- [x] P3: Auth API — login (HS bằng SBD, STAFF/ADMIN bằng email), logout, /me, change-password. **Bắt buộc đổi mật khẩu lần đầu** (cờ `mustChangePassword`, default true cho tài khoản seed). JWT (jose) trong 1 httpOnly cookie; proxy.ts gác /api + ép đổi MK. Hardening: pin alg HS256, timing-safe login, chặn đặt lại MK cũ, primitive `requireUser`. Test: `scripts/test-p3.sh` (20/20). Hoãn: rate-limit→P9, RefreshToken→P5.
 - [ ] P4: Cases API — create, list, get by ID
 - [ ] P5: Assignment + Workflow — state machine, assign
 - [ ] P6: Comments + Notifications
