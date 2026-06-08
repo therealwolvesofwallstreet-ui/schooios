@@ -1,1 +1,78 @@
 @import "tailwindcss";
+
+/* =========================================
+   1. ĐƯA TOÀN BỘ TOKENS VÀO @theme CỦA TAILWIND V4
+   ========================================= */
+@theme {
+  /* HỆ MÀU (Colors) */
+  --color-paper: #F6F2EA;
+  --color-paper-2: #EFE9DD;
+  --color-stone: #D9D5CC;
+  --color-ink: #111111;
+  --color-ink-soft: #2A2A2A;
+  --color-muted: #686760;
+  --color-navy: #0E1B2A;
+  --color-navy-2: #162638;
+  --color-signal: #D72638;
+  --color-signal-2: #B81E2E;
+  --color-gold: #C7A76C;
+  --color-cyan: #55D6BE;
+  --color-lavender: #B883FF;
+
+  /* HỆ FONT CHỮ (Typography) - Liên kết với biến từ layout.tsx */
+  --font-display: var(--font-fraunces), serif;
+  --font-body: var(--font-be-vietnam), sans-serif;
+
+  /* CHUYỂN ĐỘNG (Easing) */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* =========================================
+   2. CSS CUSTOM PROPERTIES (Dùng cho Fluid Typography & Motion)
+   ========================================= */
+@layer base {
+  :root {
+    /* Fluid scale - co giãn theo viewport, min @ 360px, max @ 1440px */
+    --fs-display: clamp(2.75rem, 1.2rem + 6.8vw, 7rem);
+    --fs-h1: clamp(2rem, 1.2rem + 3.6vw, 3.5rem);
+    --fs-h2: clamp(1.5rem, 1.1rem + 1.8vw, 2.25rem);
+    --fs-h3: clamp(1.25rem, 1.05rem + 0.9vw, 1.5rem);
+    --fs-stat: clamp(2.5rem, 1.5rem + 4.5vw, 5rem);
+    
+    --fs-body-lg: 1.125rem;
+    --fs-body: 1rem;
+    --fs-small: 0.8125rem;
+    --fs-mono: 0.875rem;
+    --fs-eyebrow: 0.6875rem;
+
+    /* Duration */
+    --dur-instant: 120ms;
+    --dur-fast: 240ms;
+    --dur-base: 420ms;
+    --dur-slow: 720ms;
+    --dur-cine: 1200ms;
+  }
+
+  /* RESET CƠ BẢN THEO CHUẨN AWWWARDS */
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, .font-display {
+    font-family: var(--font-display);
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+
+  /* Reset lại Border - Trả về viền 1px mảnh màu stone */
+  * {
+    border-color: var(--color-stone);
+  }
+}

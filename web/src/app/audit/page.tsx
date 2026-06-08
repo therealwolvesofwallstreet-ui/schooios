@@ -1,104 +1,119 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { ShieldCheck, Clock, Activity, Lock } from "lucide-react";
-import { useAuditStore } from "@/store/useAuditStore";
-import { useAuthStore } from "@/store/useAuthStore";
+import { useRef } from "react";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
+import { Activity, AlertTriangle, CheckCircle, Clock, ShieldAlert, Users } from "lucide-react";
+import Reveal from "@/components/motion/Reveal";
 
-export default function AuditLogPage() {
-  const [isMounted, setIsMounted] = useState(false);
-  const router = useRouter();
-  
-  const { logs } = useAuditStore();
-  const { role } = useAuthStore();
+// Dữ liệu Audit giả lập
+const stats = [
+  { label: "Tín hiệu mới (24h)", value: "14", icon: Activity, color: "text-cyan" },
+  { label: "Bạo lực học đường", value: "02", icon: ShieldAlert, color: "text-signal" },
+  { label: "Đang xử lý", value: "08", icon: Clock, color: "text-gold" },
+  { label: "Đã đóng (Tuần)", value: "45", icon: CheckCircle, color: "text-stone" },
+];
 
-  useEffect(() => {
-    const timer = setTimeout(() => setIsMounted(true), 0);
-    return () => clearTimeout(timer);
-  }, []);
+const auditLogs = [
+  { id: "LOG-089", action: "Nâng mức độ ưu tiên: CASE-2026-00042", actor: "Admin Khải", time: "10 phút trước", type: "critical" },
+  { id: "LOG-088", action: "Đóng hồ sơ: CASE-2026-00011", actor: "Thầy Bình (Giám thị)", time: "1 giờ trước", type: "normal" },
+  { id: "LOG-087", action: "Trích xuất Camera khu B", actor: "Hệ thống bảo vệ", time: "2 giờ trước", type: "system" },
+  { id: "LOG-086", action: "Học sinh Ẩn danh gửi tín hiệu mới", actor: "Hệ thống", time: "3 giờ trước", type: "warning" },
+];
 
-  if (!isMounted) return null;
+export default function AuditDashboard() {
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  // CHẶN BẢO MẬT: Nếu là học sinh, lập tức văng ra ngoài hoặc báo lỗi
-  if (role !== "admin") {
-    return (
-      <div className="max-w-2xl mx-auto text-center py-24 space-y-4">
-        <div className="bg-red-50 p-4 rounded-full text-red-500 inline-block mb-2">
-          <Lock size={48} />
-        </div>
-        <h2 className="text-2xl font-bold text-slate-900">Khu vực cấm truy cập</h2>
-        <p className="text-slate-500">Chỉ có Ban Giám Hiệu và Quản trị viên mới có quyền xem Lịch sử kiểm toán.</p>
-        <button onClick={() => router.push("/")} className="text-blue-600 font-bold hover:underline mt-4">
-          Quay lại Trang chủ
-        </button>
-      </div>
-    );
-  }
+  // Hiệu ứng GSAP Stagger đơn giản để load các con số mượt mà
+  useGSAP(() => {
+    gsap.from(".stat-card", {
+      y: 20,
+      opacity: 0,
+      duration: 0.6,
+      stagger: 0.1,
+      ease: "power3.out",
+    });
+  }, { scope: containerRef });
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
-      
-      {/* HEADER */}
-      <div className="bg-slate-900 p-6 md:p-8 rounded-2xl shadow-lg text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border border-slate-800">
-        <div className="flex items-center gap-4">
-          <div className="bg-slate-800 p-3 rounded-xl text-emerald-400 border border-slate-700">
-            <ShieldCheck size={28} />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-              Lịch sử kiểm toán (Audit Log)
-              <span className="bg-emerald-500/20 text-emerald-400 text-[10px] font-extrabold px-2 py-0.5 rounded border border-emerald-500/30">SECURE</span>
-            </h1>
-            <p className="text-slate-400 text-sm mt-1">Ghi nhận mọi thao tác thay đổi dữ liệu trong hệ thống.</p>
-          </div>
-        </div>
-        <div className="bg-slate-800 px-4 py-2 rounded-lg border border-slate-700 flex items-center gap-2">
-          <Activity size={16} className="text-blue-400" />
-          <span className="text-sm font-medium text-slate-300">Tổng số: {logs.length} logs</span>
-        </div>
-      </div>
+    <div className="min-h-screen bg-navy text-paper pt-24 pb-32 px-6 lg:px-12" ref={containerRef}>
+      <div className="max-w-[1440px] mx-auto">
+        
+        {/* HEADER DÀNH CHO ADMIN */}
+        <Reveal>
+          <header className="mb-16 border-b border-stone/30 pb-8 flex justify-between items-end">
+            <div>
+              <p className="text-[0.6875rem] font-mono tracking-[0.18em] text-muted uppercase mb-4 flex items-center gap-2">
+                <AlertTriangle size={14} className="text-signal" /> Mạng lưới giám sát
+              </p>
+              <h1 className="font-display text-4xl tracking-tight">Trung tâm Chỉ huy</h1>
+            </div>
+            <div className="text-right hidden md:block">
+              <p className="font-mono text-sm text-muted">Trạng thái hệ thống</p>
+              <p className="text-cyan font-medium tracking-widest uppercase text-sm mt-1">Hoạt động ổn định</p>
+            </div>
+          </header>
+        </Reveal>
 
-      {/* DANH SÁCH LOG */}
-      {logs.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-16 text-center text-slate-400 flex flex-col items-center justify-center gap-3">
-          <ShieldCheck size={40} className="opacity-20" />
-          <p className="text-sm font-medium">Hệ thống chưa ghi nhận thao tác nào.</p>
+        {/* CÁC THẺ THỐNG KÊ (DATA DENSITY) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+          {stats.map((stat, i) => (
+            <div key={i} className="stat-card border border-stone/30 p-6 flex flex-col justify-between h-32 hover:bg-white/5 transition-colors">
+              <div className="flex justify-between items-start">
+                <p className="text-[0.6875rem] font-mono tracking-[0.18em] text-muted uppercase w-2/3 leading-relaxed">
+                  {stat.label}
+                </p>
+                <stat.icon size={18} className={stat.color} />
+              </div>
+              <p className="font-display text-4xl leading-none">{stat.value}</p>
+            </div>
+          ))}
         </div>
-      ) : (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500">
-                  <th className="p-4 font-bold">Thời gian</th>
-                  <th className="p-4 font-bold">Thao tác</th>
-                  <th className="p-4 font-bold">Chi tiết</th>
-                  <th className="p-4 font-bold">Thực hiện bởi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-sm">
-                {logs.map((log) => (
-                  <tr key={log.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="p-4 text-slate-500 whitespace-nowrap">
-                      <div className="flex items-center gap-1.5"><Clock size={14}/> {log.timestamp}</div>
-                    </td>
-                    <td className="p-4">
-                      <span className={`text-[11px] font-extrabold px-2 py-1 rounded-md ${
-                        log.action === "TẠO SỰ VỤ" ? "bg-blue-50 text-blue-600" : "bg-purple-50 text-purple-600"
-                      }`}>
+
+        {/* AUDIT LOG BẤT ĐỐI XỨNG */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
+          <div className="lg:col-span-2">
+            <Reveal delay={0.2}>
+              <h2 className="text-[0.6875rem] font-mono tracking-[0.18em] text-muted uppercase mb-8 pb-4 border-b border-stone/30">
+                Nhật ký vận hành (Audit Log)
+              </h2>
+            </Reveal>
+            
+            <div className="flex flex-col">
+              {auditLogs.map((log, index) => (
+                <Reveal key={log.id} delay={0.3 + index * 0.1}>
+                  <div className="group border-b border-stone/30 py-6 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-white/5 px-4 -mx-4 transition-colors">
+                    <div className="flex items-center gap-6">
+                      <span className="font-mono text-xs text-muted w-20 shrink-0">{log.id}</span>
+                      <p className={`font-medium ${log.type === 'critical' ? 'text-signal' : log.type === 'warning' ? 'text-gold' : 'text-paper'}`}>
                         {log.action}
-                      </span>
-                    </td>
-                    <td className="p-4 text-slate-700 font-medium">{log.details}</td>
-                    <td className="p-4 text-slate-500 font-mono text-xs">{log.actor}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-6 text-sm">
+                      <span className="flex items-center gap-2 text-muted min-w-[120px]"><Users size={14}/> {log.actor}</span>
+                      <span className="font-mono text-xs text-muted w-24 text-right">{log.time}</span>
+                    </div>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+
+          <div className="lg:col-span-1">
+             <Reveal delay={0.4}>
+              <div className="bg-white/5 border border-stone/30 p-8">
+                <h3 className="font-mono text-[0.6875rem] tracking-[0.18em] text-muted uppercase mb-6">Trực ban hôm nay</h3>
+                <div className="space-y-4">
+                  <p className="flex justify-between items-center text-sm"><span className="text-muted">Trưởng ban:</span> Thầy Trần Văn B</p>
+                  <p className="flex justify-between items-center text-sm"><span className="text-muted">Kỹ thuật:</span> Bộ phận IT</p>
+                  <p className="flex justify-between items-center text-sm border-t border-stone/30 pt-4 mt-4"><span className="text-muted">Bảo vệ:</span> Chú Năm (Cổng chính)</p>
+                </div>
+              </div>
+             </Reveal>
           </div>
         </div>
-      )}
+
+      </div>
     </div>
   );
 }

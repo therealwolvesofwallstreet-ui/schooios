@@ -1,186 +1,196 @@
 "use client";
 
-import { use, useState } from "react";
-import { useRouter } from "next/navigation";
-import { ArrowLeft, Clock, MapPin, Tag, ShieldAlert, CheckCircle2, User, Image as ImageIcon, Briefcase, MessageSquare, Lock, Send } from "lucide-react";
-import { useReportStore } from "@/store/useReportStore";
+import { useState, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation"; 
+// 🛠️ FIX CÀNH BÁO: Xóa CheckCircle không sử dụng để giải phóng tài nguyên
+import { ArrowLeft, Clock, ShieldCheck, AlertTriangle, Eye } from "lucide-react";
+import Reveal from "@/components/motion/Reveal";
+import { useCommunityStore } from "@/store/useCommunityStore";
 import { useAuthStore } from "@/store/useAuthStore";
 
-export default function ReportDetailPage({ params }: { params: Promise<{ id: string }> }) {
+interface FeedItem {
+  id: number;
+  type: string;
+  author: string;
+  date: string;
+  content: string;
+  imageUrl?: string | null;
+  status?: "pending" | "approved" | "rejected";
+}
+
+interface CommunityStoreMethods {
+  items: FeedItem[];
+}
+
+export default function ReportDetailPage() {
   const router = useRouter();
-  const resolvedParams = use(params);
-  const reportId = resolvedParams.id;
-
-  const { reports, updateStatus } = useReportStore();
-  const { role } = useAuthStore(); 
+  const { id } = useParams(); 
+  const { role } = useAuthStore();
   
-  const report = reports.find((r) => r.id === reportId);
+  const store = useCommunityStore() as unknown as CommunityStoreMethods;
+  const { items } = store;
 
-  // MOCK DATA BÌNH LUẬN (Ghi dữ liệu tạm thời để test luồng UI)
-  const [comments, setComments] = useState([
-    { id: 1, author: "Hệ thống", text: "Sự vụ đã được ghi nhận thành công vào hệ thống.", time: "11:31", isInternal: false },
-    { id: 2, author: "Admin (Thầy Quản lý)", text: "Cần kiểm tra camera khu vực hành lang dãy A để xác minh thêm.", time: "11:45", isInternal: true },
-  ]);
-  const [newComment, setNewComment] = useState("");
-  const [isInternalNote, setIsInternalNote] = useState(false);
+  const [statusMap, setStatusMap] = useState<Record<number, "pending" | "approved" | "rejected">>({});
+  const [mounted, setMounted] = useState(false);
 
-  if (!report) {
+  useEffect(() => {
+    const saved = localStorage.getItem("schoolos_feed_status_map");
+    const timer = setTimeout(() => {
+      if (saved) {
+        try { setStatusMap(JSON.parse(saved)); } catch { /* ignore */ }
+      }
+      setMounted(true);
+    }, 0);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (!mounted) return null;
+
+  const rawItem = (items || []).find(i => i.id === Number(id));
+  const currentItem = rawItem || (items || []).find(i => String(i.id) === String(id));
+
+  if (!currentItem) {
     return (
-      <div className="max-w-3xl mx-auto text-center py-20 space-y-4">
-        <h2 className="text-2xl font-bold text-slate-900">Không tìm thấy sự vụ</h2>
-        <p className="text-slate-500">Báo cáo này không tồn tại hoặc đã bị xóa khỏi hệ thống.</p>
-        <button onClick={() => router.push("/report")} className="text-blue-600 font-bold hover:underline">
-          Quay lại danh sách
+      <div className="min-h-screen bg-paper text-ink flex flex-col items-center justify-center p-6">
+        <AlertTriangle size={40} className="text-signal mb-4" />
+        <h2 className="font-display text-2xl mb-2">Không tìm thấy mã sự vụ</h2>
+        <p className="text-muted text-sm mb-6 font-light">Hồ sơ này không tồn tại hoặc đã bị xóa khỏi hệ thống.</p>
+        <button onClick={() => router.push("/feed")} className="font-mono text-xs uppercase tracking-widest border border-ink px-4 py-2">
+          Quay lại bảng tin
         </button>
       </div>
     );
   }
 
-  const handleAddComment = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newComment.trim()) return;
+  const currentStatus = statusMap[currentItem.id] || currentItem.status || "pending";
 
-    const comment = {
-      id: Date.now(),
-      author: role === "admin" ? "Admin (Bạn)" : "Học sinh (Bạn)",
-      text: newComment,
-      time: new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }),
-      isInternal: role === "admin" ? isInternalNote : false, 
-    };
-
-    setComments([...comments, comment]);
-    setNewComment("");
+  const isDark = role === "admin";
+  const ui = {
+    bg: isDark ? "bg-navy text-paper" : "bg-paper text-ink",
+    muted: isDark ? "text-paper/50" : "text-muted",
+    border: isDark ? "border-white/15" : "border-stone",
   };
 
-  const visibleComments = comments.filter(c => !c.isInternal || role === "admin");
-
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <button onClick={() => router.push("/report")} className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors">
-          <ArrowLeft size={16} /> Quay lại danh sách
-        </button>
-        <span className="font-mono text-sm font-bold bg-slate-200 text-slate-700 px-3 py-1 rounded-lg">{report.id}</span>
-      </div>
-
-      <div className={`grid grid-cols-1 ${role === "admin" ? "lg:grid-cols-3" : ""} gap-6 items-start`}>
+    <div className={`min-h-screen pt-24 pb-32 px-6 lg:px-12 transition-colors duration-slow ${ui.bg}`}>
+      {/* 🛠️ FIX TAILWIND: Đổi max-w-[1000px] sang class chuẩn max-w-250 */}
+      <div className="max-w-250 mx-auto">
         
-        {/* CỘT TRÁI: NỘI DUNG VÀ BÌNH LUẬN */}
-        <div className={`${role === "admin" ? "lg:col-span-2" : "lg:col-span-3"} space-y-6`}>
-          
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className={`p-6 md:p-8 border-b ${report.isEmergency ? "bg-red-50/50 border-red-100" : "border-slate-100"}`}>
-              <div className="flex flex-wrap items-center gap-3 mb-4">
-                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
-                  report.status === "Chờ tiếp nhận" ? "bg-amber-100 text-amber-700" :
-                  report.status === "Đang xử lý" ? "bg-blue-100 text-blue-700" :
-                  "bg-green-100 text-green-700"
-                }`}>
-                  {report.status === "Chờ tiếp nhận" && <Clock size={14} />}
-                  {report.status === "Đang xử lý" && <ShieldAlert size={14} />}
-                  {report.status === "Đã giải quyết" && <CheckCircle2 size={14} />}
-                  {report.status}
-                </span>
-                {report.isEmergency && <span className="bg-red-600 text-white text-xs font-extrabold px-3 py-1 rounded-full animate-pulse">KHẨN CẤP</span>}
-              </div>
-              
-              <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-4 leading-snug">{report.title}</h1>
-              
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm font-medium text-slate-500">
-                <div className="flex items-center gap-2"><Clock size={16} className="text-slate-400"/> {report.createdAt}</div>
-                <div className="flex items-center gap-2"><MapPin size={16} className="text-slate-400"/> {report.location}</div>
-                <div className="flex items-center gap-2"><Tag size={16} className="text-slate-400"/> {report.category}</div>
-                <div className="flex items-center gap-2"><User size={16} className="text-slate-400"/> {report.isConfidential ? "Người báo cáo ẩn danh" : "Học sinh (Đã xác thực)"}</div>
-              </div>
-            </div>
+        {/* NÚT QUAY LẠI */}
+        <Reveal>
+          <button 
+            onClick={() => router.back()} 
+            className={`group flex items-center gap-2 text-[0.6875rem] font-mono tracking-[0.18em] uppercase ${ui.muted} hover:text-current transition-colors mb-16`}
+          >
+            <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> 
+            Quay lại kho lưu trữ
+          </button>
+        </Reveal>
 
-            <div className="p-6 md:p-8 space-y-8">
-              <div>
-                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3">Mô tả sự vụ</h3>
-                <p className="text-slate-700 leading-relaxed whitespace-pre-wrap text-[15px]">{report.description}</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3">Ảnh minh chứng</h3>
-                <div className="w-full md:w-3/4 aspect-video bg-slate-50 rounded-xl border border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400">
-                  <ImageIcon size={32} className="mb-2 opacity-50" />
-                  <span className="text-sm font-medium">Không có ảnh đính kèm</span>
-                </div>
-              </div>
+        {/* TIÊU ĐỀ HỒ SƠ CHÍNH CHỦ */}
+        <header className={`border-b ${ui.border} pb-8 mb-16`}>
+          <Reveal>
+            <p className="text-[0.6875rem] font-mono tracking-[0.18em] text-signal uppercase mb-3">
+              Hồ sơ giám sát sự vụ
+            </p>
+          </Reveal>
+          <Reveal delay={0.1}>
+            <h1 className="font-display text-4xl md:text-5xl tracking-tight leading-none">
+              Mã hồ sơ: #{currentItem.id}
+            </h1>
+          </Reveal>
+          <Reveal delay={0.2}>
+            <div className={`flex items-center gap-6 mt-6 font-mono text-xs ${ui.muted}`}>
+              <span>Người phát tín hiệu: {role === "admin" ? currentItem.author : "Ẩn danh bảo mật"}</span>
+              <span className="w-1 h-1 bg-current rounded-full"></span>
+              <span>Thời gian: {currentItem.date}</span>
             </div>
+          </Reveal>
+        </header>
+
+        {/* THÂN BÀI */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
+          
+          {/* CỘT NỘI DUNG GỐC */}
+          <div className="lg:col-span-7 space-y-8">
+            <Reveal delay={0.3}>
+              <div className="space-y-4">
+                <h3 className={`text-[0.6875rem] font-mono tracking-[0.18em] ${ui.muted} uppercase`}>Nội dung tường trình</h3>
+                {/* 🛠️ FIX LỖI ĐỎ: Thay thế dấu ngoặc kép bằng thực thể HTML &ldquo; và &rdquo; */}
+                <p className="text-xl font-light leading-relaxed tracking-wide italic">
+                  &ldquo;{currentItem.content}&rdquo;
+                </p>
+              </div>
+            </Reveal>
+
+            {currentItem.imageUrl && (
+              <Reveal delay={0.4}>
+                <div className={`border ${ui.border} p-1 w-fit mt-6`}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={currentItem.imageUrl} alt="Bằng chứng sự vụ" className="max-h-150 object-cover" />
+                </div>
+              </Reveal>
+            )}
           </div>
 
-          {/* KHU VỰC BÌNH LUẬN & GHI CHÚ NỘI BỘ */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
-            <h3 className="flex items-center gap-2 font-bold text-slate-900 text-base border-b border-slate-100 pb-3">
-              <MessageSquare size={18} className="text-blue-600" /> Trao đổi trong vụ việc
-            </h3>
-
-            <div className="space-y-4 max-h-60 overflow-y-auto pr-2">
-              {visibleComments.map((c) => (
-                <div key={c.id} className={`p-4 rounded-xl text-sm ${c.isInternal ? "bg-purple-50 border border-purple-100" : "bg-slate-50 border border-slate-100"}`}>
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-slate-800">{c.author}</span>
-                      {c.isInternal && (
-                        <span className="bg-purple-600 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded flex items-center gap-1">
-                          <Lock size={10} /> Nội bộ
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-xs text-slate-400 font-medium">{c.time}</span>
+          {/* CỘT SỢI CHỈ ĐỎ TIMELINE */}
+          <div className="lg:col-span-5 border-l border-stone pl-8 lg:pl-12 space-y-12 relative">
+            <h3 className={`text-[0.6875rem] font-mono tracking-[0.18em] ${ui.muted} uppercase mb-8`}>Tuyến tiến trình xử lý</h3>
+            
+            {/* Vạch tiến trình */}
+            {/* 🛠️ FIX TAILWIND: Đổi before:left-[11px] thành before:left-2.75 và before:w-[1px] thành before:w-px */}
+            <div className="space-y-12 relative before:absolute before:left-2.75 before:top-2 before:bottom-2 before:w-px before:bg-stone">
+              
+              {/* BƯỚC 1: TIẾP NHẬN */}
+              <Reveal delay={0.4}>
+                <div className="flex gap-4 relative z-10">
+                  <div className="w-6 h-6 rounded-full bg-cyan text-navy flex items-center justify-center"><Clock size={12} /></div>
+                  <div>
+                    <h4 className="text-sm font-medium">Hệ thống tiếp nhận tín hiệu</h4>
+                    <p className={`text-xs ${ui.muted} mt-1 font-light`}>Mã hóa danh tính và tạo lập hồ sơ thành công.</p>
                   </div>
-                  <p className="text-slate-600 leading-relaxed">{c.text}</p>
                 </div>
-              ))}
+              </Reveal>
+
+              {/* BƯỚC 2: PHÂN LOẠI ĐIỀU PHỐI */}
+              <Reveal delay={0.5}>
+                <div className="flex gap-4 relative z-10">
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center ${currentStatus !== 'pending' ? 'bg-cyan text-navy' : 'bg-gold text-ink animate-pulse'}`}>
+                    <Eye size={12} />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium">Ban Giám Hiệu thẩm định</h4>
+                    <p className={`text-xs ${ui.muted} mt-1 font-light`}>
+                      {currentStatus === "pending" ? "Đang nằm trong hòm thư chờ điều phối viên phân loại." : "Điều phối viên đã hoàn thành đọc và thẩm định nội dung."}
+                    </p>
+                  </div>
+                </div>
+              </Reveal>
+
+              {/* BƯỚC 3: KẾT LUẬN HỒ SƠ */}
+              <Reveal delay={0.6}>
+                <div className="flex gap-4 relative z-10">
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                    currentStatus === 'approved' ? 'bg-signal text-paper' : currentStatus === 'rejected' ? 'bg-stone text-paper' : 'border border-stone bg-transparent text-stone'
+                  }`}>
+                    <ShieldCheck size={12} />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium">Trạng thái cuối cùng</h4>
+                    <p className={`text-xs ${ui.muted} mt-1 font-light`}>
+                      {currentStatus === "approved" && "Hồ sơ hợp lệ. Đã phát tán cảnh báo công khai lên Bảng tin."}
+                      {currentStatus === "rejected" && "Hồ sơ bị từ chối hoặc được chuyển sang lưu trữ nội bộ."}
+                      {currentStatus === "pending" && "Đang đợi quyết định phê duyệt."}
+                    </p>
+                  </div>
+                </div>
+              </Reveal>
+
             </div>
-
-            <form onSubmit={handleAddComment} className="space-y-3 pt-2">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder={isInternalNote && role === "admin" ? "Nhập ghi chú nội bộ (chỉ Admin thấy)..." : "Nhập phản hồi công khai..."}
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  className={`w-full pl-4 pr-12 py-3 rounded-xl border text-[14px] focus:outline-none focus:ring-2 transition-all ${isInternalNote && role === "admin" ? "border-purple-300 focus:border-purple-500 focus:ring-purple-100" : "border-slate-200 focus:border-blue-500 focus:ring-blue-100"}`}
-                />
-                <button type="submit" className={`absolute right-2.5 top-1/2 -translate-y-1/2 p-2 rounded-lg text-white transition-all active:scale-95 ${isInternalNote && role === "admin" ? "bg-purple-600 hover:bg-purple-700" : "bg-blue-600 hover:bg-blue-700"}`}>
-                  <Send size={14} />
-                </button>
-              </div>
-
-              {role === "admin" && (
-                <label className="flex items-center gap-2 text-xs font-bold text-purple-700 cursor-pointer w-fit">
-                  <input
-                    type="checkbox"
-                    checked={isInternalNote}
-                    onChange={(e) => setIsInternalNote(e.target.checked)}
-                    className="w-3.5 h-3.5 text-purple-600 rounded border-purple-300 focus:ring-purple-500"
-                  />
-                  🔒 Bật chế độ Ghi chú nội bộ Staff / Admin
-                </label>
-              )}
-            </form>
           </div>
 
         </div>
 
-        {/* CỘT PHẢI: BAN ĐIỀU KHIỂN TRẠNG THÁI (CHỈ ADMIN THẤY) */}
-        {role === "admin" && (
-          <div className="space-y-4 animate-in fade-in slide-in-from-right-8 duration-500">
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 md:p-6">
-              <h3 className="flex items-center gap-2 font-bold text-slate-900 mb-4 border-b border-slate-100 pb-3">
-                <Briefcase size={18} className="text-blue-600"/> Cập nhật quy trình
-              </h3>
-              <div className="space-y-3">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Đổi trạng thái sự vụ</p>
-                <button onClick={() => updateStatus(report.id, "Chờ tiếp nhận")} className={`w-full py-2.5 px-4 rounded-xl text-sm font-bold text-left transition-all ${report.status === "Chờ tiếp nhận" ? "bg-amber-100 text-amber-800 border-2 border-amber-500" : "bg-slate-50 text-slate-600 hover:bg-slate-100 border-2 border-transparent"}`}>1. Chờ tiếp nhận</button>
-                <button onClick={() => updateStatus(report.id, "Đang xử lý")} className={`w-full py-2.5 px-4 rounded-xl text-sm font-bold text-left transition-all ${report.status === "Đang xử lý" ? "bg-blue-100 text-blue-800 border-2 border-blue-500" : "bg-slate-50 text-slate-600 hover:bg-slate-100 border-2 border-transparent"}`}>2. Đang xử lý</button>
-                <button onClick={() => updateStatus(report.id, "Đã giải quyết")} className={`w-full py-2.5 px-4 rounded-xl text-sm font-bold text-left transition-all ${report.status === "Đã giải quyết" ? "bg-green-100 text-green-800 border-2 border-green-500" : "bg-slate-50 text-slate-600 hover:bg-slate-100 border-2 border-transparent"}`}>3. Đã giải quyết</button>
-              </div>
-            </div>
-          </div>
-        )}
-        
       </div>
     </div>
   );
