@@ -45,7 +45,8 @@ Nguồn: `docs/data/` (Trường THPT Chuyên Lý Tự Trọng). Nạp bằng `p
 **11 categories · 12 buildings · 96 locations · 3 ADMIN · 36 classes · 979 students · 979 enrollments.**
 - `campus.json` (cơ sở vật chất) + `classes.json` (sĩ số) → **commit**. `students.json` (PII: tên+DOB) → **gitignored**.
 - **Case "thật" sinh từ app (P4+), KHÔNG seed.** Data giả test API: `prisma/seed-dev.ts` (dev-only, gắn nhãn `[DEMO]`, KHÔNG vào `migrations.seed`).
-- Login: STUDENT bằng `sbd` (mật khẩu mặc định `123456`); STAFF/ADMIN bằng `email` (admin pw từ `SEED_ADMIN_PASSWORD`).
+- Login: STUDENT bằng `sbd` (mật khẩu mặc định `123456`); STAFF/ADMIN bằng `email` (admin pw từ `SEED_ADMIN_PASSWORD`, fallback `Admin@12345`).
+- **Mật khẩu seed chỉ là TẠM (vé đăng nhập lần đầu).** P3 sẽ thêm cờ `User.mustChangePassword` (Boolean, default true cho tài khoản seed; migration **additive**) → đăng nhập lần đầu bị **bắt buộc đổi mật khẩu** trước khi vào hệ thống. Admin/HS tự đặt mật khẩu thật, KHÔNG hardcode trong seed.
 
 ## ⛔ Deferred — KHÔNG thêm nếu chưa được chốt lại
 - **`schoolId` (multi-trường/tenant)** — retrofit: thêm vào `User` + `Case` (+ Building/Location/Class), đưa vào **leftmost** mọi composite index + filter ở mọi permission check + seed.
