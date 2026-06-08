@@ -99,6 +99,8 @@ model User {
   gender        Gender?
   admissionYear Int?      @map("admission_year")
   isActive      Boolean   @default(true) @map("is_active")
+  // P3: mật khẩu seed chỉ là tạm — buộc đổi ở lần đăng nhập đầu. Tài khoản seed tự nhận true (default).
+  mustChangePassword Boolean @default(true) @map("must_change_password")
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
