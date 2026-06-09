@@ -58,3 +58,24 @@ export const changeStatusSchema = z.object({
 
 export type AssignCaseInput = z.infer<typeof assignCaseSchema>;
 export type ChangeStatusInput = z.infer<typeof changeStatusSchema>;
+
+// ─────────────────────────── Comments + Notifications (P6) ───────────────────────────
+// createComment: body trim trước khi đo (loại comment toàn khoảng trắng), max chặn input khổng lồ;
+//   isInternal mặc định false (STUDENT bị ép false ở route — chỉ STAFF/ADMIN được đặt true).
+export const createCommentSchema = z.object({
+  body: z.string().trim().min(1).max(5000),
+  isInternal: z.boolean().optional().default(false),
+});
+
+// listNotifications: coerce query string → số (giống listCasesQuery); unreadOnly "true"/"false" → bool.
+export const listNotificationsQuery = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  unreadOnly: z
+    .enum(["true", "false"])
+    .transform((v) => v === "true")
+    .optional(),
+});
+
+export type CreateCommentInput = z.infer<typeof createCommentSchema>;
+export type ListNotificationsQuery = z.infer<typeof listNotificationsQuery>;
