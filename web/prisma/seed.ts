@@ -22,6 +22,17 @@ const readJson = (f: string) => JSON.parse(fs.readFileSync(path.join(DATA, f), "
 const adapter = new PrismaPg({ connectionString: process.env.DIRECT_URL });
 const prisma = new PrismaClient({ adapter });
 
+// Shape của 1 record trong docs/data/students.json (PII, gitignored). `grade` KHÔNG có ở đây
+// (lớp suy ra từ className → Class). Khai tường minh để map không phải dùng `any`.
+type RawStudent = {
+  sbd: string;
+  name: string;
+  gender: "MALE" | "FEMALE" | null;
+  dob: string | null;
+  admissionYear: number;
+  className: string;
+};
+
 async function main() {
   const campus = readJson("campus.json");
   const classesData = readJson("classes.json");
@@ -85,11 +96,11 @@ async function main() {
   if (!fs.existsSync(studentsPath)) {
     console.warn("⚠ docs/data/students.json không có (PII/gitignored) — BỎ QUA students + enrollments.");
   } else {
-    const students = JSON.parse(fs.readFileSync(studentsPath, "utf8")).students;
+    const students: RawStudent[] = JSON.parse(fs.readFileSync(studentsPath, "utf8")).students;
     const studentHash = await bcrypt.hash("123456", 10); // hash 1 lần, dùng chung 979 HS (đổi sau lần đầu)
     await prisma.user.createMany({
       skipDuplicates: true,
-      data: students.map((s: any) => ({
+      data: students.map((s) => ({
         sbd: s.sbd,
         name: s.name,
         role: Role.STUDENT,

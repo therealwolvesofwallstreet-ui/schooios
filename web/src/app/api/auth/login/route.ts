@@ -61,8 +61,10 @@ export async function POST(request: NextRequest) {
       user.id,
     );
 
-    // Loại passwordHash khỏi response (không bao giờ trả ra).
-    const { passwordHash: _omit, ...safeUser } = user;
+    // Loại passwordHash khỏi response (không bao giờ trả ra). Xóa field thay vì destructure-bỏ
+    // (tránh biến unused — eslint --max-warnings 0 không ignore tiền tố `_`).
+    const safeUser = { ...user };
+    delete (safeUser as { passwordHash?: string }).passwordHash;
     const res = NextResponse.json({ user: safeUser });
     setAuthCookie(res, token);
 
