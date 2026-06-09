@@ -45,3 +45,13 @@ export const caseDetailInclude = {
     include: { changedBy: { select: { id: true, name: true, role: true } } },
   },
 } satisfies Prisma.CaseInclude;
+
+// Include TỐI THIỂU cho response sau mutation (assign/status P5): đủ cho client cập nhật UI,
+// nhẹ hơn caseDetailInclude (không kéo attachments/statusHistory/comments). KHÔNG lộ passwordHash
+// (User omit toàn cục + chỉ select id/name/role). Dùng include → trả kèm mọi scalar (status,
+// assignedToId, resolvedAt, closedAt…) để test/UI đọc trực tiếp.
+export const caseMutationInclude = {
+  category: true,
+  createdBy: { select: { id: true, name: true, role: true } },
+  assignedTo: { select: { id: true, name: true, role: true } },
+} satisfies Prisma.CaseInclude;

@@ -42,3 +42,19 @@ export const listCasesQuery = z.object({
 
 export type CreateCaseInput = z.infer<typeof createCaseSchema>;
 export type ListCasesQuery = z.infer<typeof listCasesQuery>;
+
+// ─────────────────────────── Workflow + Assignment (P5) ───────────────────────────
+// assign: chỉ nhận assignedToId; KHÔNG có dueAt (deferred — xem DATA_MODEL.md).
+export const assignCaseSchema = z.object({
+  // max chặn input khổng lồ (id là cuid ~25 ký tự) — nhất quán với title/description.
+  assignedToId: z.string().min(1).max(64),
+});
+
+// changeStatus: status là enum thật (nativeEnum loại giá trị rác → 400); reason (tùy chọn) ghi vào history.note.
+export const changeStatusSchema = z.object({
+  status: z.nativeEnum(CaseStatus),
+  reason: z.string().trim().max(1000).optional(),
+});
+
+export type AssignCaseInput = z.infer<typeof assignCaseSchema>;
+export type ChangeStatusInput = z.infer<typeof changeStatusSchema>;
