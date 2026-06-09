@@ -79,3 +79,14 @@ export const listNotificationsQuery = z.object({
 
 export type CreateCommentInput = z.infer<typeof createCommentSchema>;
 export type ListNotificationsQuery = z.infer<typeof listNotificationsQuery>;
+
+// ─────────────────────────── Emergency lane (P7) ───────────────────────────
+// setEmergency: bật/tắt cờ KHẨN CẤP CHÍNH THỨC (isEmergency) — KHÁC studentFlaggedEmergency
+//   (nút HS bấm) và KHÔNG đụng status. reason (tùy chọn) ghi vào audit metadata + message notify.
+//   Bắt buộc isEmergency là boolean thật (thiếu/sai kiểu → 400), không dùng default để no-op rõ ràng.
+export const setEmergencySchema = z.object({
+  isEmergency: z.boolean(),
+  reason: z.string().trim().max(500).optional(),
+});
+
+export type SetEmergencyInput = z.infer<typeof setEmergencySchema>;
