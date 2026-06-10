@@ -21,7 +21,7 @@ export default function AuditLogPage() {
   if (!isMounted) return null;
 
   // CHẶN BẢO MẬT: Nếu là học sinh, lập tức văng ra ngoài hoặc báo lỗi
-  if (role !== "admin") {
+  if (role !== "ADMIN" && role !== "AUDITOR") {
     return (
       <div className="max-w-2xl mx-auto text-center py-24 space-y-4">
         <div className="bg-red-50 p-4 rounded-full text-red-500 inline-block mb-2">

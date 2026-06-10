@@ -33,14 +33,14 @@ export default function Dashboard() {
         <div>
           <div className="flex items-center gap-3">
             <h2 className="text-xl md:text-2xl font-bold text-slate-900">
-              {role === "admin" ? "Bảng điều khiển Ban Giám Hiệu" : "Hệ thống báo cáo sự vụ"}
+              {role !== "STUDENT" ? "Bảng điều khiển Ban Giám Hiệu" : "Hệ thống báo cáo sự vụ"}
             </h2>
-            <span className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold uppercase tracking-wider ${role === "admin" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"}`}>
-              {role === "admin" ? "Admin" : "Học sinh"}
+            <span className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold uppercase tracking-wider ${role !== "STUDENT" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"}`}>
+              {role !== "STUDENT" ? "Admin" : "Học sinh"}
             </span>
           </div>
           <p className="text-slate-500 text-sm mt-1">
-            {role === "admin" ? "Quản lý và điều phối các sự vụ trong toàn trường." : "Chào mừng bạn trở lại. Hãy gửi báo cáo nếu phát hiện sự cố."}
+            {role !== "STUDENT" ? "Quản lý và điều phối các sự vụ trong toàn trường." : "Chào mừng bạn trở lại. Hãy gửi báo cáo nếu phát hiện sự cố."}
           </p>
         </div>
         
@@ -62,7 +62,7 @@ export default function Dashboard() {
       </div>
 
       {/* 4 CỤC THỐNG KÊ */}
-      {role === "admin" && (
+      {role !== "STUDENT" && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="bg-white p-4 md:p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
             <div className="bg-blue-50 p-3 rounded-xl text-blue-600 shrink-0"><FileText size={22} /></div>
@@ -99,7 +99,7 @@ export default function Dashboard() {
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="font-bold text-slate-900 text-base">
-            {role === "admin" ? "Tất cả sự vụ gần đây" : "Báo cáo của bạn"}
+            {role !== "STUDENT" ? "Tất cả sự vụ gần đây" : "Báo cáo của bạn"}
           </h3>
           <button onClick={() => router.push("/report")} className="text-xs font-bold text-blue-600 hover:text-blue-700">Xem tất cả</button>
         </div>

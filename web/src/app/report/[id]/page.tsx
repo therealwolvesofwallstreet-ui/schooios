@@ -42,17 +42,17 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
 
     const comment = {
       id: Date.now(),
-      author: role === "admin" ? "Admin (Bạn)" : "Học sinh (Bạn)",
+      author: role !== "STUDENT" ? "Admin (Bạn)" : "Học sinh (Bạn)",
       text: newComment,
       time: new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }),
-      isInternal: role === "admin" ? isInternalNote : false, 
+      isInternal: role !== "STUDENT" ? isInternalNote : false, 
     };
 
     setComments([...comments, comment]);
     setNewComment("");
   };
 
-  const visibleComments = comments.filter(c => !c.isInternal || role === "admin");
+  const visibleComments = comments.filter(c => !c.isInternal || role !== "STUDENT");
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
@@ -63,10 +63,10 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
         <span className="font-mono text-sm font-bold bg-slate-200 text-slate-700 px-3 py-1 rounded-lg">{report.id}</span>
       </div>
 
-      <div className={`grid grid-cols-1 ${role === "admin" ? "lg:grid-cols-3" : ""} gap-6 items-start`}>
+      <div className={`grid grid-cols-1 ${role !== "STUDENT" ? "lg:grid-cols-3" : ""} gap-6 items-start`}>
         
         {/* CỘT TRÁI: NỘI DUNG VÀ BÌNH LUẬN */}
-        <div className={`${role === "admin" ? "lg:col-span-2" : "lg:col-span-3"} space-y-6`}>
+        <div className={`${role !== "STUDENT" ? "lg:col-span-2" : "lg:col-span-3"} space-y-6`}>
           
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <div className={`p-6 md:p-8 border-b ${report.isEmergency ? "bg-red-50/50 border-red-100" : "border-slate-100"}`}>
@@ -138,17 +138,17 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
               <div className="relative">
                 <input
                   type="text"
-                  placeholder={isInternalNote && role === "admin" ? "Nhập ghi chú nội bộ (chỉ Admin thấy)..." : "Nhập phản hồi công khai..."}
+                  placeholder={isInternalNote && role !== "STUDENT" ? "Nhập ghi chú nội bộ (chỉ Admin thấy)..." : "Nhập phản hồi công khai..."}
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
-                  className={`w-full pl-4 pr-12 py-3 rounded-xl border text-[14px] focus:outline-none focus:ring-2 transition-all ${isInternalNote && role === "admin" ? "border-purple-300 focus:border-purple-500 focus:ring-purple-100" : "border-slate-200 focus:border-blue-500 focus:ring-blue-100"}`}
+                  className={`w-full pl-4 pr-12 py-3 rounded-xl border text-[14px] focus:outline-none focus:ring-2 transition-all ${isInternalNote && role !== "STUDENT" ? "border-purple-300 focus:border-purple-500 focus:ring-purple-100" : "border-slate-200 focus:border-blue-500 focus:ring-blue-100"}`}
                 />
-                <button type="submit" className={`absolute right-2.5 top-1/2 -translate-y-1/2 p-2 rounded-lg text-white transition-all active:scale-95 ${isInternalNote && role === "admin" ? "bg-purple-600 hover:bg-purple-700" : "bg-blue-600 hover:bg-blue-700"}`}>
+                <button type="submit" className={`absolute right-2.5 top-1/2 -translate-y-1/2 p-2 rounded-lg text-white transition-all active:scale-95 ${isInternalNote && role !== "STUDENT" ? "bg-purple-600 hover:bg-purple-700" : "bg-blue-600 hover:bg-blue-700"}`}>
                   <Send size={14} />
                 </button>
               </div>
 
-              {role === "admin" && (
+              {role !== "STUDENT" && (
                 <label className="flex items-center gap-2 text-xs font-bold text-purple-700 cursor-pointer w-fit">
                   <input
                     type="checkbox"
@@ -165,7 +165,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
         </div>
 
         {/* CỘT PHẢI: BAN ĐIỀU KHIỂN TRẠNG THÁI (CHỈ ADMIN THẤY) */}
-        {role === "admin" && (
+        {role !== "STUDENT" && (
           <div className="space-y-4 animate-in fade-in slide-in-from-right-8 duration-500">
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 md:p-6">
               <h3 className="flex items-center gap-2 font-bold text-slate-900 mb-4 border-b border-slate-100 pb-3">

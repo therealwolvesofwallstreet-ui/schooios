@@ -1,7 +1,7 @@
 "use client";
 
 import { Toaster } from "react-hot-toast";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { LayoutDashboard, FileText, Bell, User, ShieldAlert, LogOut, HelpCircle } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -36,28 +36,44 @@ const menuItems = [
   { name: "Tài khoản", icon: User, path: "/profile" },
 ];
 
+// Trang tự render layout riêng (không vỏ app): proxy đảm bảo chỉ user phù hợp tới được.
+const BARE_PAGES = new Set(["/login", "/change-password"]);
+
 /**
  * AppShell — vỏ giao diện ứng dụng (sidebar PC + header/bottom-nav mobile + modal đăng xuất + Toaster).
  * Root layout (Server Component) giữ fonts/metadata/html/body; AppShell là client boundary.
- * Auth thật + ép đổi mật khẩu được gác ở proxy.ts + trang /login (M2). Ở đây chỉ hiển thị vỏ.
+ * Hydrate auth từ /api/auth/me khi mở app; gác trang thật do proxy.ts.
  */
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const { userEmail, role, logout } = useAuthStore();
+  const { userEmail, role, logout, hydrate } = useAuthStore();
   const { notifications } = useNotificationStore();
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-  const confirmLogoutAction = () => {
-    logout();
+  // Mở app → đọc trạng thái đăng nhập 1 lần (root layout không remount khi điều hướng).
+  useEffect(() => {
+    hydrate();
+  }, [hydrate]);
+
+  const confirmLogoutAction = async () => {
+    await logout();
     setShowLogoutConfirm(false);
     router.push("/login");
   };
 
-  // Trang /login + /change-password tự render layout riêng (không vỏ app) — xử lý ở M2.
+  // /login + /change-password: render trần (full-screen của chính trang) + Toaster.
+  if (BARE_PAGES.has(pathname)) {
+    return (
+      <>
+        {children}
+        <Toaster position="top-right" toastOptions={premiumToastConfig} />
+      </>
+    );
+  }
 
   return (
     <div className="bg-slate-50 text-slate-800 font-sans flex h-screen w-screen overflow-hidden flex-col md:flex-row">
@@ -71,7 +87,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <div>
               <h1 className="font-bold text-lg text-slate-900 leading-none">SchooIOS</h1>
               <span className="text-xs font-semibold text-blue-600 mt-1 block">
-                {role === "admin" ? "Admin/Staff Portal" : "Student Portal"}
+                {role && role !== "STUDENT" ? "Admin/Staff Portal" : "Student Portal"}
               </span>
             </div>
           </div>
