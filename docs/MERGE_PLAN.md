@@ -238,3 +238,94 @@ GET /dashboard,/audit: ADMIN/AUDITOR=200; STUDENT/STAFF=403. Tài nguyên không
 Mỗi phase: commit "feat(integration): Mx — …" + cập nhật ROADMAP. Báo cáo cuối: output từng test-mx.sh
 (PASS=n FAIL=0), next build, playwright, ma trận smoke 4 role, danh sách TODO (ẩn danh thật, upload
 Attachment nếu hoãn). Test fail → tự đọc log/tự sửa/chạy lại; chỉ báo user ở checkpoint mỗi phase.
+
+════════════════════════════════════════════════════════════════════════
+# INTEGRATION-V2 (§I0–§I7) — wire new UI aa1af15 onto backend main (PHƯƠNG ÁN A)
+════════════════════════════════════════════════════════════════════════
+> Round 2: the M0–M5 above already merged the OLD frontend. This round grafts the NEW UI super-app
+> (`origin/feature/frontend@aa1af15`: feed/mailbox/polls/suggestions + dashboard/report/notifications/
+> profile/audit) onto the same frozen backend (P0–P9 + M1–M5 infra). Branch `feature/integration-v2`
+> (base `origin/main` = da7f2e9). SSOT contract: docs/API.md (FROZEN). Field/store map: §PHỤ LỤC A above.
+> Each phase packet = read this §Ix + MERGE_MAP field-map + the phase's files only (no whole-repo scan).
+
+## Phương án A — scope
+- WIRE real (6 areas): auth · report/cases · dashboard · audit · notifications · profile.
+- KEEP MOCK (4 pages + 3 stores): feed/mailbox/polls/suggestions + useCommunityStore/useSchoolStore/
+  useSuggestionStore. Only add `NEXT_PUBLIC_DEMO=1` "DEMO/LOCAL" banner + thin adapter/area.
+  ⛔ NEVER wire to real API / NEVER rewrite these in any phase.
+
+## Guardrails (same invariants as M-series, plus)
+- NEVER touch backend: web/src/app/api/*, web/src/lib/* (except store/UI glue), web/prisma/*.
+  proxy.ts is the SOLE gate — use as-is (edit only with written reason). NO middleware.ts (Next 16).
+- CONTRACT FREEZE: no shape/enum/error-code change. New field ⇒ bump version + edit docs/API.md FIRST.
+- No re-infection in WIRED stores: isConfidential→isSensitive; SOS- ids→caseCode; no localStorage/persist
+  for server data; Vietnamese status only at DISPLAY layer (case-display.ts).
+- 1 LAYER / PHASE. Git safety: no force-push/branch-delete/history-rewrite. No node_modules/.env/secrets.
+
+## Per-phase loop
+(a) write scripts/test-Ix.sh (style test-p7.sh: KEY=VALUE fixtures, per-role login, expect_status,
+DELTA-count, leak-scan passwordHash/PII) → (b) run → (c) read → (d) fix → (e) loop until Ix: PASS=n FAIL=0
+(no loosened assertions). Commit "feat(integration-v2): Ix — …" + update ROADMAP, STOP, report (test output
++ commit hash), await user approval.
+
+### §I0 — Safety & base
+Backup tags backup/main-da7f2e9, backup/frontend-aa1af15; branch feature/integration-v2 from origin/main;
+create this §Ix section. PASS: branch + tags exist, status clean, no node_modules tracked.
+
+### §I1 — Dep discovery + safe graft
+Dep grep (prove): git grep -nE "from ['\"](framer-motion|gsap|@gsap/react|@studio-freight/react-lenis|recharts|react-hot-toast)" aa1af15 -- web/src.
+Selective checkout from aa1af15: components store app/globals.css app/layout.tsx app/template.tsx
+app/page.tsx app/dashboard app/report app/notifications app/profile app/audit app/feed app/mailbox app/polls
+app/suggestions. NEVER checkout: app/api app/login app/change-password proxy.ts lib.
+GUARD: git diff --stat backup/main-da7f2e9 -- web/src/app/api web/src/proxy.ts web/src/lib
+web/src/app/login web/src/app/change-password MUST be empty. package.json = union(main, 6 UI deps incl.
+react-hot-toast ^2.5.2); npm i. PASS: GUARD empty; tsc --noEmit runs (store type errors ok until I2–I4).
+
+### §I2 — Re-wire AUTH
+useAuthStore → POST /api/auth/login {identifier,password}, GET /api/auth/me, POST /api/auth/logout; store
+{id,name,role,mustChangePassword} 4-role; no token stored (httpOnly). Remove auto-role-by-email,
+sessionStorage-mock, persist-auth. AuthGuard → thin UX (read /me, loading, nav by 4-role); REMOVE
+sessionStorage("schoolos_session_active") + 2-role auto + router.replace gating (proxy is sole gate). Lift
+Navbar/WorldWrapper to 4-role. Keep main /login + /change-password; port aa1af15 / login form into /login;
+/ becomes authed home. test-I2: 4-role login 200+cookie; wrong pw 401 (separate identifier — P9 10/60s);
+/me role; mustChangePassword blocks inner + redirects /change-password no loop. test-p3 green.
+
+### §I3 — Re-wire REPORT/CASES (may split I3a/I3b)
+useReportStore → POST/GET /api/cases, GET /api/cases/[id]. Remove SOS-/localStorage/status-VN. Map
+isConfidential→isSensitive; status enum↔VN via case-display.ts; category/location from GET
+/api/categories|locations; priority +CRITICAL; HS "khẩn cấp"→emergency flag; flip isEmergency STAFF/ADMIN
+only via PATCH /api/cases/[id]/emergency; detail comments GET/POST + status/assign by role; STUDENT no
+mutation buttons. Image upload hidden + TODO. test-I3: STUDENT create 201+caseCode; list by role; STUDENT
+internal comment 403; other's sensitive 404; NEW→CLOSED 400. test-p4/p5/p7 green.
+
+### §I4 — Re-wire DASHBOARD/AUDIT/NOTIFICATIONS/PROFILE
+useNotificationStore → GET /api/notifications (+?unreadOnly) + PATCH read-all. useAuditStore → GET
+/api/audit. Dashboard (ADMIN/AUDITOR, recharts) exact keys: totalCases,newToday,emergencyOpen,unassigned,
+stale,byStatus,byPriority,byCategory,byLocation,unlocated (byStatus/byPriority use _count; byCategory/
+byLocation use count). profile → GET /api/auth/me. STUDENT/STAFF hide dashboard (403). test-I4:
+comment/status → recipient notif +1; read-all → unread 0; ADMIN dashboard 200 all keys; STUDENT/STAFF 403.
+test-p6/p9 green.
+
+### §I5 — Isolate mock areas + narrow contract-guard
+Keep mock stores/pages; add NEXT_PUBLIC_DEMO=1 + "DEMO/LOCAL" banner + thin adapter (1 file/area). Narrow
+contract-guard in test-integration.sh to WIRED stores only (auth/report/notification/audit); EXEMPT mock
+stores+pages via allowlist + reason comment. PASS: narrowed guard PASS; mock pages show banner.
+
+### §I6 — Close INTEGRATION GATE
+Fix test-integration.sh only on REAL syntax error (bash -n scripts/*.sh) — no phantom fixes. Anti-flaky:
+per-phase fixture namespace (prefix Ix-/p-) + teardown + explicit single shared next dev (probe first). Loop
+to INTEGRATION GATE PASS: test-p3..p9 + test-I2..I4 + tsc --noEmit + next build + narrowed guard, exit 0.
+
+### §I7 — Report & PR
+4-role smoke matrix (curl) + each test-Ix output + next build. PR feature/integration-v2 → main (replaces
+old UI); keep old branches/tags. Update docs/ROADMAP.md + record backend TODOs for the 4 mock areas
+(feed/mailbox/polls/suggestions/school).
+
+## Authz matrix (per docs/API.md & P9) — same as §VERIFY above
+POST /api/cases: STUDENT/STAFF/ADMIN=201, AUDITOR=403, anon=401. PATCH assign/status/emergency: ADMIN ok;
+STAFF per scope/self; STUDENT/AUDITOR=403; anon=401. GET /dashboard,/audit: ADMIN/AUDITOR=200; STUDENT/
+STAFF=403. Resource not visible = 404 (not 403).
+
+## Deploy note
+No schema change → prod DB already migrated (P8/P9). Deploy = merge to main, Vercel auto-build; NO
+migrate deploy needed.
