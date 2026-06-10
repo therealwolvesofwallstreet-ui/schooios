@@ -59,5 +59,12 @@
 - `web/src/app/api/` route · `web/src/lib/` logic (prisma, jwt, audit, validation) ·
   `web/prisma/` schema+migration.
 
+## Token discipline (BẮT BUỘC khi merge FE↔BE)
+- KHÔNG "đọc/quét toàn dự án". Dùng "Bản đồ tài liệu & mã nguồn" + đường dẫn cụ thể.
+- Rà >3 file → giao subagent, yêu cầu trả TÓM TẮT/BẢNG, KHÔNG dán code.
+- Đối chiếu FE↔BE → đọc/ghi docs/MERGE_MAP.md (không tái khám phá).
+- Mỗi phase = 1 session sạch (/clear); chỉ next build ở cuối phase; KHÔNG đọc lại file vừa Edit.
+- CẤM đọc: node_modules/, web/.next/, web/src/generated/.
+
 @docs/ROADMAP.md
 @docs/DATA_MODEL.md
