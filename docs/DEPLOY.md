@@ -53,4 +53,5 @@ cd web && node -e "const u=new URL(process.env.DIRECT_URL); console.log('migrate
 CI + `scripts/test-p8.sh` chỉ chứng minh: **code build được** (offline, ENV giả) + **không lộ
 secret** trong repo. Chúng **CHƯA** chứng minh một lần deploy Vercel thật thành công — việc đó cần
 một deploy thật + kiểm tra trên UI. Smoke test runtime (health endpoint, env validation lúc khởi
-động, deploy verification trên Preview) thuộc phase sau (P9+).
+động, deploy verification trên Preview) thuộc phase **post-launch** — **P9 KHÔNG bao gồm** các mục
+này (P9 = permission audit + error states + rate-limit login; health/smoke đã chốt deferred).
