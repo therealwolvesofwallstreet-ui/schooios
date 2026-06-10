@@ -125,6 +125,18 @@ này TRƯỚC): **tên field** trong shape, **giá trị enum** (chuỗi), **ng�
 | GET `/api/notifications` | `?page&limit&unreadOnly(true/false)` | 200 `{ notifications[], unreadCount, total, page, totalPages }` |
 | PATCH `/api/notifications/read-all` | – | 200 `{ success: true, updated: n }` |
 
+## Lookups & Audit (M1 — thêm cho FE merge; additive, KHÔNG đổi contract cũ)
+
+| Method · Path | Auth/Role | Request | OK | Lỗi |
+|---|---|---|---|---|
+| GET `/api/categories` | mọi role đã đăng nhập | – | 200 `{ categories[] }` | 401 · 503 |
+| GET `/api/locations` | mọi role đã đăng nhập | – | 200 `{ locations[] }` | 401 · 503 |
+| GET `/api/audit` | **CHỈ ADMIN/AUDITOR** (role khác → 403) | `?page&limit(1–100)&entityType?&entityId?` | 200 `{ logs[], total, page, totalPages }` | 400 · 401 · 403 · 503 |
+
+**Category (lookup item)** — `{ id, name, description|null, defaultPriority|null, defaultSensitive }` (chỉ `isActive=true`, sắp theo `name`). Dùng nạp dropdown form tạo case.
+**Location (lookup item)** — `{ id, code, name, floor|null, type, buildingId|null, building{id,code,name}|null }` (chỉ `isActive=true`, sắp theo `code`). Dùng nạp dropdown form tạo case.
+**AuditLog (list item)** — `{ id, action, entityType, entityId, metadata, createdAt, actorId|null, actor{id,name,role}|null }` (append-only/immutable; mới nhất trước, tiebreaker `id` cho paging tất định; KHÔNG phơi PII ngoài `{id,name,role}` của actor).
+
 ---
 
 ## Object shapes (chỉ field FE nhận)
