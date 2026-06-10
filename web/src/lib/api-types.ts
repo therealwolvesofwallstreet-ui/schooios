@@ -6,9 +6,10 @@ import type {
   CaseStatus,
   AuditAction,
   LocationType,
+  NotificationType,
 } from "@/generated/prisma/client";
 
-export type { Role, CasePriority, CaseStatus, AuditAction, LocationType };
+export type { Role, CasePriority, CaseStatus, AuditAction, LocationType, NotificationType };
 
 // ---- Lookups (M1) ----
 export interface CategoryDTO {
@@ -147,4 +148,38 @@ export interface CaseResponse {
 }
 export interface CommentResponse {
   comment: CommentDTO;
+}
+
+// ---- Notifications (M4) ----
+export interface NotificationDTO {
+  id: string;
+  userId: string;
+  caseId: string | null;
+  type: NotificationType;
+  message: string;
+  isRead: boolean;
+  readAt: string | null;
+  createdAt: string;
+  case: { id: string; caseCode: string } | null;
+}
+export interface NotificationsResponse {
+  notifications: NotificationDTO[];
+  unreadCount: number;
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+// ---- Dashboard (M4) — keys ĐÓNG BĂNG (chú ý _count vs count theo từng mảng) ----
+export interface DashboardResponse {
+  totalCases: number;
+  newToday: number;
+  emergencyOpen: number;
+  unassigned: number;
+  stale: number;
+  byStatus: { status: CaseStatus; _count: number }[];
+  byPriority: { priority: CasePriority; _count: number }[];
+  byCategory: { categoryId: string; name: string; count: number }[];
+  byLocation: { locationId: string; code: string; name: string; count: number }[];
+  unlocated: number;
 }

@@ -1,64 +1,39 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { api } from "@/lib/api";
+import type { NotificationDTO, NotificationsResponse } from "@/lib/api-types";
 
-export interface NotificationItem {
-  id: string;
-  title: string;
-  description: string;
-  createdAt: string;
-  isRead: boolean;
-  type: "new_report" | "status_change" | "emergency";
-}
-
+// Nối API thật: GET /api/notifications (+?unreadOnly) + PATCH /api/notifications/read-all.
+// KHÔNG mock, KHÔNG localStorage. unreadCount lấy TỪ server (nguồn sự thật).
 interface NotificationState {
-  notifications: NotificationItem[];
-  addNotification: (title: string, description: string, type: NotificationItem["type"]) => void;
-  markAllAsRead: () => void;
-  clearAll: () => void;
+  notifications: NotificationDTO[];
+  unreadCount: number;
+  loading: boolean;
+  fetchNotifications: (unreadOnly?: boolean) => Promise<void>;
+  markAllAsRead: () => Promise<void>;
 }
 
-export const useNotificationStore = create<NotificationState>()(
-  persist(
-    (set) => ({
-      notifications: [
-        // Dữ liệu mẫu ban đầu để giao diện không bị trống
-        {
-          id: "noti-1",
-          title: "Hệ thống SchoolOS",
-          description: "Chào mừng bạn đến với hệ thống vận hành sự vụ số SchoolOS.",
-          createdAt: "11:30 05/06/2026",
-          isRead: false,
-          type: "new_report"
-        }
-      ],
+export const useNotificationStore = create<NotificationState>((set) => ({
+  notifications: [],
+  unreadCount: 0,
+  loading: false,
 
-      // Hàm thêm thông báo mới
-      addNotification: (title, description, type) =>
-        set((state) => {
-          const newNoti: NotificationItem = {
-            id: "noti-" + Date.now(),
-            title,
-            description,
-            type,
-            isRead: false,
-            createdAt: new Date().toLocaleString("vi-VN", {
-              hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit", year: "numeric",
-            }),
-          };
-          return { notifications: [newNoti, ...state.notifications] };
-        }),
-
-      // Hàm đánh dấu tất cả là đã đọc
-      markAllAsRead: () =>
-        set((state) => ({
-          notifications: state.notifications.map((n) => ({ ...n, isRead: true })),
-        })),
-
-      // Hàm xóa sạch thông báo
-      clearAll: () => set({ notifications: [] }),
-    }),
-    {
-      name: "school-os-notifications",
+  fetchNotifications: async (unreadOnly) => {
+    set({ loading: true });
+    try {
+      const data = await api.get<NotificationsResponse>(
+        `/api/notifications${unreadOnly ? "?unreadOnly=true" : ""}`,
+      );
+      set({ notifications: data.notifications, unreadCount: data.unreadCount, loading: false });
+    } catch {
+      set({ loading: false });
     }
-  )
-);
+  },
+
+  markAllAsRead: async () => {
+    await api.patch("/api/notifications/read-all");
+    set((s) => ({
+      notifications: s.notifications.map((n) => ({ ...n, isRead: true })),
+      unreadCount: 0,
+    }));
+  },
+}));

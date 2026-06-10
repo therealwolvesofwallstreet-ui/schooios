@@ -2,7 +2,7 @@
 
 import { Toaster } from "react-hot-toast";
 import { useEffect, useState } from "react";
-import { LayoutDashboard, FileText, Bell, User, ShieldAlert, LogOut, HelpCircle } from "lucide-react";
+import { LayoutDashboard, FileText, Bell, User, ShieldAlert, ShieldCheck, LogOut, HelpCircle } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -29,27 +29,20 @@ const premiumToastConfig = {
   },
 };
 
-const menuItems = [
-  { name: "Tổng quan", icon: LayoutDashboard, path: "/" },
-  { name: "Báo cáo", icon: FileText, path: "/report" },
-  { name: "Thông báo", icon: Bell, path: "/notifications" },
-  { name: "Tài khoản", icon: User, path: "/profile" },
-];
-
 // Trang tự render layout riêng (không vỏ app): proxy đảm bảo chỉ user phù hợp tới được.
 const BARE_PAGES = new Set(["/login", "/change-password"]);
 
 /**
  * AppShell — vỏ giao diện ứng dụng (sidebar PC + header/bottom-nav mobile + modal đăng xuất + Toaster).
  * Root layout (Server Component) giữ fonts/metadata/html/body; AppShell là client boundary.
- * Hydrate auth từ /api/auth/me khi mở app; gác trang thật do proxy.ts.
+ * Hydrate auth từ /api/auth/me + nạp notifications khi đã đăng nhập; gác trang thật do proxy.ts.
  */
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const { userEmail, role, logout, hydrate } = useAuthStore();
-  const { notifications } = useNotificationStore();
+  const { userEmail, role, status, logout, hydrate } = useAuthStore();
+  const { notifications, fetchNotifications } = useNotificationStore();
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -59,11 +52,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     hydrate();
   }, [hydrate]);
 
+  // Đã đăng nhập → nạp thông báo cho badge.
+  useEffect(() => {
+    if (status === "authed") fetchNotifications().catch(() => {});
+  }, [status, fetchNotifications]);
+
   const confirmLogoutAction = async () => {
     await logout();
     setShowLogoutConfirm(false);
     router.push("/login");
   };
+
+  // Menu theo vai trò: Kiểm toán chỉ hiện cho ADMIN/AUDITOR (đồng bộ §VERIFY).
+  const navItems = [
+    { name: "Tổng quan", icon: LayoutDashboard, path: "/" },
+    { name: "Báo cáo", icon: FileText, path: "/report" },
+    { name: "Thông báo", icon: Bell, path: "/notifications" },
+    ...(role === "ADMIN" || role === "AUDITOR"
+      ? [{ name: "Kiểm toán", icon: ShieldCheck, path: "/audit" }]
+      : []),
+    { name: "Tài khoản", icon: User, path: "/profile" },
+  ];
 
   // /login + /change-password: render trần (full-screen của chính trang) + Toaster.
   if (BARE_PAGES.has(pathname)) {
@@ -93,7 +102,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
 
           <nav className="p-4 space-y-1.5">
-            {menuItems.map((item) => {
+            {navItems.map((item) => {
               const isActive = pathname === item.path;
               return (
                 <Link
@@ -155,7 +164,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* BOTTOM NAV MOBILE */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-2 py-2 flex justify-around items-center z-50 shadow-lg">
-        {menuItems.map((item) => {
+        {navItems.map((item) => {
           const isActive = pathname === item.path;
           return (
             <Link
