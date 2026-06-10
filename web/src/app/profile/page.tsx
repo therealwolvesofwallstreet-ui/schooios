@@ -9,16 +9,38 @@ import {
   ArrowRight, Mail, MapPin, Bell
 } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useCommunityStore } from "@/store/useCommunityStore";
 import Reveal from "../../components/motion/Reveal";
 import toast from "react-hot-toast";
+
+interface FeedItem {
+  id: number;
+  type: string;
+  author: string;
+  date: string;
+  content: string;
+  status?: "pending" | "approved" | "rejected";
+}
+
+interface CommunityStoreMethods {
+  items: FeedItem[];
+}
 
 export default function ProfilePage() {
   const router = useRouter();
   const { userEmail, role, logout } = useAuthStore();
+  const store = useCommunityStore() as unknown as CommunityStoreMethods;
+  const { items } = store;
+
+  const [statusMap, setStatusMap] = useState<Record<number, "pending" | "approved" | "rejected">>({});
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    const saved = localStorage.getItem("schoolos_feed_status_map");
     const timer = setTimeout(() => {
+      if (saved) {
+        try { setStatusMap(JSON.parse(saved)); } catch { /* ignore */ }
+      }
       setMounted(true);
     }, 0);
     
@@ -35,23 +57,34 @@ export default function ProfilePage() {
     hover: isDark ? "hover:bg-white/10" : "hover:bg-stone/10",
   };
 
-  // 🛠️ VÁ LỖI ĐĂNG XUẤT: Bẻ gãy ổ khóa Session cứng để chặn đứng dữ liệu nạp tự động
+  // 🛠 *XỬ LÝ LUỒNG HOẠT ĐỘNG THẬT 100%*
+  const currentUserName = userEmail || (role === "admin" ? "Admin" : "Học sinh");
+  const allPosts = (items || []).filter(i => i.type === "feed");
+  
+  // Lọc hoạt động: Nếu là admin thì xem các tin vừa xử lý, nếu là học sinh thì xem tin mình đã gửi
+  const myActivities = allPosts.filter(item => {
+    if (role === "admin") {
+      const currentStatus = statusMap[item.id] || item.status || "pending";
+      return currentStatus !== "pending"; // Đã duyệt hoặc đã từ chối
+    }
+    return item.author === currentUserName;
+  }).reverse().slice(0, 2); // Lấy 2 hoạt động mới nhất
+
+  // 🛠️ VÁ LỖI ĐĂNG XUẤT TỐI THƯỢNG: Dọn rác có chọn lọc để giữ lại kho bài viết
   const handleLogout = () => {
-    // 1. Tắt chế độ hoạt động để trang chủ biết chắc chắn sếp đã thoát ra ngoài
-    localStorage.setItem("schoolos_session_active", "false");
+    localStorage.removeItem("schoolos_session_active");
+    localStorage.removeItem("auth-storage");
+    localStorage.removeItem("schoolos-auth");
+    localStorage.removeItem("schoolos_auth_store");
     
-    // 2. Dọn dẹp sạch sẽ toàn bộ các phân vùng dữ liệu khác
-    localStorage.clear();
     sessionStorage.clear();
 
-    // 3. Chạy hàm giải phóng bộ nhớ RAM
     try {
       logout();
     } catch (e) {
       /* ignore */
     }
 
-    // 4. Ép tải lại cứng về trang gốc
     window.location.href = "/";
   };
 
@@ -67,7 +100,7 @@ export default function ProfilePage() {
           <div className="flex flex-col md:flex-row items-start md:items-center gap-8">
             <Reveal>
               <div className={`w-32 h-32 rounded-full border ${ui.border} flex items-center justify-center font-display text-5xl ${ui.text} uppercase`}>
-                {userEmail?.charAt(0) || "U"}
+                {currentUserName.charAt(0)}
               </div>
             </Reveal>
             
@@ -79,7 +112,7 @@ export default function ProfilePage() {
               </Reveal>
               <Reveal delay={0.2}>
                 <h1 className={`font-display text-[clamp(2.5rem,5vw,4rem)] leading-none tracking-tight ${ui.text}`}>
-                  {userEmail?.split('@')[0] || "Người dùng"}
+                  {currentUserName.split('@')[0]}
                 </h1>
               </Reveal>
             </div>
@@ -110,7 +143,7 @@ export default function ProfilePage() {
               <div className="space-y-6">
                 <div className="flex items-center gap-4">
                   <Mail size={18} className="text-stone" />
-                  <span className={`${ui.text}`}>{userEmail}</span>
+                  <span className={`${ui.text}`}>{userEmail || "N/A"}</span>
                 </div>
                 <div className="flex items-center gap-4">
                   <Shield size={18} className="text-stone" />
@@ -187,21 +220,30 @@ export default function ProfilePage() {
                 Hoạt động mới nhất
               </h2>
               <div className="space-y-6">
-                {[1, 2].map((_, i) => (
-                  <div key={i} className="flex gap-6">
-                    <div className="w-1 bg-stone shrink-0"></div>
-                    <div>
-                      <p className={`text-sm ${ui.text} font-light leading-relaxed`}>
-                        {role === "admin" 
-                          ? "Bạn đã phê duyệt hồ sơ CASE-2026-00042 về vấn đề bạo lực học đường."
-                          : "Tín hiệu về 'Vệ sinh căn tin' của bạn đã được Admin tiếp nhận."}
-                      </p>
-                      <p className={`font-mono text-[0.6rem] uppercase tracking-widest ${ui.muted} mt-2`}>
-                        2 giờ trước
-                      </p>
-                    </div>
+                {myActivities.length === 0 ? (
+                  <div className={`font-mono text-xs italic ${ui.muted} py-4 px-2`}>
+                    Chưa ghi nhận hoạt động nào gần đây.
                   </div>
-                ))}
+                ) : (
+                  myActivities.map((log) => {
+                    const currentStatus = statusMap[log.id] || log.status || "pending";
+                    return (
+                      <div key={log.id} className="flex gap-6">
+                        <div className="w-1 bg-stone shrink-0"></div>
+                        <div>
+                          <p className={`text-sm ${ui.text} font-light leading-relaxed`}>
+                            {role === "admin" 
+                              ? `Bạn đã quyết định xử lý hồ sơ CASE-${log.id} thành [${currentStatus.toUpperCase()}].`
+                              : `Tín hiệu sự vụ [${log.content.substring(0, 20)}...] của bạn hiện đang ở trạng thái [${currentStatus.toUpperCase()}].`}
+                          </p>
+                          <p className={`font-mono text-[0.6rem] uppercase tracking-widest ${ui.muted} mt-2`}>
+                            {log.date}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </section>
           </Reveal>

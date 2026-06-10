@@ -1,7 +1,9 @@
 import { Fraunces, Be_Vietnam_Pro } from "next/font/google";
+import type { Metadata, Viewport } from "next"; 
 import SmoothScrollProvider from "@/components/motion/SmoothScrollProvider";
 import WorldWrapper from "@/components/layout/WorldWrapper";
-import Navbar from "@/components/layout/Navbar"; // 🛠️ IMPORT NAVBAR CHÍNH CHỦ
+import Navbar from "@/components/layout/Navbar";
+import AuthGuard from "@/components/layout/AuthGuard";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -19,7 +21,14 @@ const beVietnamPro = Be_Vietnam_Pro({
   display: "swap",
 });
 
-export const metadata = {
+// 🛠️ ĐÃ CỨU NGUY: Giữ nguyên viewport và metadata chạy ở môi trường Server Component
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+};
+
+export const metadata: Metadata = {
   title: "SchoolOS - Hệ thống vận hành sự vụ số",
   description: "Bảng tin, điều phối và xử lý sự cố học đường thế hệ mới",
 };
@@ -29,12 +38,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="vi" className={`${fraunces.variable} ${beVietnamPro.variable} antialiased`}>
       <body className="font-body selection:bg-cyan selection:text-ink">
         <SmoothScrollProvider>
-          {/* 🛠️ BỌC WORLD WRAPPER ĐỂ QUẢN LÝ THEME THEO ROLE */}
           <WorldWrapper>
-            {/* 🛠️ ĐẶT NAVBAR VÀO ĐÂY ĐỂ NÓ PHỦ SÓNG TOÀN BỘ TRANG WEB */}
-            <Navbar /> 
-            
-            {children}
+            <AuthGuard>
+              <Navbar /> 
+              {children}
+            </AuthGuard>
           </WorldWrapper>
         </SmoothScrollProvider>
       </body>

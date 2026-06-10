@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { persist, createJSONStorage } from "zustand/middleware"; // 🛠️ BƯỚC 1: Import thêm createJSONStorage
 
 interface AuthState {
   isLoggedIn: boolean;
@@ -32,6 +32,10 @@ export const useAuthStore = create<AuthState>()(
 
       logout: () => set({ userEmail: null, role: "student", isLoggedIn: false }),
     }),
-    { name: "school-os-auth" }
+    { 
+      name: "school-os-auth",
+      // 🛠️ BƯỚC 2: CHÌA KHÓA Ở ĐÂY! Ép Zustand xài sessionStorage để mỗi tab là một thế giới riêng biệt
+      storage: createJSONStorage(() => sessionStorage) 
+    }
   )
 );
