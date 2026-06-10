@@ -1,0 +1,353 @@
+// SchooIOS — Prisma schema (v2)
+// Hệ thống quản lý sự vụ học đường. Quy ước: field camelCase, cột DB snake_case (@map),
+// bảng snake_case (@@map). ID = cuid(). Soft delete cho Case. AuditLog/CaseStatusHistory immutable.
+//
+// SINGLE SOURCE OF TRUTH cho data model + danh sách field ĐÃ DEFER (schoolId, Location entity,
+// dueAt/SLA, partition/retention): xem docs/DATA_MODEL.md. KHÔNG thêm field defer nếu chưa chốt.
+// DB-level: trigger immutability (audit_logs, case_status_history) + pg_trgm GIN (cases.title/description)
+// nằm trong migration raw-SQL, không khai ở đây — xem migration v2_schema_hardening.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+// Prisma 7: connection URLs sống trong prisma.config.ts (Migrate dùng DIRECT_URL).
+// Runtime PrismaClient sẽ dùng driver adapter (DATABASE_URL pooled) — xem src/lib/prisma.ts.
+datasource db {
+  provider = "postgresql"
+}
+
+// ────────────────────────────── Enums ──────────────────────────────
+
+enum Role {
+  STUDENT
+  STAFF
+  ADMIN
+  AUDITOR
+}
+
+enum CaseStatus {
+  NEW
+  TRIAGED
+  ASSIGNED
+  IN_PROGRESS
+  WAITING_FOR_USER
+  RESOLVED
+  CLOSED
+}
+
+enum CasePriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum NotificationType {
+  CASE_ASSIGNED
+  STATUS_CHANGED
+  COMMENT_ADDED
+  EMERGENCY_CONFIRMED
+  CASE_RESOLVED
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  ASSIGN
+  STATUS_CHANGE
+  LOGIN
+  LOGOUT
+  EMERGENCY_FLAG
+  SENSITIVE_FLAG
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum BuildingType {
+  CLASSROOM
+  SPECIAL
+  FACILITY
+  OFFICE
+  OUTDOOR
+}
+
+enum LocationType {
+  CLASSROOM
+  FACILITY
+  OFFICE
+  OUTDOOR
+  OTHER
+}
+
+// ────────────────────────────── Models ─────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  // Định danh: STAFF/ADMIN dùng email; STUDENT dùng sbd. Cả hai optional+unique (Postgres cho nhiều NULL).
+  email         String?   @unique
+  sbd           String?   @unique
+  passwordHash  String    @map("password_hash")
+  name          String
+  role          Role      @default(STUDENT)
+  dob           DateTime? @db.Date
+  gender        Gender?
+  admissionYear Int?      @map("admission_year")
+  isActive      Boolean   @default(true) @map("is_active")
+  // P3: mật khẩu seed chỉ là tạm — buộc đổi ở lần đăng nhập đầu. Tài khoản seed tự nhận true (default).
+  mustChangePassword Boolean @default(true) @map("must_change_password")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  createdCases  Case[]              @relation("CaseCreatedBy")
+  assignedCases Case[]              @relation("CaseAssignedTo")
+  comments      Comment[]
+  attachments   Attachment[]
+  notifications Notification[]
+  auditLogs     AuditLog[]
+  refreshTokens RefreshToken[]
+  statusChanges CaseStatusHistory[]
+  enrollments   Enrollment[]
+
+  @@index([role])
+  @@index([admissionYear])
+  @@map("users")
+}
+
+model Case {
+  id                      String       @id @default(cuid())
+  // caseCode sinh tự động ở DB qua sequence case_code_seq (tạo trong migration v2). Dạng CASE-2026-00001.
+  caseCode                String       @unique @default(dbgenerated("('CASE-' || to_char(CURRENT_DATE, 'YYYY') || '-' || lpad(nextval('case_code_seq')::text, 5, '0'))")) @map("case_code")
+  title                   String
+  description             String       @db.Text
+  location                String?      // ghi chú địa điểm tự do (tùy chọn); địa điểm có cấu trúc dùng locationId
+  locationId              String?      @map("location_id")
+  categoryId              String       @map("category_id")
+  priority                CasePriority @default(MEDIUM)
+  status                  CaseStatus   @default(NEW)
+  isSensitive             Boolean      @default(false) @map("is_sensitive")
+  isEmergency             Boolean      @default(false) @map("is_emergency")
+  studentFlaggedEmergency Boolean      @default(false) @map("student_flagged_emergency")
+  createdById             String       @map("created_by")
+  assignedToId            String?      @map("assigned_to")
+  createdAt               DateTime     @default(now()) @map("created_at")
+  updatedAt               DateTime     @updatedAt @map("updated_at")
+  resolvedAt              DateTime?    @map("resolved_at")
+  closedAt                DateTime?    @map("closed_at")
+  deletedAt               DateTime?    @map("deleted_at")
+
+  category      Category            @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  createdBy     User                @relation("CaseCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  assignedTo    User?               @relation("CaseAssignedTo", fields: [assignedToId], references: [id], onDelete: SetNull)
+  locationRef   Location?           @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  comments      Comment[]
+  attachments   Attachment[]
+  statusHistory CaseStatusHistory[]
+  notifications Notification[]
+
+  // Index bám query path thật; composite cover prefix trái nên không cần index đơn cho status/assignedTo/createdBy.
+  @@index([status, createdAt])
+  @@index([assignedToId, status, createdAt])
+  @@index([createdById, createdAt])
+  @@index([isEmergency, status])
+  @@index([categoryId])
+  @@index([locationId])
+  @@index([deletedAt])
+  // Trigram GIN cho ILIKE search. Extension pg_trgm tạo bằng raw SQL trong migration
+  // (Prisma không quản extension nên không gây drift); index thì Prisma quản được.
+  @@index([title(ops: raw("gin_trgm_ops"))], type: Gin)
+  @@index([description(ops: raw("gin_trgm_ops"))], type: Gin)
+  @@map("cases")
+}
+
+model Category {
+  id               String        @id @default(cuid())
+  name             String        @unique
+  description      String?
+  defaultPriority  CasePriority? @map("default_priority")
+  defaultSensitive Boolean       @default(false) @map("default_sensitive")
+  isActive         Boolean       @default(true) @map("is_active")
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
+
+  cases Case[]
+
+  @@map("categories")
+}
+
+model Comment {
+  id         String   @id @default(cuid())
+  caseId     String   @map("case_id")
+  authorId   String   @map("author_id")
+  body       String   @db.Text
+  isInternal Boolean  @default(false) @map("is_internal")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  case   Case @relation(fields: [caseId], references: [id], onDelete: Restrict)
+  author User @relation(fields: [authorId], references: [id], onDelete: Restrict)
+
+  @@index([caseId, createdAt])
+  @@map("comments")
+}
+
+model Attachment {
+  id           String   @id @default(cuid())
+  caseId       String   @map("case_id")
+  uploadedById String   @map("uploaded_by")
+  fileName     String   @map("file_name")
+  filePath     String   @map("file_path")
+  fileSize     Int      @map("file_size")
+  mimeType     String   @map("mime_type")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  case       Case @relation(fields: [caseId], references: [id], onDelete: Restrict)
+  uploadedBy User @relation(fields: [uploadedById], references: [id], onDelete: Restrict)
+
+  @@index([caseId])
+  @@map("attachments")
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String           @map("user_id")
+  caseId    String?          @map("case_id")
+  type      NotificationType
+  message   String           @db.Text
+  isRead    Boolean          @default(false) @map("is_read")
+  readAt    DateTime?        @map("read_at")
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  case Case? @relation(fields: [caseId], references: [id], onDelete: SetNull)
+
+  @@index([userId, isRead, createdAt])
+  @@map("notifications")
+}
+
+model CaseStatusHistory {
+  id          String      @id @default(cuid())
+  caseId      String      @map("case_id")
+  changedById String      @map("changed_by")
+  fromStatus  CaseStatus? @map("from_status")
+  toStatus    CaseStatus  @map("to_status")
+  note        String?
+  createdAt   DateTime    @default(now()) @map("created_at")
+
+  case      Case @relation(fields: [caseId], references: [id], onDelete: Restrict)
+  changedBy User @relation(fields: [changedById], references: [id], onDelete: Restrict)
+
+  @@index([caseId, createdAt])
+  @@map("case_status_history")
+}
+
+model AuditLog {
+  id         String      @id @default(cuid())
+  actorId    String?     @map("actor_id")
+  action     AuditAction
+  entityType String      @map("entity_type")
+  entityId   String      @map("entity_id")
+  metadata   Json?
+  ipAddress  String?     @map("ip_address")
+  userAgent  String?     @map("user_agent")
+  createdAt  DateTime    @default(now()) @map("created_at")
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@index([actorId, createdAt])
+  @@index([action, createdAt])
+  @@map("audit_logs")
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  userId    String    @map("user_id")
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  userAgent String?   @map("user_agent")
+  ipAddress String?   @map("ip_address")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+// ───────────────────── Campus: Building / Location ─────────────────────
+
+model Building {
+  id        String       @id @default(cuid())
+  code      String       @unique // A, B, C, D, LIB, ADMIN, Trad-1, CANTEEN-1, GYM, POOL, PKG-STUDENT, PKG-TEACHER
+  name      String
+  type      BuildingType
+  note      String?
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
+
+  locations Location[]
+
+  @@map("buildings")
+}
+
+model Location {
+  id         String       @id @default(cuid())
+  code       String       @unique // A1.1, A1-WC-GV, ENTRY-1, GYM-1...
+  name       String
+  buildingId String?      @map("building_id") // null = khu chung không thuộc tòa (sân, cổng...)
+  floor      Int? // null nếu không có (vd LIB-WC nguồn ghi "2+")
+  type       LocationType
+  note       String?
+  isActive   Boolean      @default(true) @map("is_active")
+  createdAt  DateTime     @default(now()) @map("created_at")
+  updatedAt  DateTime     @updatedAt @map("updated_at")
+
+  building Building? @relation(fields: [buildingId], references: [id], onDelete: Restrict)
+  cases    Case[]
+
+  @@index([buildingId])
+  @@map("locations")
+}
+
+// ───────────────────── Lớp & ghi danh theo niên khóa ─────────────────────
+
+model Class {
+  id             String   @id @default(cuid())
+  name           String // "12A1A", "10A", "10A1"...
+  schoolYear     String   @map("school_year") // "2025-2026"
+  grade          Int? // 10 / 11 / 12
+  specialization String? // môn chuyên: "Toán", "Tin", "Pháp"...
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  enrollments Enrollment[]
+
+  @@unique([name, schoolYear])
+  @@index([schoolYear, grade])
+  @@map("classes")
+}
+
+// SBD cố định suốt đời, lớp đổi theo năm → tách Enrollment để lưu lịch sử lớp qua từng niên khóa.
+model Enrollment {
+  id        String   @id @default(cuid())
+  studentId String   @map("student_id")
+  classId   String   @map("class_id")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  student User  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  class   Class @relation(fields: [classId], references: [id], onDelete: Restrict)
+
+  @@unique([studentId, classId])
+  @@index([classId])
+  @@index([studentId, isActive])
+  @@map("enrollments")
+}

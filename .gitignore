@@ -1,0 +1,55 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Root .gitignore cho monorepo SchooIOS (áp dụng cho cả ./ và ./web).
+# Pattern KHÔNG neo (không có dấu / đầu) để chặn ở mọi cấp thư mục.
+
+# ---- Dependencies ----
+node_modules/
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# ---- Next.js build output ----
+.next/
+out/
+build/
+
+# ---- Testing / coverage ----
+coverage/
+
+# ---- Env files: KHÔNG commit secrets. .env.example được phép. ----
+.env
+.env.*
+!.env.example
+
+# ---- Misc OS / editor ----
+.DS_Store
+Thumbs.db
+*.pem
+
+# ---- Debug logs ----
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ---- Vercel ----
+.vercel
+
+# ---- TypeScript ----
+*.tsbuildinfo
+next-env.d.ts
+
+# ---- Claude Code local tooling (cấu hình máy cá nhân, đường dẫn tuyệt đối, không chia sẻ) ----
+.claude/
+
+.env.local
+
+# ---- PII: dữ liệu cá nhân học sinh (họ tên + ngày sinh thật) — KHÔNG commit ----
+# campus.json (cơ sở vật chất) + classes.json (sĩ số) là dữ liệu tổng hợp, vẫn commit được.
+docs/data/students.json
+**/students*.json
+!docs/data/students.example.json

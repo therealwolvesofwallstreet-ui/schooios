@@ -1,0 +1,261 @@
+{
+  "meta": {
+    "schoolYear": "2025-2026",
+    "note": "Danh bạ lớp suy từ students.json. specialization = môn chuyên theo block code; Toán có 2 lớp (khối 11/12: A1A&A1B; khối 10: 10A&10A1).",
+    "total": 36
+  },
+  "classes": [
+    {
+      "name": "10A",
+      "grade": 10,
+      "schoolYear": "2025-2026",
+      "specialization": "Toán",
+      "size": 34
+    },
+    {
+      "name": "10A1",
+      "grade": 10,
+      "schoolYear": "2025-2026",
+      "specialization": "Toán",
+      "size": 31
+    },
+    {
+      "name": "10A2",
+      "grade": 10,
+      "schoolYear": "2025-2026",
+      "specialization": "Tin",
+      "size": 19
+    },
+    {
+      "name": "10A3",
+      "grade": 10,
+      "schoolYear": "2025-2026",
+      "specialization": "Lí",
+      "size": 17
+    },
+    {
+      "name": "10A4",
+      "grade": 10,
+      "schoolYear": "2025-2026",
+      "specialization": "Hóa",
+      "size": 36
+    },
+    {
+      "name": "10A5",
+      "grade": 10,
+      "schoolYear": "2025-2026",
+      "specialization": "Sinh",
+      "size": 35
+    },
+    {
+      "name": "10C1",
+      "grade": 10,
+      "schoolYear": "2025-2026",
+      "specialization": "Văn",
+      "size": 25
+    },
+    {
+      "name": "10C2",
+      "grade": 10,
+      "schoolYear": "2025-2026",
+      "specialization": "Sử",
+      "size": 33
+    },
+    {
+      "name": "10C3",
+      "grade": 10,
+      "schoolYear": "2025-2026",
+      "specialization": "Địa",
+      "size": 23
+    },
+    {
+      "name": "10D1",
+      "grade": 10,
+      "schoolYear": "2025-2026",
+      "specialization": "Anh",
+      "size": 35
+    },
+    {
+      "name": "10D2",
+      "grade": 10,
+      "schoolYear": "2025-2026",
+      "specialization": "Anh",
+      "size": 34
+    },
+    {
+      "name": "10P",
+      "grade": 10,
+      "schoolYear": "2025-2026",
+      "specialization": "Pháp",
+      "size": 12
+    },
+    {
+      "name": "11A1A",
+      "grade": 11,
+      "schoolYear": "2025-2026",
+      "specialization": "Toán",
+      "size": 34
+    },
+    {
+      "name": "11A1B",
+      "grade": 11,
+      "schoolYear": "2025-2026",
+      "specialization": "Toán",
+      "size": 33
+    },
+    {
+      "name": "11A2",
+      "grade": 11,
+      "schoolYear": "2025-2026",
+      "specialization": "Tin",
+      "size": 20
+    },
+    {
+      "name": "11A3",
+      "grade": 11,
+      "schoolYear": "2025-2026",
+      "specialization": "Lí",
+      "size": 30
+    },
+    {
+      "name": "11A4",
+      "grade": 11,
+      "schoolYear": "2025-2026",
+      "specialization": "Hóa",
+      "size": 25
+    },
+    {
+      "name": "11A5",
+      "grade": 11,
+      "schoolYear": "2025-2026",
+      "specialization": "Sinh",
+      "size": 35
+    },
+    {
+      "name": "11C1",
+      "grade": 11,
+      "schoolYear": "2025-2026",
+      "specialization": "Văn",
+      "size": 26
+    },
+    {
+      "name": "11C2",
+      "grade": 11,
+      "schoolYear": "2025-2026",
+      "specialization": "Sử",
+      "size": 15
+    },
+    {
+      "name": "11C3",
+      "grade": 11,
+      "schoolYear": "2025-2026",
+      "specialization": "Địa",
+      "size": 17
+    },
+    {
+      "name": "11D1",
+      "grade": 11,
+      "schoolYear": "2025-2026",
+      "specialization": "Anh",
+      "size": 35
+    },
+    {
+      "name": "11D2",
+      "grade": 11,
+      "schoolYear": "2025-2026",
+      "specialization": "Anh",
+      "size": 35
+    },
+    {
+      "name": "11P",
+      "grade": 11,
+      "schoolYear": "2025-2026",
+      "specialization": "Pháp",
+      "size": 7
+    },
+    {
+      "name": "12A1A",
+      "grade": 12,
+      "schoolYear": "2025-2026",
+      "specialization": "Toán",
+      "size": 26
+    },
+    {
+      "name": "12A1B",
+      "grade": 12,
+      "schoolYear": "2025-2026",
+      "specialization": "Toán",
+      "size": 35
+    },
+    {
+      "name": "12A2",
+      "grade": 12,
+      "schoolYear": "2025-2026",
+      "specialization": "Tin",
+      "size": 14
+    },
+    {
+      "name": "12A3",
+      "grade": 12,
+      "schoolYear": "2025-2026",
+      "specialization": "Lí",
+      "size": 26
+    },
+    {
+      "name": "12A4",
+      "grade": 12,
+      "schoolYear": "2025-2026",
+      "specialization": "Hóa",
+      "size": 32
+    },
+    {
+      "name": "12A5",
+      "grade": 12,
+      "schoolYear": "2025-2026",
+      "specialization": "Sinh",
+      "size": 38
+    },
+    {
+      "name": "12C1",
+      "grade": 12,
+      "schoolYear": "2025-2026",
+      "specialization": "Văn",
+      "size": 27
+    },
+    {
+      "name": "12C2Đ",
+      "grade": 12,
+      "schoolYear": "2025-2026",
+      "specialization": "Sử",
+      "size": 15
+    },
+    {
+      "name": "12C2S",
+      "grade": 12,
+      "schoolYear": "2025-2026",
+      "specialization": "Sử",
+      "size": 20
+    },
+    {
+      "name": "12D1",
+      "grade": 12,
+      "schoolYear": "2025-2026",
+      "specialization": "Anh",
+      "size": 33
+    },
+    {
+      "name": "12D2",
+      "grade": 12,
+      "schoolYear": "2025-2026",
+      "specialization": "Anh",
+      "size": 30
+    },
+    {
+      "name": "12P",
+      "grade": 12,
+      "schoolYear": "2025-2026",
+      "specialization": "Pháp",
+      "size": 37
+    }
+  ]
+}

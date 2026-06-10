@@ -1,0 +1,62 @@
+# SchooIOS — CI tĩnh (P8). Gate mọi push/PR qua pipeline chuẩn hóa: generate → lint → tsc →
+# validate → build. KHÔNG migrate, KHÔNG deploy (deploy model: xem docs/DEPLOY.md).
+#
+# MIRROR: scripts/test-p8.sh phải đồng bộ các lệnh dưới (drift-guard trong test-p8.sh grep file này).
+# Prisma client (web/src/generated/prisma) GITIGNORED → PHẢI `prisma generate` TRƯỚC lint/tsc/build.
+# ENV ở job là GIẢ (build offline được — không có side-effect connect/throw lúc import). Secret thật
+# chỉ ở GitHub/Vercel UI + .env.local, KHÔNG bao giờ trong repo.
+name: CI
+
+on:
+  push:
+    branches: [main, feature/backend]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# Hủy run cũ trên cùng ref khi có push mới (tiết kiệm runner).
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: web
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15 # chặn run treo (mặc định GH 6 tiếng); build+install thực tế ~vài phút.
+    env:
+      # ENV GIẢ: đủ để generate/validate/build offline; KHÔNG kết nối DB. (Khớp scripts/test-p8.sh.)
+      DATABASE_URL: postgresql://u:p@localhost:5432/db
+      DIRECT_URL: postgresql://u:p@localhost:5432/db
+      JWT_SECRET: ci-fake-secret-at-least-32-characters-0000
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Prisma generate (client gitignored → bắt buộc trước lint/tsc/build)
+        run: npx prisma generate
+
+      - name: Lint (zero-warning gate)
+        run: npx eslint --max-warnings 0
+
+      - name: Type-check
+        run: npx tsc --noEmit
+
+      - name: Prisma validate
+        run: npx prisma validate
+
+      - name: Build
+        run: npm run build

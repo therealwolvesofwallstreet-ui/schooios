@@ -1,0 +1,8 @@
+{
+  "_comment": "TEMPLATE ĐỊNH DẠNG (dữ liệu GIẢ, ẩn danh). File thật là students.json (PII, gitignored). Mỗi học sinh: sbd (định danh login), name, gender (MALE|FEMALE|null), dob (YYYY-MM-DD|null), className (phải khớp classes.json), grade, admissionYear (= 2000 + 2 số đầu sbd). seed.ts đọc students.json; file này chỉ để tham chiếu định dạng.",
+  "students": [
+    { "sbd": "250001", "name": "Nguyễn Văn A", "gender": "MALE", "dob": "2010-01-15", "className": "10A", "grade": 10, "admissionYear": 2025 },
+    { "sbd": "240001", "name": "Trần Thị B", "gender": "FEMALE", "dob": "2009-09-02", "className": "11A1A", "grade": 11, "admissionYear": 2024 },
+    { "sbd": "230001", "name": "Lê Văn C", "gender": null, "dob": null, "className": "12D2", "grade": 12, "admissionYear": 2023 }
+  ]
+}
