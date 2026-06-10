@@ -1,74 +1,129 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
-import { useNotificationStore } from "./useNotificationStore"; 
-import { useAuditStore } from "./useAuditStore"; 
-import toast from "react-hot-toast"; // <--- Import thư viện Toast
+import { api } from "@/lib/api";
+import type {
+  CaseListItem,
+  CaseDetail,
+  CasesListResponse,
+  CaseResponse,
+  CommentDTO,
+  CommentResponse,
+  CasePriority,
+  CaseStatus,
+} from "@/lib/api-types";
 
-export interface Report {
-  id: string;
+// Store nối API THẬT: KHÔNG localStorage, KHÔNG client-gen id (dùng caseCode từ response),
+// KHÔNG status tiếng Việt ở tầng dữ liệu. Notification/Audit do BACKEND ghi (không bắn ở client).
+// Optimistic-lock theo updatedAt là VIỆC CỦA SERVER — client chỉ tải lại + thử lại khi gặp 409.
+
+export interface CreateCaseInput {
   title: string;
   description: string;
-  category: string;
-  location: string;
-  priority: string;
-  isEmergency: boolean;
-  isConfidential: boolean;
-  status: "Chờ tiếp nhận" | "Đang xử lý" | "Đã giải quyết";
-  createdAt: string;
+  categoryId: string;
+  locationId?: string;
+  priority?: CasePriority;
+  emergency?: boolean; // = studentFlaggedEmergency (HS bấm lúc tạo)
+  sensitive?: boolean; // checkbox "ẩn danh" → isSensitive (TODO: ẩn danh thật cần schema)
+}
+
+export interface ListParams {
+  status?: CaseStatus;
+  isEmergency?: boolean;
+  page?: number;
+  limit?: number;
 }
 
 interface ReportState {
-  reports: Report[];
-  addReport: (newReport: Omit<Report, "id" | "status" | "createdAt">) => void;
-  updateStatus: (id: string, newStatus: Report["status"]) => void;
+  cases: CaseListItem[];
+  total: number;
+  listLoading: boolean;
+  current: CaseDetail | null;
+  detailLoading: boolean;
+
+  fetchList: (params?: ListParams) => Promise<void>;
+  fetchDetail: (id: string) => Promise<CaseDetail | null>;
+  createCase: (input: CreateCaseInput) => Promise<CaseListItem>;
+  changeStatus: (id: string, status: CaseStatus, reason?: string) => Promise<void>;
+  assign: (id: string, assignedToId: string) => Promise<void>;
+  setEmergency: (id: string, isEmergency: boolean, reason?: string) => Promise<void>;
+  addComment: (id: string, body: string, isInternal?: boolean) => Promise<CommentDTO>;
 }
 
-export const useReportStore = create<ReportState>()(
-  persist(
-    (set) => ({
-      reports: [],
+function buildQuery(params?: ListParams): string {
+  if (!params) return "";
+  const sp = new URLSearchParams();
+  if (params.status) sp.set("status", params.status);
+  if (params.isEmergency !== undefined) sp.set("isEmergency", String(params.isEmergency));
+  if (params.page) sp.set("page", String(params.page));
+  if (params.limit) sp.set("limit", String(params.limit));
+  const q = sp.toString();
+  return q ? `?${q}` : "";
+}
 
-      addReport: (newReport) =>
-        set((state) => {
-          const id = "SOS-" + Math.floor(100000 + Math.random() * 900000);
-          const createdAt = new Date().toLocaleString("vi-VN", {
-            hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit", year: "numeric",
-          });
+export const useReportStore = create<ReportState>((set, get) => ({
+  cases: [],
+  total: 0,
+  listLoading: false,
+  current: null,
+  detailLoading: false,
 
-          const fullReport: Report = { ...newReport, id, status: "Chờ tiếp nhận", createdAt };
+  fetchList: async (params) => {
+    set({ listLoading: true });
+    try {
+      const data = await api.get<CasesListResponse>(`/api/cases${buildQuery(params)}`);
+      set({ cases: data.cases, total: data.total, listLoading: false });
+    } catch (e) {
+      set({ listLoading: false });
+      throw e;
+    }
+  },
 
-          // Bắn thông báo ngầm vào chuông
-          if (fullReport.isEmergency) {
-            useNotificationStore.getState().addNotification("🚨 SỰ VỤ KHẨN CẤP MỚI!", `Mã số ${id}: "${fullReport.title}" cần xử lý ngay!`, "emergency");
-            toast.error(`Đã phát SOS khẩn cấp: ${id}!`, { icon: '🚨', duration: 5000 }); // Pop-up đỏ rực
-          } else {
-            useNotificationStore.getState().addNotification("📝 Tiếp nhận báo cáo mới", `Sự vụ ${id} đã được tạo thành công.`, "new_report");
-            toast.success(`Tạo báo cáo ${id} thành công!`); // Pop-up xanh mượt
-          }
+  fetchDetail: async (id) => {
+    set({ detailLoading: true });
+    try {
+      const { case: c } = await api.get<{ case: CaseDetail }>(`/api/cases/${id}`);
+      set({ current: c, detailLoading: false });
+      return c;
+    } catch (e) {
+      set({ current: null, detailLoading: false });
+      throw e;
+    }
+  },
 
-          useAuditStore.getState().addLog("TẠO SỰ VỤ", `Sự vụ mã ${id} (${fullReport.title}) được tạo trên hệ thống.`, "Hệ thống / Người dùng");
+  createCase: async (input) => {
+    const { case: c } = await api.post<CaseResponse>("/api/cases", input);
+    return c as CaseListItem;
+  },
 
-          return { reports: [fullReport, ...state.reports] };
-        }),
+  // Mutations: gọi PATCH rồi tải lại detail (lấy status/history/updatedAt mới). Lỗi → ném cho page xử lý.
+  changeStatus: async (id, status, reason) => {
+    await api.patch(`/api/cases/${id}/status`, reason ? { status, reason } : { status });
+    await get().fetchDetail(id);
+  },
 
-      updateStatus: (id, newStatus) =>
-        set((state) => {
-          const updatedReports = state.reports.map((report) => {
-            if (report.id === id) {
-              
-              useNotificationStore.getState().addNotification("🔄 Cập nhật tiến độ", `Sự vụ ${id} chuyển sang trạng thái: "${newStatus}".`, "status_change");
-              useAuditStore.getState().addLog("ĐỔI TRẠNG THÁI", `Chuyển sự vụ ${id} từ "${report.status}" sang "${newStatus}".`, "Admin");
+  assign: async (id, assignedToId) => {
+    await api.patch(`/api/cases/${id}/assign`, { assignedToId });
+    await get().fetchDetail(id);
+  },
 
-              // Bắn pop-up góc phải màn hình cho Admin sướng mắt
-              toast.success(`Đã chuyển ${id} sang: ${newStatus}`);
+  setEmergency: async (id, isEmergency, reason) => {
+    await api.patch(
+      `/api/cases/${id}/emergency`,
+      reason ? { isEmergency, reason } : { isEmergency },
+    );
+    await get().fetchDetail(id);
+  },
 
-              return { ...report, status: newStatus };
-            }
-            return report;
-          });
-          return { reports: updatedReports };
-        }),
-    }),
-    { name: "school-os-reports" }
-  )
-);
+  addComment: async (id, body, isInternal) => {
+    const { comment } = await api.post<CommentResponse>(`/api/cases/${id}/comments`, {
+      body,
+      ...(isInternal ? { isInternal: true } : {}),
+    });
+    // Gắn ngay vào detail hiện tại (parity với GET) thay vì refetch.
+    set((s) =>
+      s.current && s.current.id === id
+        ? { current: { ...s.current, comments: [...s.current.comments, comment] } }
+        : {},
+    );
+    return comment;
+  },
+}));

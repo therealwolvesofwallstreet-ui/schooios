@@ -62,3 +62,89 @@ export interface AuditResponse {
   page: number;
   totalPages: number;
 }
+
+// ---- Cases (M3) ----
+export interface UserRef {
+  id: string;
+  name: string;
+  role?: Role;
+}
+export interface CategoryRef {
+  id: string;
+  name: string;
+}
+export interface CaseLocationRef {
+  id: string;
+  code: string;
+  name: string;
+}
+
+export interface CaseListItem {
+  id: string;
+  caseCode: string;
+  title: string;
+  description: string;
+  location: string | null;
+  locationId: string | null;
+  categoryId: string;
+  priority: CasePriority;
+  status: CaseStatus;
+  isSensitive: boolean;
+  isEmergency: boolean;
+  studentFlaggedEmergency: boolean;
+  createdById: string;
+  assignedToId: string | null;
+  resolvedAt: string | null;
+  closedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  category: CategoryRef;
+  locationRef: CaseLocationRef | null;
+  createdBy: UserRef;
+  assignedTo: { id: string; name: string } | null;
+}
+
+export interface CommentDTO {
+  id: string;
+  caseId: string;
+  authorId: string;
+  body: string;
+  isInternal: boolean;
+  createdAt: string;
+  author: UserRef;
+}
+export interface AttachmentDTO {
+  id: string;
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+  createdAt: string;
+  uploadedBy: { id: string; name: string };
+}
+export interface StatusHistoryDTO {
+  id: string;
+  fromStatus: CaseStatus | null;
+  toStatus: CaseStatus;
+  note: string | null;
+  createdAt: string;
+  changedBy: UserRef;
+}
+export interface CaseDetail extends CaseListItem {
+  category: CategoryRef & { description?: string | null };
+  attachments: AttachmentDTO[];
+  statusHistory: StatusHistoryDTO[];
+  comments: CommentDTO[];
+}
+
+export interface CasesListResponse {
+  cases: CaseListItem[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+export interface CaseResponse {
+  case: CaseListItem | CaseDetail;
+}
+export interface CommentResponse {
+  comment: CommentDTO;
+}
