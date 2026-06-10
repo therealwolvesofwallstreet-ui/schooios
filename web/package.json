@@ -6,6 +6,7 @@
     "node": ">=20"
   },
   "scripts": {
+    "postinstall": "prisma generate",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
@@ -18,15 +19,12 @@
     "@prisma/client": "^7.8.0",
     "bcryptjs": "^3.0.3",
     "jose": "^6.2.3",
-    "lucide-react": "^1.17.0",
     "next": "16.2.7",
     "pg": "^8.21.0",
     "prisma": "^7.8.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "react-hot-toast": "^2.5.2",
-    "zod": "^4.4.3",
-    "zustand": "^5.0.14"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
