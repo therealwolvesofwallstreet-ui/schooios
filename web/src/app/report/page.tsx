@@ -2,20 +2,26 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import { Search, Filter, Plus, ArrowRight } from "lucide-react";
 import { useReportStore } from "@/store/useReportStore";
+import { useAuthStore } from "@/store/useAuthStore";
+import { ApiError } from "@/lib/api";
 import { STATUS_LABEL, STATUS_BADGE, STATUS_ORDER, formatDateTime } from "@/lib/case-display";
 import type { CaseStatus } from "@/lib/api-types";
 
 export default function ReportListPage() {
   const router = useRouter();
   const { cases, listLoading, fetchList } = useReportStore();
+  const role = useAuthStore((s) => s.role);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<CaseStatus | "ALL">("ALL");
 
   useEffect(() => {
-    fetchList().catch(() => {});
+    fetchList().catch((e) => {
+      if (e instanceof ApiError && e.status !== 401) toast.error("Không tải được danh sách sự vụ.");
+    });
   }, [fetchList]);
 
   const filtered = cases.filter((c) => {
@@ -33,12 +39,14 @@ export default function ReportListPage() {
           <h1 className="text-2xl font-bold text-slate-900">Danh sách sự vụ</h1>
           <p className="text-slate-500 text-sm mt-1">Quản lý và tra cứu các báo cáo bạn được phép xem.</p>
         </div>
-        <button
-          onClick={() => router.push("/report/new")}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-100 transition-all active:scale-[0.98] shrink-0"
-        >
-          <Plus size={18} /> Tạo báo cáo mới
-        </button>
+        {role !== "AUDITOR" && (
+          <button
+            onClick={() => router.push("/report/new")}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-100 transition-all active:scale-[0.98] shrink-0"
+          >
+            <Plus size={18} /> Tạo báo cáo mới
+          </button>
+        )}
       </div>
 
       <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4">

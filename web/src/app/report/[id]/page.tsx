@@ -19,7 +19,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
   const router = useRouter();
   const reportId = use(params).id;
 
-  const { current, detailLoading, fetchDetail, changeStatus, assign, setEmergency, addComment } =
+  const { current, fetchDetail, changeStatus, assign, setEmergency, addComment } =
     useReportStore();
   const { role, user } = useAuthStore();
   const isPrivileged = role === "ADMIN" || role === "STAFF";
@@ -30,9 +30,13 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
   const [posting, setPosting] = useState(false);
   const [acting, setActing] = useState(false);
 
+  // setState trong callback promise (async) — KHÔNG gọi đồng bộ trong effect body
+  // (tránh react-hooks/set-state-in-effect + cascading renders).
   useEffect(() => {
-    setLoadFailed(false);
-    fetchDetail(reportId).catch(() => setLoadFailed(true));
+    fetchDetail(reportId).then(
+      () => setLoadFailed(false),
+      () => setLoadFailed(true),
+    );
   }, [reportId, fetchDetail]);
 
   const ready = current && current.id === reportId;

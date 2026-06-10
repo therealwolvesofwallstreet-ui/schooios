@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, ShieldAlert, FileText, Clock, AlertTriangle, Inbox, Timer } from "lucide-react";
+import { Plus, ShieldAlert, FileText, Clock, Inbox, Timer } from "lucide-react";
 import { useReportStore } from "@/store/useReportStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { api } from "@/lib/api";
@@ -23,11 +23,9 @@ export default function HomePage() {
   }, [fetchList]);
 
   // CHỈ ADMIN/AUDITOR gọi /api/dashboard (STUDENT/STAFF → 403, không gọi).
+  // Render gate `canDashboard && dash` đảm bảo số liệu cũ không lộ cho role không đủ quyền.
   useEffect(() => {
-    if (!canDashboard) {
-      setDash(null);
-      return;
-    }
+    if (!canDashboard) return;
     api.get<DashboardResponse>("/api/dashboard").then(setDash).catch(() => {});
   }, [canDashboard]);
 
@@ -44,20 +42,23 @@ export default function HomePage() {
               : "Chào mừng bạn trở lại. Hãy gửi báo cáo nếu phát hiện sự cố."}
           </p>
         </div>
-        <div className="flex items-center gap-3 shrink-0">
-          <button
-            onClick={() => router.push("/report/new")}
-            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-red-100 transition-all active:scale-[0.98]"
-          >
-            <ShieldAlert size={16} /> Báo khẩn cấp
-          </button>
-          <button
-            onClick={() => router.push("/report/new")}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-100 transition-all active:scale-[0.98]"
-          >
-            <Plus size={16} /> Tạo báo cáo
-          </button>
-        </div>
+        {/* AUDITOR read-only (matrix: POST /cases AUDITOR→403) → ẩn nút tạo. */}
+        {role !== "AUDITOR" && (
+          <div className="flex items-center gap-3 shrink-0">
+            <button
+              onClick={() => router.push("/report/new")}
+              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-red-100 transition-all active:scale-[0.98]"
+            >
+              <ShieldAlert size={16} /> Báo khẩn cấp
+            </button>
+            <button
+              onClick={() => router.push("/report/new")}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-100 transition-all active:scale-[0.98]"
+            >
+              <Plus size={16} /> Tạo báo cáo
+            </button>
+          </div>
+        )}
       </div>
 
       {/* DASHBOARD AGGREGATE (chỉ ADMIN/AUDITOR — GET /api/dashboard) */}

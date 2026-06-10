@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { ArrowLeft, Send, MapPin, Tag, AlertCircle } from "lucide-react";
 import { useReportStore } from "@/store/useReportStore";
+import { useAuthStore } from "@/store/useAuthStore";
 import { api, ApiError } from "@/lib/api";
 import { PRIORITY_LABEL, PRIORITY_ORDER } from "@/lib/case-display";
 import type {
@@ -18,6 +19,7 @@ import type {
 export default function NewReportPage() {
   const router = useRouter();
   const createCase = useReportStore((s) => s.createCase);
+  const role = useAuthStore((s) => s.role);
 
   const [categories, setCategories] = useState<CategoryDTO[]>([]);
   const [locations, setLocations] = useState<LocationDTO[]>([]);
@@ -87,6 +89,15 @@ export default function NewReportPage() {
       setSubmitting(false);
     }
   };
+
+  if (role === "AUDITOR") {
+    return (
+      <div className="max-w-2xl mx-auto text-center py-24 space-y-3">
+        <h2 className="text-2xl font-bold text-slate-900">Chỉ xem (Kiểm toán)</h2>
+        <p className="text-slate-500">Vai trò Kiểm toán không có quyền tạo báo cáo.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto">

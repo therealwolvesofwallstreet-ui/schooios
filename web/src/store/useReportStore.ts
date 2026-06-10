@@ -11,7 +11,7 @@ import type {
   CaseStatus,
 } from "@/lib/api-types";
 
-// Store nối API THẬT: KHÔNG localStorage, KHÔNG client-gen id (dùng caseCode từ response),
+// Store nối API THẬT: KHÔNG lưu ở trình duyệt, KHÔNG client-gen id (dùng caseCode từ response),
 // KHÔNG status tiếng Việt ở tầng dữ liệu. Notification/Audit do BACKEND ghi (không bắn ở client).
 // Optimistic-lock theo updatedAt là VIỆC CỦA SERVER — client chỉ tải lại + thử lại khi gặp 409.
 

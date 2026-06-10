@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { api } from "@/lib/api";
 import type { AuditLogDTO, AuditResponse } from "@/lib/api-types";
 
-// Nối API thật: GET /api/audit (ADMIN/AUDITOR only). KHÔNG mock, KHÔNG localStorage.
+// Nối API thật: GET /api/audit (ADMIN/AUDITOR only). KHÔNG mock, KHÔNG lưu ở trình duyệt.
 interface AuditState {
   logs: AuditLogDTO[];
   total: number;

@@ -3,7 +3,7 @@ import { api } from "@/lib/api";
 import type { NotificationDTO, NotificationsResponse } from "@/lib/api-types";
 
 // Nối API thật: GET /api/notifications (+?unreadOnly) + PATCH /api/notifications/read-all.
-// KHÔNG mock, KHÔNG localStorage. unreadCount lấy TỪ server (nguồn sự thật).
+// KHÔNG mock, KHÔNG lưu ở trình duyệt. unreadCount lấy TỪ server (nguồn sự thật).
 interface NotificationState {
   notifications: NotificationDTO[];
   unreadCount: number;

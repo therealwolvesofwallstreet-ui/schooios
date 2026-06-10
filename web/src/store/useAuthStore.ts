@@ -3,7 +3,7 @@ import { api } from "@/lib/api";
 import type { Role } from "@/lib/api-types";
 
 // Auth state lấy TỪ server (GET /api/auth/me) — JWT nằm trong cookie httpOnly, FE KHÔNG đọc token.
-// KHÔNG persist localStorage (nguồn sự thật = cookie + /me). Proxy.ts lo việc gác trang/redirect.
+// KHÔNG persist phía client (nguồn sự thật = cookie + /me). Proxy.ts lo việc gác trang/redirect.
 export interface AuthUser {
   id: string;
   name: string;
