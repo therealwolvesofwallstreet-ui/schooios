@@ -142,7 +142,7 @@ export async function GET(
     // STUDENT không thấy comment nội bộ; role khác thấy hết. author chỉ {id,name,role} (không lộ PII).
     const comments = await prisma.comment.findMany({
       where: { caseId: id, ...(user.role === Role.STUDENT ? { isInternal: false } : {}) },
-      orderBy: { createdAt: "asc" },
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }], // id tiebreaker → thứ tự tất định khi trùng createdAt
       include: commentAuthorSelect,
     });
 

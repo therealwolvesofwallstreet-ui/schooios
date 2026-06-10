@@ -8,6 +8,7 @@ import { loginSchema } from "@/lib/validation";
 import { signJWT } from "@/lib/jwt";
 import { setAuthCookie, clientMeta } from "@/lib/auth";
 import { recordAudit } from "@/lib/audit";
+import { rateLimit } from "@/lib/ratelimit";
 
 // Thông điệp 401 ĐỒNG NHẤT cho mọi nhánh sai (không lộ định danh tồn tại hay không).
 // Factory (KHÔNG dùng chung 1 instance): body của Response là stream, chỉ tiêu thụ được 1 lần.
@@ -41,6 +42,16 @@ export async function POST(request: NextRequest) {
     const identifier = parsed.data.identifier.trim();
     const isEmail = identifier.includes("@");
     const where = isEmail ? { email: identifier.toLowerCase() } : { sbd: identifier };
+
+    // Rate-limit TRƯỚC findUnique/bcrypt: chặn sớm khi flood (không tốn CPU hash). Key=(ip+identifier)
+    // → 1 kẻ tấn công không khoá được toàn hệ thống (mỗi định danh 1 bucket). Đếm MỌI lần (kể cả đúng).
+    const ip = clientMeta(request).ipAddress ?? "unknown";
+    const rl = rateLimit(`login:${ip}:${identifier}`);
+    if (!rl.ok) {
+      const res = NextResponse.json({ error: "Too many requests" }, { status: 429 });
+      res.headers.set("Retry-After", String(rl.retryAfter));
+      return res;
+    }
 
     // opt-in passwordHash CHỈ để so khớp (prisma.ts omit toàn cục).
     const user = await prisma.user.findUnique({ where, omit: { passwordHash: false } });

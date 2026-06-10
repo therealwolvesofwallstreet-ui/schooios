@@ -1,1 +1,7 @@
-web/
+# Chặn RÁC sinh-máy/dependency khỏi mọi tool của Claude (KHÔNG chặn web/ — đó là codebase)
+web/node_modules/
+web/.next/
+web/src/generated/
+node_modules/
+**/*.tsbuildinfo
+web/package-lock.json

@@ -1,49 +1,77 @@
 // Proxy (Next.js 16 — TÊN MỚI của Middleware; KHÔNG dùng middleware.ts).
-// Cổng auth "optimistic" cho /api/*: verify JWT trong cookie bằng jose (stateless, KHÔNG Prisma).
-// Authz thật vẫn được lặp lại ở từng route/service (defense-in-depth) — proxy chỉ là lớp chặn sớm.
+// Gác cả /api/* (trả 401 JSON cho fetch) LẪN trang (redirect /login | /change-password).
+// Verify JWT bằng jose (stateless, KHÔNG Prisma — proxy chạy Node nhưng giữ nhẹ).
+// Authz thật vẫn lặp ở từng route/service (defense-in-depth) — proxy chỉ chặn sớm + điều hướng.
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { AUTH_COOKIE, verifyJWT } from "@/lib/jwt";
 
-// Route công khai (không cần token).
-const PUBLIC_PATHS = new Set(["/api/auth/login", "/api/auth/logout"]);
-
-// Khi mustChangePassword=true: CHỈ các path này được phép (tránh khoá luôn endpoint đổi mật khẩu).
-const MUST_CHANGE_ALLOWED = new Set([
+// API auth công khai (không cần token) — cũng tránh loop "/login → /login".
+const PUBLIC_API = new Set(["/api/auth/login", "/api/auth/logout"]);
+// Khi mustChangePassword=true: CHỈ các API này được phép (để đổi được mật khẩu).
+const MUST_CHANGE_ALLOWED_API = new Set([
   "/api/auth/me",
   "/api/auth/change-password",
   "/api/auth/logout",
 ]);
 
-function unauthorized() {
-  return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-}
+const jsonUnauthorized = () =>
+  NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+const jsonMustChange = () =>
+  NextResponse.json(
+    { error: "Password change required", code: "MUST_CHANGE_PASSWORD" },
+    { status: 403 },
+  );
+const redirectTo = (request: NextRequest, path: string) =>
+  NextResponse.redirect(new URL(path, request.url));
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-
-  if (PUBLIC_PATHS.has(pathname)) return NextResponse.next();
+  const isApi = pathname.startsWith("/api");
 
   const token = request.cookies.get(AUTH_COOKIE)?.value;
-  if (!token) return unauthorized();
+  const payload = token ? await verifyJWT(token) : null;
 
-  const payload = await verifyJWT(token);
-  if (!payload) return unauthorized();
-
-  // Ép đổi mật khẩu lần đầu: chặn mọi route trừ allowlist.
-  if (payload.mustChangePassword && !MUST_CHANGE_ALLOWED.has(pathname)) {
-    return NextResponse.json(
-      { error: "Password change required", code: "MUST_CHANGE_PASSWORD" },
-      { status: 403 },
-    );
+  // ── API ──────────────────────────────────────────────────────────────
+  if (isApi) {
+    if (PUBLIC_API.has(pathname)) return NextResponse.next(); // login/logout luôn cho qua
+    if (!payload) return jsonUnauthorized(); // thiếu/sai token → 401 JSON (KHÔNG redirect)
+    if (payload.mustChangePassword && !MUST_CHANGE_ALLOWED_API.has(pathname))
+      return jsonMustChange();
+    return NextResponse.next();
   }
 
-  // RBAC theo payload.role sẽ gắn ở đây khi P4+ có route giới hạn theo vai trò.
-  // P3 chưa có route role-gated nào ngoài /api/auth/* nên cho qua.
+  // ── TRANG ────────────────────────────────────────────────────────────
+  // /login: chống loop — chưa auth thì render; đã auth thì đẩy đi đúng chỗ.
+  if (pathname === "/login") {
+    if (!payload) return NextResponse.next();
+    return redirectTo(request, payload.mustChangePassword ? "/change-password" : "/");
+  }
+
+  // Các trang còn lại cần auth.
+  if (!payload) return redirectTo(request, "/login");
+
+  // Ép đổi mật khẩu lần đầu (cho qua đúng trang /change-password để khỏi loop).
+  if (payload.mustChangePassword) {
+    return pathname === "/change-password"
+      ? NextResponse.next()
+      : redirectTo(request, "/change-password");
+  }
+
+  // Đã auth + không cần đổi MK: chặn vào lại /change-password → đẩy vào app.
+  if (pathname === "/change-password") return redirectTo(request, "/");
+
   return NextResponse.next();
 }
 
-// P3: chỉ gác /api (chưa có trang FE → tránh redirect tới /login chưa tồn tại).
+// Gác cả trang lẫn /api. Tách 2 matcher:
+//  1) "/api/:path*" — gác TOÀN BỘ API (parity byte-for-byte với gác cũ, kể cả path /api chứa dấu
+//     chấm như tên file/version → KHÔNG bị bỏ gác).
+//  2) trang — loại _next, favicon, và CHỈ asset có ĐUÔI file ở CUỐI path (.*\.[^/]+$), không loại
+//     mọi path-có-dấu-chấm như trước.
 export const config = {
-  matcher: ["/api/:path*"],
+  matcher: [
+    "/api/:path*",
+    "/((?!api/|_next/static|_next/image|favicon\\.ico|.*\\.[^/]+$).*)",
+  ],
 };

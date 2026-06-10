@@ -24,7 +24,7 @@ export async function GET(
         // STUDENT không thấy comment nội bộ; role khác thấy hết.
         comments: {
           where: user.role === "STUDENT" ? { isInternal: false } : {},
-          orderBy: { createdAt: "asc" },
+          orderBy: [{ createdAt: "asc" }, { id: "asc" }], // id tiebreaker → thứ tự tất định khi trùng createdAt
           include: { author: { select: { id: true, name: true, role: true } } },
         },
       },

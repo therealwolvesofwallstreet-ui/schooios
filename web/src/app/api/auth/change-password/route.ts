@@ -8,6 +8,7 @@ import { changePasswordSchema } from "@/lib/validation";
 import { signJWT } from "@/lib/jwt";
 import { getAuthPayload, setAuthCookie, clientMeta } from "@/lib/auth";
 import { recordAudit } from "@/lib/audit";
+import { rateLimit } from "@/lib/ratelimit";
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,6 +28,15 @@ export async function POST(request: NextRequest) {
         { error: "Invalid input", details: parsed.error.issues },
         { status: 400 },
       );
+    }
+
+    // Rate-limit theo user TRƯỚC bcrypt: chặn brute-force `currentPassword` qua một phiên hợp lệ
+    // (kiosk / tài khoản mật khẩu mặc định). Mỗi user 1 bucket → không khoá chéo người khác. P9 audit.
+    const rl = rateLimit(`pwchange:${payload.sub}`);
+    if (!rl.ok) {
+      const res = NextResponse.json({ error: "Too many requests" }, { status: 429 });
+      res.headers.set("Retry-After", String(rl.retryAfter));
+      return res;
     }
 
     // opt-in passwordHash để so khớp mật khẩu hiện tại.

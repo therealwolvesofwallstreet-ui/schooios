@@ -41,7 +41,8 @@ export const caseDetailInclude = {
   },
   // Kèm người đổi (parity với comments.author) → timeline hữu dụng, không chỉ cuid trơ.
   statusHistory: {
-    orderBy: { createdAt: "asc" },
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }], // id tiebreaker → thứ tự tất định khi trùng createdAt
+
     include: { changedBy: { select: { id: true, name: true, role: true } } },
   },
 } satisfies Prisma.CaseInclude;

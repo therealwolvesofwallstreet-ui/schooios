@@ -38,7 +38,10 @@ export async function GET(request: NextRequest) {
         prisma.notification.count({ where: { userId: user.id, isRead: false } }),
         prisma.notification.findMany({
           where,
-          orderBy: { createdAt: "desc" },
+          // id desc làm tiebreaker → phân trang TẤT ĐỊNH khi trùng createdAt (notification batch
+          // qua createMany dùng chung created_at = CURRENT_TIMESTAMP → skip/take có thể bỏ sót/lặp
+          // dòng nếu thiếu khoá phụ duy nhất). Nhất quán với cases list/emergency lane.
+          orderBy: [{ createdAt: "desc" }, { id: "desc" }],
           skip: (page - 1) * limit,
           take: limit,
           include: { case: { select: { id: true, caseCode: true } } },

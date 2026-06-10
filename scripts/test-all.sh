@@ -99,6 +99,7 @@ else
   for f in "$SCRIPT_DIR"/test-*.sh; do
     [ -e "$f" ] || continue
     [ "$(basename "$f")" = "test-all.sh" ] && continue
+    [ "$(basename "$f")" = "test-integration.sh" ] && continue   # orchestrator: chạy riêng, tránh đệ quy
     found=1
     run_one "$f"
   done
