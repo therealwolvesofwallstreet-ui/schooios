@@ -1,236 +1,236 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import toast from "react-hot-toast";
-import { ArrowLeft, Send, MapPin, Tag, AlertCircle } from "lucide-react";
-import { useReportStore } from "@/store/useReportStore";
+import Image from "next/image"; 
 import { useAuthStore } from "@/store/useAuthStore";
-import { api, ApiError } from "@/lib/api";
-import { PRIORITY_LABEL, PRIORITY_ORDER } from "@/lib/case-display";
-import type {
-  CategoriesResponse,
-  CategoryDTO,
-  LocationsResponse,
-  LocationDTO,
-  CasePriority,
-} from "@/lib/api-types";
+import { useCommunityStore } from "@/store/useCommunityStore";
+import { ArrowLeft, Camera, X, ShieldAlert, Send } from "lucide-react";
+import toast from "react-hot-toast";
+import Reveal from "@/components/motion/Reveal";
+
+type StoreCommunityItem = ReturnType<typeof useCommunityStore.getState>["items"][number];
 
 export default function NewReportPage() {
   const router = useRouter();
-  const createCase = useReportStore((s) => s.createCase);
-  const role = useAuthStore((s) => s.role);
+  const { userEmail } = useAuthStore();
+  
+  const store = useCommunityStore();
+  const items = store.items || [];
 
-  const [categories, setCategories] = useState<CategoryDTO[]>([]);
-  const [locations, setLocations] = useState<LocationDTO[]>([]);
+  const [mounted, setMounted] = useState(false);
+  const [content, setContent] = useState("");
+  const [location, setLocation] = useState("");
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [categoryId, setCategoryId] = useState("");
-  const [locationId, setLocationId] = useState("");
-  const [priority, setPriority] = useState<CasePriority>("MEDIUM");
-  const [emergency, setEmergency] = useState(false);
-  const [sensitive, setSensitive] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-
-  // Nạp dropdown từ API thật (KHÔNG hardcode).
   useEffect(() => {
-    (async () => {
-      try {
-        const [cat, loc] = await Promise.all([
-          api.get<CategoriesResponse>("/api/categories"),
-          api.get<LocationsResponse>("/api/locations"),
-        ]);
-        setCategories(cat.categories);
-        setLocations(loc.locations);
-      } catch {
-        toast.error("Không tải được danh mục / vị trí.");
-      }
-    })();
+    const timer = setTimeout(() => setMounted(true), 0);
+    return () => clearTimeout(timer);
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (title.trim().length < 5) {
-      toast.error("Tiêu đề tối thiểu 5 ký tự.");
+  if (!mounted) return null;
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Tệp tin bằng chứng vượt quá 5MB! Vui lòng chọn ảnh nhẹ hơn.");
+      if (e.target) e.target.value = "";
       return;
     }
-    if (description.trim().length < 10) {
-      toast.error("Mô tả tối thiểu 10 ký tự.");
-      return;
-    }
-    if (!categoryId) {
-      toast.error("Vui lòng chọn danh mục.");
-      return;
-    }
-    setSubmitting(true);
-    try {
-      const created = await createCase({
-        title: title.trim(),
-        description: description.trim(),
-        categoryId,
-        locationId: locationId || undefined,
-        priority,
-        emergency,
-        sensitive,
-      });
-      toast.success(`Đã tạo báo cáo ${created.caseCode}`);
-      router.push("/report");
-    } catch (err) {
-      if (err instanceof ApiError) {
-        if (err.status === 403) toast.error("Vai trò của bạn không được tạo báo cáo.");
-        else if (err.status === 400) toast.error(err.message || "Dữ liệu không hợp lệ.");
-        else if (err.status === 503) toast.error("Hệ thống bận, vui lòng thử lại.");
-        else toast.error("Tạo báo cáo thất bại.");
-      } else {
-        toast.error("Lỗi kết nối.");
-      }
-    } finally {
-      setSubmitting(false);
-    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string); 
+    };
+    reader.readAsDataURL(file);
   };
 
-  if (role === "AUDITOR") {
-    return (
-      <div className="max-w-2xl mx-auto text-center py-24 space-y-3">
-        <h2 className="text-2xl font-bold text-slate-900">Chỉ xem (Kiểm toán)</h2>
-        <p className="text-slate-500">Vai trò Kiểm toán không có quyền tạo báo cáo.</p>
-      </div>
-    );
-  }
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!content.trim()) {
+      toast.error("Vui lòng mô tả chi tiết sự kiện đang xảy ra.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    setTimeout(() => {
+      const authorEmail = userEmail || "anonym@schoolos.edu";
+      // 🛠️ CHUẨN HÓA LOGIC: Gỡ bỏ chữ khẩn cấp, để tựa đề mang tính khách quan
+      const reportTitle = location ? `Sự vụ tại: ${location}` : "Báo cáo sự vụ mật";
+      const generatedId = Date.now();
+
+      const newReport = {
+        id: generatedId,
+        type: "mailbox",
+        title: reportTitle,
+        content: content.trim(),
+        author: authorEmail,
+        date: new Date().toLocaleString("vi-VN"),
+        status: "pending",
+        imageUrl: imagePreview, 
+        comments: [],
+        upvotes: [],   
+        downvotes: []  
+      } as unknown as StoreCommunityItem;
+
+      useCommunityStore.setState({ items: [...items, newReport] });
+
+      toast.success("Tín hiệu mật đã được phát đi thành công! Ban Giám Hiệu sẽ phân loại và xử lý.");
+      
+      setContent("");
+      setLocation("");
+      setImagePreview(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      
+      setIsSubmitting(false);
+      
+      // 🛠️ UX UPGRADE: Dịch chuyển thẳng vào phòng thẩm định 1-1 thay vì đuổi ra trang chủ
+      router.push(`/report/${generatedId}`); 
+    }, 800);
+  };
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="flex items-center gap-3 mb-6">
-        <button
-          type="button"
-          onClick={() => router.push("/")}
-          className="p-2 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-600 shadow-sm"
-        >
-          <ArrowLeft size={18} />
-        </button>
-        <div>
-          <h2 className="text-xl md:text-2xl font-bold text-slate-900">Tạo báo cáo mới</h2>
-          <p className="text-slate-400 text-xs md:text-sm mt-0.5">Cung cấp thông tin chi tiết để xử lý sự cố.</p>
-        </div>
-      </div>
-
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-start">
-        <div className="col-span-1 md:col-span-2 space-y-4 md:space-y-6 bg-white p-5 md:p-6 rounded-2xl border border-slate-200 shadow-sm">
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">Tiêu đề sự vụ * (≥ 5 ký tự)</label>
-            <input
-              type="text"
-              placeholder="Ví dụ: Hỏng điều hòa, sự cố mất trật tự..."
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 text-[14px]"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">Mô tả chi tiết * (≥ 10 ký tự)</label>
-            <textarea
-              rows={4}
-              placeholder="Mô tả rõ diễn biến vụ việc..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 text-[14px]"
-            />
-          </div>
-          {/* TODO(upload): Attachment + Signed URL hoãn (P6/sau). Ẩn nút tải ảnh tới khi nối storage. */}
-        </div>
-
-        <div className="space-y-4 md:space-y-6">
-          <div className="bg-white p-5 md:p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-            <div>
-              <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-2">
-                <Tag size={16} className="text-slate-400" /> Danh mục *
-              </label>
-              <select
-                value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-[14px] bg-white"
-              >
-                <option value="">-- Chọn danh mục --</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-2">
-                <MapPin size={16} className="text-slate-400" /> Vị trí
-              </label>
-              <select
-                value={locationId}
-                onChange={(e) => setLocationId(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-[14px] bg-white"
-              >
-                <option value="">-- Chọn vị trí (không bắt buộc) --</option>
-                {locations.map((l) => (
-                  <option key={l.id} value={l.id}>
-                    {l.building ? `${l.building.name} · ` : ""}
-                    {l.name} ({l.code})
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-2">
-                <AlertCircle size={16} className="text-slate-400" /> Độ ưu tiên
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                {PRIORITY_ORDER.map((p) => (
-                  <button
-                    key={p}
-                    type="button"
-                    onClick={() => setPriority(p)}
-                    className={`py-2 text-xs font-semibold rounded-xl border transition-all ${
-                      priority === p
-                        ? "bg-slate-900 border-slate-900 text-white"
-                        : "border-slate-200 text-slate-600"
-                    }`}
-                  >
-                    {PRIORITY_LABEL[p]}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <hr className="border-slate-100" />
-            <div className="space-y-3 pt-1">
-              <label className="flex items-center justify-between cursor-pointer">
-                <span className="text-xs font-semibold text-slate-700">🚨 Đánh dấu KHẨN CẤP</span>
-                <input
-                  type="checkbox"
-                  checked={emergency}
-                  onChange={(e) => setEmergency(e.target.checked)}
-                  className="w-4 h-4 text-red-600 rounded border-slate-300"
-                />
-              </label>
-              <label className="flex items-center justify-between cursor-pointer">
-                <span className="text-xs font-semibold text-slate-700">🔒 Báo cáo nhạy cảm (ẩn)</span>
-                <input
-                  type="checkbox"
-                  checked={sensitive}
-                  onChange={(e) => setSensitive(e.target.checked)}
-                  className="w-4 h-4 text-blue-600 rounded border-slate-300"
-                />
-              </label>
-              {/* TODO(ẩn-danh-thật): checkbox "ẩn danh" hiện map → sensitive=true (ẩn với HS khác);
-                  ẩn danh thực sự (giấu danh tính người tạo) là feature tách, cần thay đổi schema. */}
-            </div>
-          </div>
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-bold rounded-2xl flex items-center justify-center gap-2 shadow-md text-sm"
+    <div className="min-h-screen bg-paper text-ink pt-24 pb-32 px-6 lg:px-12 font-body selection:bg-gold selection:text-ink">
+      <div className="max-w-200 mx-auto space-y-12">
+        
+        {/* NÚT QUAY LẠI */}
+        <Reveal>
+          <button 
+            onClick={() => router.back()} 
+            disabled={isSubmitting}
+            className="group flex items-center gap-2 text-[0.6875rem] font-mono tracking-[0.18em] uppercase text-muted hover:text-ink transition-colors disabled:opacity-30"
           >
-            <Send size={14} /> {submitting ? "Đang gửi..." : "Gửi báo cáo"}
+            <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> Hủy và quay lại
           </button>
-        </div>
-      </form>
+        </Reveal>
+
+        {/* TIÊU ĐỀ KHÔNG GIAN */}
+        <header className="space-y-3">
+          <h1 className="font-display text-3xl sm:text-4xl tracking-tight flex items-center gap-3">
+            <ShieldAlert className="text-signal shrink-0 animate-pulse" size={28} />
+            {/* 🛠️ CHUẨN HÓA GIAO DIỆN: Thay đổi tiêu đề trung lập */}
+            Phát tín hiệu sự vụ
+          </h1>
+          <p className="text-xs font-light text-muted leading-relaxed max-w-xl">
+            Tín hiệu này được bảo mật mã hóa 1-1. Ban Giám Hiệu sẽ tiếp nhận, phân loại mức độ và trực tiếp điều phối. Danh tính của bạn được ẩn giấu an toàn.
+          </p>
+        </header>
+
+        {/* FORM NHẬP LIỆU */}
+        <form onSubmit={handleSubmit} className="space-y-10 pt-4">
+          
+          {/* PHÂN KHU 01: NỘI DUNG */}
+          <Reveal delay={0.1}>
+            <div className="space-y-4">
+              <label className="text-[0.6875rem] font-mono tracking-[0.18em] uppercase text-muted flex items-center gap-2">
+                <span className="border border-current px-1 py-0.2 text-[9px]">01</span> Sự việc diễn ra như thế nào?
+              </label>
+              <textarea
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                disabled={isSubmitting}
+                placeholder="Mô tả chi tiết sự việc khách quan nhất có thể. Bạn đang ở trong một không gian an toàn..."
+                rows={4}
+                className="w-full bg-stone/5 border border-stone/50 focus:border-ink p-4 focus:outline-none text-base font-light resize-none rounded-sm transition-colors placeholder:text-stone disabled:opacity-50"
+                required
+              />
+            </div>
+          </Reveal>
+
+          {/* PHÂN KHU 02: ĐỊA ĐIỂM */}
+          <Reveal delay={0.2}>
+            <div className="space-y-4">
+              <label className="text-[0.6875rem] font-mono tracking-[0.18em] uppercase text-muted flex items-center gap-2">
+                <span className="border border-current px-1 py-0.2 text-[9px]">02</span> Khu vực / Địa điểm
+              </label>
+              <input
+                type="text"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                disabled={isSubmitting}
+                placeholder="VD: Nhà vệ sinh tầng 3, Căn tin, Phòng thể chất..."
+                className="w-full bg-stone/5 border border-stone/50 focus:border-ink p-4 focus:outline-none text-sm font-light rounded-sm transition-colors placeholder:text-stone/60 disabled:opacity-50"
+              />
+            </div>
+          </Reveal>
+
+          {/* PHÂN KHU 03: HÌNH ẢNH BẰNG CHỨNG */}
+          <Reveal delay={0.3}>
+            <div className="space-y-4">
+              <label className="text-[0.6875rem] font-mono tracking-[0.18em] uppercase text-muted flex items-center gap-2">
+                <span className="border border-current px-1 py-0.2 text-[9px]">03</span> Tệp tin bằng chứng (Hình ảnh)
+              </label>
+              
+              <input 
+                type="file" 
+                className="hidden" 
+                ref={fileInputRef} 
+                onChange={handleImageChange} 
+                accept="image/*" 
+              />
+
+              {imagePreview ? (
+                <div className="relative inline-block border border-stone p-1 bg-stone/5 rounded-sm animate-in fade-in zoom-in-95 duration-fast">
+                  <div className="relative max-h-72 overflow-hidden rounded-sm">
+                    <Image 
+                      src={imagePreview} 
+                      alt="Bằng chứng sự cố" 
+                      width={400} 
+                      height={300} 
+                      className="object-cover w-auto h-auto max-h-72 rounded-sm"
+                      unoptimized
+                    />
+                  </div>
+                  
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setImagePreview(null);
+                      if (fileInputRef.current) fileInputRef.current.value = "";
+                    }}
+                    disabled={isSubmitting}
+                    className="absolute -top-4 -right-4 bg-signal text-paper rounded-full w-11 h-11 flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95 transition-transform z-10"
+                    title="Gỡ ảnh"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isSubmitting}
+                  className="w-full sm:w-auto h-14 px-6 border border-dashed border-stone/80 hover:border-ink text-muted hover:text-ink font-mono text-xs uppercase tracking-widest flex items-center justify-center gap-3 transition-colors rounded-sm bg-stone/5 disabled:opacity-30"
+                >
+                  <Camera size={16} /> Đính kèm ảnh bằng chứng
+                </button>
+              )}
+            </div>
+          </Reveal>
+
+          {/* NÚT BẤM KÍCH HOẠT PHÁT SÓNG SỰ VỤ */}
+          <Reveal delay={0.4}>
+            <div className="pt-4 border-t border-stone/20 flex justify-end">
+              <button
+                type="submit"
+                disabled={isSubmitting || !content.trim()}
+                className="w-full sm:w-auto px-8 h-14 bg-ink text-paper dark:bg-paper dark:text-navy hover:opacity-90 font-mono text-xs uppercase tracking-widest flex items-center justify-center gap-3 transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-xl rounded-sm"
+              >
+                <Send size={14} className={isSubmitting ? "animate-ping" : ""} />
+                {/* 🛠️ CHUẨN HÓA GIAO DIỆN: Nút bấm mang ý nghĩa báo cáo trung lập */}
+                <span>{isSubmitting ? "Đang mã hóa dữ liệu mật..." : "Phát tín hiệu bảo mật"}</span>
+              </button>
+            </div>
+          </Reveal>
+
+        </form>
+
+      </div>
     </div>
   );
 }

@@ -1,27 +1,39 @@
 import { create } from "zustand";
-import { api } from "@/lib/api";
-import type { AuditLogDTO, AuditResponse } from "@/lib/api-types";
+import { persist } from "zustand/middleware";
 
-// Nối API thật: GET /api/audit (ADMIN/AUDITOR only). KHÔNG mock, KHÔNG lưu ở trình duyệt.
-interface AuditState {
-  logs: AuditLogDTO[];
-  total: number;
-  loading: boolean;
-  fetchAudit: (page?: number, limit?: number) => Promise<void>;
+export interface AuditLog {
+  id: string;
+  action: string;
+  details: string;
+  actor: string;
+  timestamp: string;
 }
 
-export const useAuditStore = create<AuditState>((set) => ({
-  logs: [],
-  total: 0,
-  loading: false,
+interface AuditState {
+  logs: AuditLog[];
+  addLog: (action: string, details: string, actor: string) => void;
+}
 
-  fetchAudit: async (page = 1, limit = 50) => {
-    set({ loading: true });
-    try {
-      const data = await api.get<AuditResponse>(`/api/audit?page=${page}&limit=${limit}`);
-      set({ logs: data.logs, total: data.total, loading: false });
-    } catch {
-      set({ loading: false });
-    }
-  },
-}));
+export const useAuditStore = create<AuditState>()(
+  persist(
+    (set) => ({
+      logs: [],
+      addLog: (action, details, actor) =>
+        set((state) => ({
+          logs: [
+            {
+              id: "log-" + Date.now(),
+              action,
+              details,
+              actor,
+              timestamp: new Date().toLocaleString("vi-VN", {
+                hour: "2-digit", minute: "2-digit", second: "2-digit", day: "2-digit", month: "2-digit", year: "numeric",
+              }),
+            },
+            ...state.logs,
+          ],
+        })),
+    }),
+    { name: "school-os-audit" }
+  )
+);

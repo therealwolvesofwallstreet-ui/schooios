@@ -1,35 +1,50 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Fraunces, Be_Vietnam_Pro } from "next/font/google";
+import type { Metadata, Viewport } from "next"; 
+import SmoothScrollProvider from "@/components/motion/SmoothScrollProvider";
+import WorldWrapper from "@/components/layout/WorldWrapper";
+import Navbar from "@/components/layout/Navbar";
+import AuthGuard from "@/components/layout/AuthGuard";
 import "./globals.css";
-import { AppShell } from "@/components/layout/AppShell";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+const fraunces = Fraunces({
+  subsets: ["vietnamese"],
+  weight: ["300", "400", "500"],
+  style: ["normal", "italic"],
+  variable: "--font-fraunces",
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+const beVietnamPro = Be_Vietnam_Pro({
+  subsets: ["vietnamese"],
+  weight: ["400", "500", "600", "700", "900"],
+  variable: "--font-be-vietnam",
+  display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: "SchooIOS",
-  description: "Hệ thống vận hành sự vụ học đường số",
+// 🛠️ ĐÃ CỨU NGUY: Giữ nguyên viewport và metadata chạy ở môi trường Server Component
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export const metadata: Metadata = {
+  title: "SchoolOS - Hệ thống vận hành sự vụ số",
+  description: "Bảng tin, điều phối và xử lý sự cố học đường thế hệ mới",
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang="vi"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full">
-        <AppShell>{children}</AppShell>
+    <html lang="vi" className={`${fraunces.variable} ${beVietnamPro.variable} antialiased`}>
+      <body className="font-body selection:bg-cyan selection:text-ink">
+        <SmoothScrollProvider>
+          <WorldWrapper>
+            <AuthGuard>
+              <Navbar /> 
+              {children}
+            </AuthGuard>
+          </WorldWrapper>
+        </SmoothScrollProvider>
       </body>
     </html>
   );

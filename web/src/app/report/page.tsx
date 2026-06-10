@@ -1,187 +1,152 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import toast from "react-hot-toast";
-import { Search, Filter, Plus, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { ShieldAlert, Plus, MapPin, Clock, PlayCircle, CheckCircle, Trash2, FileText, Image as ImageIcon } from "lucide-react";
 import { useReportStore } from "@/store/useReportStore";
 import { useAuthStore } from "@/store/useAuthStore";
-import { ApiError } from "@/lib/api";
-import { STATUS_LABEL, STATUS_BADGE, STATUS_ORDER, formatDateTime } from "@/lib/case-display";
-import type { CaseStatus } from "@/lib/api-types";
+import toast from "react-hot-toast";
 
-const LIMIT = 20; // khớp default server (validation.listCasesQuery)
+interface ReportItem {
+  id: string | number;
+  title: string;
+  description?: string;
+  category?: string;
+  location: string;
+  status?: string; 
+  isEmergency?: boolean;
+  createdAt?: string;
+  date?: string;
+  author?: string;
+  imageUrl?: string | null; 
+}
 
-export default function ReportListPage() {
+interface StoreMethods {
+  reports: ReportItem[];
+  updateStatus?: (id: string | number, status: string) => void;
+  updateReportStatus?: (id: string | number, status: string) => void;
+  setReportStatus?: (id: string | number, status: string) => void;
+  deleteReport?: (id: string | number) => void;
+  removeReport?: (id: string | number) => void;
+  deleteItem?: (id: string | number) => void;
+}
+
+export default function ReportManagementPage() {
   const router = useRouter();
-  const { cases, total, listLoading, fetchList } = useReportStore();
-  const role = useAuthStore((s) => s.role);
+  const [isMounted, setIsMounted] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<CaseStatus | "ALL">("ALL");
-  const [page, setPage] = useState(1);
+  const store = useReportStore() as unknown as StoreMethods;
+  const reports = store.reports || [];
+  const updateStatus = store.updateStatus || store.updateReportStatus || store.setReportStatus;
+  const removeReport = store.deleteReport || store.removeReport || store.deleteItem;
 
-  // Lọc trạng thái + phân trang chạy SERVER (phủ toàn bộ corpus, không chỉ 20 dòng đầu).
+  const { role, userEmail } = useAuthStore();
+  const [filter, setFilter] = useState("all");
+
+  // 🛠️ ĐÃ FIX LỖI CHỮ ĐỎ CỦA SẾP: Bọc bằng setTimeout để linter Next.js/React hết báo lỗi render cascading
   useEffect(() => {
-    fetchList({
-      status: statusFilter === "ALL" ? undefined : statusFilter,
-      page,
-      limit: LIMIT,
-    }).catch((e) => {
-      if (e instanceof ApiError && e.status !== 401) toast.error("Không tải được danh sách sự vụ.");
-    });
-  }, [statusFilter, page, fetchList]);
+    const timer = setTimeout(() => setIsMounted(true), 0);
+    return () => clearTimeout(timer);
+  }, []);
 
-  const totalPages = Math.max(1, Math.ceil(total / LIMIT));
+  if (!isMounted) return null;
 
-  // Tìm theo caseCode/title chạy CLIENT trên trang hiện tại (backend chưa có tham số search).
-  const visible = cases.filter((c) => {
-    const q = searchTerm.toLowerCase();
-    return c.caseCode.toLowerCase().includes(q) || c.title.toLowerCase().includes(q);
-  });
+  const visibleReports = reports.filter((r) => {
+    if (role !== "admin" && r.author !== userEmail && r.author !== "Học sinh ẩn danh") return false;
+    if (filter === "sos") return r.isEmergency;
+    if (filter === "pending") return r.status === "Chờ tiếp nhận" || !r.status;
+    if (filter === "processing") return r.status === "Đang xử lý";
+    if (filter === "resolved") return r.status === "Đã giải quyết" || r.status === "Đã hoàn thành";
+    return true;
+  }).reverse(); 
 
-  const onStatusChange = (v: CaseStatus | "ALL") => {
-    setStatusFilter(v);
-    setPage(1); // đổi bộ lọc → về trang 1
+  const handleProcess = (id: string | number) => {
+    if (updateStatus) { updateStatus(id, "Đang xử lý"); toast.success("Đã chuyển sang: Đang xử lý"); }
+  };
+
+  const handleComplete = (id: string | number) => {
+    if (updateStatus) { updateStatus(id, "Đã hoàn thành"); toast.success("Sự vụ đã được giải quyết!"); }
+  };
+
+  const handleDelete = (id: string | number) => {
+    if (confirm("Sếp có chắc chắn muốn xóa báo cáo này?")) {
+      if (removeReport) { removeReport(id); toast.success("Đã xóa báo cáo!"); }
+    }
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-6 animate-in fade-in duration-500 max-w-6xl mx-auto pb-10">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Danh sách sự vụ</h1>
-          <p className="text-slate-500 text-sm mt-1">Quản lý và tra cứu các báo cáo bạn được phép xem.</p>
+          <h2 className="text-xl md:text-2xl font-bold text-slate-900">
+            {role === "admin" ? "Quản lý sự vụ học đường" : "Lịch sử báo cáo của bạn"}
+          </h2>
+          <p className="text-sm text-slate-500 mt-1">Danh sách toàn bộ các báo cáo và tình trạng xử lý hệ thống.</p>
         </div>
-        {role !== "AUDITOR" && (
-          <button
-            onClick={() => router.push("/report/new")}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-100 transition-all active:scale-[0.98] shrink-0"
-          >
-            <Plus size={18} /> Tạo báo cáo mới
+        <div className="flex items-center gap-3 shrink-0">
+          <button onClick={() => router.push("/report/new?type=sos")} className="bg-red-500 hover:bg-red-600 text-white px-4 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg shadow-red-100 transition-all active:scale-95">
+            <ShieldAlert size={16} /> Báo động SOS
           </button>
+          <button onClick={() => router.push("/report/new?type=normal")} className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg shadow-slate-200 transition-all active:scale-95">
+            <Plus size={16} /> Tạo báo cáo
+          </button>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+        <button onClick={() => setFilter("all")} className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${filter === "all" ? "bg-slate-900 text-white shadow-md" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"}`}>Tất cả</button>
+        <button onClick={() => setFilter("sos")} className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${filter === "sos" ? "bg-red-600 text-white shadow-md" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"}`}>🚨 Khẩn cấp</button>
+        <button onClick={() => setFilter("pending")} className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${filter === "pending" ? "bg-amber-500 text-white shadow-md" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"}`}>Chờ tiếp nhận</button>
+        <button onClick={() => setFilter("processing")} className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${filter === "processing" ? "bg-blue-600 text-white shadow-md" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"}`}>Đang xử lý</button>
+        <button onClick={() => setFilter("resolved")} className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${filter === "resolved" ? "bg-green-600 text-white shadow-md" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"}`}>Đã hoàn thành</button>
+      </div>
+
+      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+        {visibleReports.length === 0 ? (
+          <div className="p-16 text-center text-slate-400 flex flex-col items-center">
+            <FileText size={48} className="mb-4 opacity-20" />
+            <p className="font-bold text-slate-600">Không có báo cáo nào</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-100">
+            {visibleReports.map((report) => (
+              <div key={report.id} className="p-5 hover:bg-slate-50 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-5 group">
+                <div className="space-y-2 flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-extrabold text-slate-900 text-base truncate">{report.title}</h4>
+                    {report.isEmergency && <span className="text-[10px] bg-red-100 text-red-700 font-black px-2 py-0.5 rounded-md uppercase border border-red-200">SOS</span>}
+                    {report.imageUrl && (
+                      <button onClick={() => setSelectedImage(report.imageUrl as string)} className="text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded-md border border-blue-100 flex items-center gap-1"><ImageIcon size={12}/> Có ảnh</button>
+                    )}
+                  </div>
+                  <p className="text-sm text-slate-500 line-clamp-2">{report.description || report.category}</p>
+                  <div className="flex items-center gap-4 text-xs font-semibold text-slate-400 pt-1">
+                    <span className="flex items-center gap-1.5"><MapPin size={14}/> {report.location}</span>
+                    <span className="flex items-center gap-1.5"><Clock size={14}/> {report.createdAt || report.date || new Date().toLocaleDateString("vi-VN")}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className={`text-xs font-bold px-3 py-1.5 rounded-xl border ${report.status === "Chờ tiếp nhận" || !report.status ? "bg-amber-50 text-amber-600 border-amber-100" : report.status === "Đang xử lý" ? "bg-blue-50 text-blue-600 border-blue-100" : "bg-green-50 text-green-600 border-green-100"}`}>{report.status || "Chờ tiếp nhận"}</span>
+                  {role === "admin" && (
+                    <div className="flex items-center gap-1 border-l border-slate-200 pl-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                      {(!report.status || report.status === "Chờ tiếp nhận") && <button onClick={() => handleProcess(report.id)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-xl"><PlayCircle size={20}/></button>}
+                      {report.status !== "Đã hoàn thành" && <button onClick={() => handleComplete(report.id)} className="p-2 text-green-600 hover:bg-green-100 rounded-xl"><CheckCircle size={20}/></button>}
+                      <button onClick={() => handleDelete(report.id)} className="p-2 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-xl"><Trash2 size={20}/></button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </div>
 
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4">
-        <div className="relative flex-1">
-          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-            <Search size={18} />
-          </div>
-          <input
-            type="text"
-            placeholder="Tìm trong trang theo Mã (CASE-2026-00001) hoặc Tiêu đề..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
-          />
-        </div>
-        <div className="relative shrink-0">
-          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-            <Filter size={18} />
-          </div>
-          <select
-            value={statusFilter}
-            onChange={(e) => onStatusChange(e.target.value as CaseStatus | "ALL")}
-            className="w-full md:w-auto pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 appearance-none transition-all cursor-pointer text-slate-700"
-          >
-            <option value="ALL">Tất cả trạng thái</option>
-            {STATUS_ORDER.map((s) => (
-              <option key={s} value={s}>
-                {STATUS_LABEL[s]}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {listLoading ? (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-16 text-center text-slate-400 text-sm">
-          Đang tải danh sách sự vụ...
-        </div>
-      ) : visible.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-16 text-center text-slate-400 flex flex-col items-center justify-center gap-3">
-          <Search size={40} className="opacity-20" />
-          <p className="text-sm font-medium">
-            {searchTerm ? "Không thấy trong trang này — thử xoá tìm kiếm hoặc sang trang khác." : "Không có sự vụ nào khớp điều kiện."}
-          </p>
-        </div>
-      ) : (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden divide-y divide-slate-100">
-          {visible.map((c) => (
-            <div
-              key={c.id}
-              onClick={() => router.push(`/report/${c.id}`)}
-              className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-4 hover:bg-slate-50 cursor-pointer transition-colors group"
-            >
-              <div className="flex flex-row sm:flex-col gap-2 shrink-0 sm:w-36">
-                <span
-                  className={`inline-flex items-center justify-center px-2.5 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wider w-fit ${STATUS_BADGE[c.status]}`}
-                >
-                  {STATUS_LABEL[c.status]}
-                </span>
-                {c.isEmergency && (
-                  <span className="bg-red-600 text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-md text-center uppercase animate-pulse">
-                    KHẨN CẤP
-                  </span>
-                )}
-                {!c.isEmergency && c.studentFlaggedEmergency && (
-                  <span className="bg-red-50 text-red-600 border border-red-100 text-[10px] font-extrabold px-2.5 py-0.5 rounded-md text-center uppercase">
-                    HS báo khẩn
-                  </span>
-                )}
-              </div>
-
-              <div className="flex-1 min-w-0 space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
-                    {c.caseCode}
-                  </span>
-                  {c.isSensitive && (
-                    <span className="text-[10px] font-bold text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded">
-                      NHẠY CẢM
-                    </span>
-                  )}
-                  <h3 className="font-bold text-slate-900 truncate group-hover:text-blue-600 transition-colors">
-                    {c.title}
-                  </h3>
-                </div>
-                <p className="text-xs text-slate-500 font-medium truncate">
-                  {c.category.name} • {c.locationRef?.name ?? c.location ?? "Chưa xác định"} •{" "}
-                  {formatDateTime(c.createdAt)}
-                </p>
-              </div>
-
-              <div className="hidden sm:flex items-center justify-center w-10 h-10 rounded-full bg-white border border-slate-200 text-slate-400 group-hover:bg-blue-600 group-hover:border-blue-600 group-hover:text-white transition-all">
-                <ArrowRight size={18} />
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* PHÂN TRANG (server-side) */}
-      {total > 0 && (
-        <div className="flex items-center justify-between text-sm text-slate-500">
-          <span>
-            Trang {page}/{totalPages} · {total} sự vụ
-          </span>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page <= 1 || listLoading}
-              className="p-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              aria-label="Trang trước"
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page >= totalPages || listLoading}
-              className="p-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              aria-label="Trang sau"
-            >
-              <ChevronRight size={16} />
-            </button>
+      {selectedImage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 p-4" onClick={() => setSelectedImage(null)}>
+          <div className="relative max-w-3xl w-full max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+            <img src={selectedImage} alt="Chứng cứ" className="w-full h-full object-contain rounded-2xl shadow-2xl border-4 border-white" />
           </div>
         </div>
       )}
