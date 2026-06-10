@@ -127,6 +127,9 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
   }
 
   const c = current;
+  // STAFF chỉ tự nhận khi NEW/TRIAGED (server enforce 403/409); ADMIN tự nhận bất kỳ lúc nào.
+  const canSelfAssign =
+    role === "ADMIN" || (role === "STAFF" && (c.status === "NEW" || c.status === "TRIAGED"));
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
@@ -262,7 +265,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
                   <div className="text-sm font-semibold text-green-700 bg-green-50 rounded-xl py-2.5 px-4 text-center">
                     Bạn đang xử lý vụ này
                   </div>
-                ) : (
+                ) : canSelfAssign ? (
                   <button
                     onClick={doAssignSelf}
                     disabled={acting}
@@ -270,6 +273,10 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
                   >
                     Nhận xử lý (giao cho tôi)
                   </button>
+                ) : (
+                  <p className="text-xs text-slate-400">
+                    {c.assignedTo ? `Đang giao: ${c.assignedTo.name}` : "Không thể tự nhận ở trạng thái hiện tại."}
+                  </p>
                 )}
                 {/* TODO(assign-to-other): ADMIN giao cho người khác cần endpoint danh sách cán bộ (ngoài contract hiện tại). */}
               </div>

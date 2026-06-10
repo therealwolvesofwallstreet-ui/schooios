@@ -12,7 +12,7 @@ interface NotificationState {
   markAllAsRead: () => Promise<void>;
 }
 
-export const useNotificationStore = create<NotificationState>((set) => ({
+export const useNotificationStore = create<NotificationState>((set, get) => ({
   notifications: [],
   unreadCount: 0,
   loading: false,
@@ -31,9 +31,11 @@ export const useNotificationStore = create<NotificationState>((set) => ({
 
   markAllAsRead: async () => {
     await api.patch("/api/notifications/read-all");
+    // Optimistic cho trang hiện tại + refetch để đồng bộ TOÀN BỘ (kể cả item ngoài trang 1).
     set((s) => ({
       notifications: s.notifications.map((n) => ({ ...n, isRead: true })),
       unreadCount: 0,
     }));
+    await get().fetchNotifications().catch(() => {});
   },
 }));

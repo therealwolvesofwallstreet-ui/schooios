@@ -64,7 +64,14 @@ export async function proxy(request: NextRequest) {
   return NextResponse.next();
 }
 
-// Gác cả trang lẫn /api; loại trừ Next internals + asset có đuôi file (chứa dấu chấm).
+// Gác cả trang lẫn /api. Tách 2 matcher:
+//  1) "/api/:path*" — gác TOÀN BỘ API (parity byte-for-byte với gác cũ, kể cả path /api chứa dấu
+//     chấm như tên file/version → KHÔNG bị bỏ gác).
+//  2) trang — loại _next, favicon, và CHỈ asset có ĐUÔI file ở CUỐI path (.*\.[^/]+$), không loại
+//     mọi path-có-dấu-chấm như trước.
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.).*)"],
+  matcher: [
+    "/api/:path*",
+    "/((?!api/|_next/static|_next/image|favicon\\.ico|.*\\.[^/]+$).*)",
+  ],
 };

@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import { Plus, ShieldAlert, FileText, Clock, Inbox, Timer } from "lucide-react";
 import { useReportStore } from "@/store/useReportStore";
 import { useAuthStore } from "@/store/useAuthStore";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
 import { STATUS_LABEL, STATUS_BADGE, formatDateTime } from "@/lib/case-display";
 import type { DashboardResponse } from "@/lib/api-types";
 
@@ -19,14 +20,22 @@ export default function HomePage() {
   const [dash, setDash] = useState<DashboardResponse | null>(null);
 
   useEffect(() => {
-    fetchList().catch(() => {});
+    fetchList().catch((e) => {
+      if (e instanceof ApiError && e.status !== 401) toast.error("Không tải được sự vụ, thử lại sau.");
+    });
   }, [fetchList]);
 
   // CHỈ ADMIN/AUDITOR gọi /api/dashboard (STUDENT/STAFF → 403, không gọi).
   // Render gate `canDashboard && dash` đảm bảo số liệu cũ không lộ cho role không đủ quyền.
   useEffect(() => {
     if (!canDashboard) return;
-    api.get<DashboardResponse>("/api/dashboard").then(setDash).catch(() => {});
+    api
+      .get<DashboardResponse>("/api/dashboard")
+      .then(setDash)
+      .catch((e) => {
+        if (e instanceof ApiError && e.status !== 401)
+          toast.error("Không tải được số liệu tổng quan.");
+      });
   }, [canDashboard]);
 
   return (

@@ -30,8 +30,13 @@ export default function AuditLogPage() {
     if (allowed) fetchAudit().catch(() => {});
   }, [allowed, fetchAudit]);
 
+  // Đang hydrate auth (role chưa biết) → loading, KHÔNG flash bảng audit rỗng.
+  if (role === null) {
+    return <div className="max-w-5xl mx-auto py-20 text-center text-slate-400 text-sm">Đang tải...</div>;
+  }
+
   // CHẶN BẢO MẬT: chỉ ADMIN/AUDITOR (đồng bộ với API 403).
-  if (role !== null && !allowed) {
+  if (!allowed) {
     return (
       <div className="max-w-2xl mx-auto text-center py-24 space-y-4">
         <div className="bg-red-50 p-4 rounded-full text-red-500 inline-block mb-2">

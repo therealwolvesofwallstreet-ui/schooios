@@ -9,6 +9,7 @@ import { requireUser, clientMeta } from "@/lib/auth";
 import { recordAudit } from "@/lib/audit";
 import { createCaseSchema, listCasesQuery } from "@/lib/validation";
 import { caseWhereForRole } from "@/lib/cases";
+import { classifyMutationError } from "@/lib/http-errors";
 import { AuditAction, CasePriority, CaseStatus } from "@/generated/prisma/client";
 import type { Prisma } from "@/generated/prisma/client";
 
@@ -60,6 +61,14 @@ export async function POST(request: NextRequest) {
         createdById: user.id,
         statusHistory: { create: [{ changedById: user.id, toStatus: CaseStatus.NEW }] },
       },
+      // Trả case ĐÃ enrich (list-item shape) → response 201 khớp CaseListItem (FE không phải refetch
+      // để có category/createdBy; bỏ cast không an toàn ở store).
+      include: {
+        category: { select: { id: true, name: true } },
+        locationRef: { select: { id: true, code: true, name: true } },
+        createdBy: { select: { id: true, name: true, role: true } },
+        assignedTo: { select: { id: true, name: true } },
+      },
     });
 
     // Audit fail-closed: ghi CREATE trước khi trả 201; lỗi audit → 500 (đồng bộ login P3).
@@ -85,6 +94,13 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ case: created }, { status: 201 });
   } catch (err) {
+    // DB bận/timeout → 503 + Retry-After (parity với status/assign/emergency; FE đã có nhánh 503).
+    const mapped = classifyMutationError(err);
+    if (mapped) {
+      const res = NextResponse.json({ error: mapped.error }, { status: mapped.status });
+      if (mapped.status === 503) res.headers.set("Retry-After", "1");
+      return res;
+    }
     console.error("cases POST error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }

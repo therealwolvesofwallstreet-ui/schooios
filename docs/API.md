@@ -151,15 +151,17 @@ này TRƯỚC): **tên field** trong shape, **giá trị enum** (chuỗi), **ng�
 
 **Case (mutation response, assign/status/emergency)** — scalars đầy đủ + `category`, `createdBy{id,name,role}`, `assignedTo{id,name,role}|null` (gọn hơn detail).
 
+**Case (POST create, 201)** — trả CÙNG shape **list item** (đã enrich `category{id,name}`, `locationRef{id,code,name}|null`, `createdBy{id,name,role}`, `assignedTo|null`) → FE không cần refetch để hiển thị ngay.
+
 **Comment** — `{ id, caseId, authorId, body, isInternal, createdAt, author{id,name,role} }`.
 
 **Notification** — `{ id, userId, caseId|null, type, message, isRead, readAt|null, createdAt, case{id,caseCode}|null }`.
 
 ---
 
-## Frontend integration notes / landmine cho phase merge (CHƯA làm — để phase sau)
+## Frontend integration notes / landmine (ĐÃ tích hợp M0–M5 — mô tả hành vi HIỆN TẠI)
 
-1. **Proxy chỉ gác `/api/*`** (`config.matcher`). Khi thêm trang FE: quyết định gác trang (redirect chưa-đăng-nhập → `/login`). Cần **tạo trang `/login`** trước, nếu không redirect sẽ 404 (lý do P3 chưa bật).
+1. **Proxy gác CẢ `/api/*` LẪN trang** (`web/src/proxy.ts`, dual `config.matcher = ["/api/:path*", "/((?!api/|_next/...|...\\.[^/]+$).*)"]`). API: 401 JSON khi thiếu/sai token, 403 `MUST_CHANGE_PASSWORD` khi cần đổi MK. Trang: chưa-đăng-nhập → redirect `/login`; `mustChangePassword` → redirect `/change-password`; đã-đăng-nhập vào `/login` → `/`. Trang `/login` + `/change-password` **đã tồn tại**; chống redirect-loop bằng special-case 2 path này. FE **KHÔNG** tự dựng client-guard trùng lặp.
 2. **Luồng ép-đổi-mật-khẩu:** sau login nếu `user.mustChangePassword=true`, proxy chặn mọi `/api/*` khác (403 `MUST_CHANGE_PASSWORD`) → FE phải route tới trang đổi MK ngay.
 3. **Auth state:** cookie httpOnly → FE không đọc JWT. Lấy user qua `GET /api/auth/me` (401 = chưa đăng nhập). Sau `login`/`change-password` cookie tự cập nhật; sau `logout` cookie bị xóa.
 4. **Xử lý lỗi đồng nhất:** viết 1 fetch-wrapper map status→hành vi theo bảng Error envelope (đặc biệt 401→login, 403/`MUST_CHANGE_PASSWORD`→đổi-MK, 409→reload+retry, 429/503→backoff theo `Retry-After`).

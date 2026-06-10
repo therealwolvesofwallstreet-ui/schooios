@@ -42,8 +42,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   const { userEmail, role, status, logout, hydrate } = useAuthStore();
-  const { notifications, fetchNotifications } = useNotificationStore();
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
+  // unreadCount lấy TỪ server (nguồn sự thật) — KHÔNG đếm từ trang đã tải (tránh undercount khi >limit).
+  const { unreadCount, fetchNotifications } = useNotificationStore();
+  const badgeLabel = unreadCount > 99 ? "99+" : String(unreadCount);
 
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
@@ -118,7 +119,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   <span className="flex-1">{item.name}</span>
                   {item.name === "Thông báo" && unreadCount > 0 && (
                     <span className="bg-red-500 text-white text-[10px] font-extrabold w-5 h-5 rounded-full flex items-center justify-center shadow-sm shadow-red-200 animate-pulse">
-                      {unreadCount}
+                      {badgeLabel}
                     </span>
                   )}
                 </Link>
@@ -178,7 +179,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <item.icon size={20} />
                 {item.name === "Thông báo" && unreadCount > 0 && (
                   <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center shadow-sm animate-pulse">
-                    {unreadCount}
+                    {badgeLabel}
                   </span>
                 )}
               </div>

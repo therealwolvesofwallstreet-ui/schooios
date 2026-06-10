@@ -29,7 +29,11 @@ export default function LoginPage() {
     } catch (err) {
       if (err instanceof ApiError) {
         if (err.status === 429)
-          toast.error("Quá nhiều lần thử. Vui lòng đợi một lát rồi thử lại.");
+          toast.error(
+            err.retryAfter
+              ? `Quá nhiều lần thử. Vui lòng đợi ${err.retryAfter}s rồi thử lại.`
+              : "Quá nhiều lần thử. Vui lòng đợi một lát rồi thử lại.",
+          );
         else if (err.status === 401) toast.error("Sai tài khoản hoặc mật khẩu.");
         else if (err.status === 403) toast.error("Tài khoản đã bị vô hiệu hoá.");
         else toast.error("Đăng nhập thất bại. Vui lòng thử lại.");

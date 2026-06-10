@@ -49,7 +49,11 @@ export default function ChangePasswordPage() {
         } else if (err.status === 400) {
           toast.error("Mật khẩu không hợp lệ (tối thiểu 6 ký tự).");
         } else if (err.status === 429) {
-          toast.error("Quá nhiều lần thử. Vui lòng đợi một lát.");
+          toast.error(
+            err.retryAfter
+              ? `Quá nhiều lần thử. Vui lòng đợi ${err.retryAfter}s.`
+              : "Quá nhiều lần thử. Vui lòng đợi một lát.",
+          );
         } else {
           toast.error("Đổi mật khẩu thất bại. Vui lòng thử lại.");
         }

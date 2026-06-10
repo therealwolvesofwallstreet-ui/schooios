@@ -3,34 +3,47 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { Search, Filter, Plus, ArrowRight } from "lucide-react";
+import { Search, Filter, Plus, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { useReportStore } from "@/store/useReportStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { ApiError } from "@/lib/api";
 import { STATUS_LABEL, STATUS_BADGE, STATUS_ORDER, formatDateTime } from "@/lib/case-display";
 import type { CaseStatus } from "@/lib/api-types";
 
+const LIMIT = 20; // khớp default server (validation.listCasesQuery)
+
 export default function ReportListPage() {
   const router = useRouter();
-  const { cases, listLoading, fetchList } = useReportStore();
+  const { cases, total, listLoading, fetchList } = useReportStore();
   const role = useAuthStore((s) => s.role);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<CaseStatus | "ALL">("ALL");
+  const [page, setPage] = useState(1);
 
+  // Lọc trạng thái + phân trang chạy SERVER (phủ toàn bộ corpus, không chỉ 20 dòng đầu).
   useEffect(() => {
-    fetchList().catch((e) => {
+    fetchList({
+      status: statusFilter === "ALL" ? undefined : statusFilter,
+      page,
+      limit: LIMIT,
+    }).catch((e) => {
       if (e instanceof ApiError && e.status !== 401) toast.error("Không tải được danh sách sự vụ.");
     });
-  }, [fetchList]);
+  }, [statusFilter, page, fetchList]);
 
-  const filtered = cases.filter((c) => {
+  const totalPages = Math.max(1, Math.ceil(total / LIMIT));
+
+  // Tìm theo caseCode/title chạy CLIENT trên trang hiện tại (backend chưa có tham số search).
+  const visible = cases.filter((c) => {
     const q = searchTerm.toLowerCase();
-    const matchSearch =
-      c.caseCode.toLowerCase().includes(q) || c.title.toLowerCase().includes(q);
-    const matchStatus = statusFilter === "ALL" || c.status === statusFilter;
-    return matchSearch && matchStatus;
+    return c.caseCode.toLowerCase().includes(q) || c.title.toLowerCase().includes(q);
   });
+
+  const onStatusChange = (v: CaseStatus | "ALL") => {
+    setStatusFilter(v);
+    setPage(1); // đổi bộ lọc → về trang 1
+  };
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
@@ -56,7 +69,7 @@ export default function ReportListPage() {
           </div>
           <input
             type="text"
-            placeholder="Tìm theo Mã sự vụ (VD: CASE-2026-00001) hoặc Tiêu đề..."
+            placeholder="Tìm trong trang theo Mã (CASE-2026-00001) hoặc Tiêu đề..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
@@ -68,7 +81,7 @@ export default function ReportListPage() {
           </div>
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as CaseStatus | "ALL")}
+            onChange={(e) => onStatusChange(e.target.value as CaseStatus | "ALL")}
             className="w-full md:w-auto pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 appearance-none transition-all cursor-pointer text-slate-700"
           >
             <option value="ALL">Tất cả trạng thái</option>
@@ -85,14 +98,16 @@ export default function ReportListPage() {
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-16 text-center text-slate-400 text-sm">
           Đang tải danh sách sự vụ...
         </div>
-      ) : filtered.length === 0 ? (
+      ) : visible.length === 0 ? (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-16 text-center text-slate-400 flex flex-col items-center justify-center gap-3">
           <Search size={40} className="opacity-20" />
-          <p className="text-sm font-medium">Không có sự vụ nào khớp điều kiện.</p>
+          <p className="text-sm font-medium">
+            {searchTerm ? "Không thấy trong trang này — thử xoá tìm kiếm hoặc sang trang khác." : "Không có sự vụ nào khớp điều kiện."}
+          </p>
         </div>
       ) : (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden divide-y divide-slate-100">
-          {filtered.map((c) => (
+          {visible.map((c) => (
             <div
               key={c.id}
               onClick={() => router.push(`/report/${c.id}`)}
@@ -141,6 +156,33 @@ export default function ReportListPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* PHÂN TRANG (server-side) */}
+      {total > 0 && (
+        <div className="flex items-center justify-between text-sm text-slate-500">
+          <span>
+            Trang {page}/{totalPages} · {total} sự vụ
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1 || listLoading}
+              className="p-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              aria-label="Trang trước"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page >= totalPages || listLoading}
+              className="p-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              aria-label="Trang sau"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
         </div>
       )}
     </div>
