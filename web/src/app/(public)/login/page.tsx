@@ -3,6 +3,9 @@
 // LOGIN — split biên tập (AuthSurface): trái = một dòng serif + 1 dấu signal thở; phải = form
 // gạch-chân. Tâm điểm = nút đỏ "Bước vào" DUY NHẤT. Lỗi = dòng mono ink-dim, KHÔNG đỏ
 // (đỏ chỉ dành cho hành động). Auth bằng cookie httpOnly (api credentials:include) — KHÔNG đọc JWT.
+// Hydration gate: nút disabled tới khi mounted → chặn submit GET-tự-nhiên trước hydrate (rò mật khẩu
+// lên URL). 429: tự mở lại sau Retry-After. Lỗi cũ tự xoá khi user gõ lại (trừ 429 — giữ cooldown).
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -12,6 +15,8 @@ import { Input } from "@/components/ui/Input";
 import { SignalDot } from "@/components/ui/SignalDot";
 import { useLogin } from "@/hooks/useLogin";
 import type { ApiError } from "@/lib/api";
+
+const MSG_ID = "login-msg";
 
 // Mirror hợp đồng login (lib/validation.loginSchema) — inline để giữ bundle (public) nhẹ,
 // KHÔNG kéo @/generated/prisma vào client như khi import @/lib/validation.
@@ -32,16 +37,33 @@ function authMessage(err: ApiError | null): string | null {
 }
 
 export default function LoginPage() {
-  const { login, isPending, error } = useLogin();
+  const { login, isPending, error, clearError } = useLogin();
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<FormValues>({ resolver: zodResolver(schema) });
 
+  // Hydration gate: SSR render nút disabled → trước khi JS gắn onSubmit, click/Enter KHÔNG thể
+  // submit GET-tự-nhiên (vốn đẩy identifier+password lên URL). Sau mount → mở nút.
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
+
+  // 429: tự mở lại nút sau Retry-After (không còn deadlock cần reload).
+  useEffect(() => {
+    if (error?.status !== 429) return;
+    const secs = error.retryAfter && error.retryAfter > 0 ? error.retryAfter : 30;
+    const t = setTimeout(() => clearError(), secs * 1000);
+    return () => clearTimeout(t);
+  }, [error, clearError]);
+
   const rateLimited = error?.status === 429;
   // Một dòng thông báo dịu: ưu tiên lỗi server, rồi tới lỗi field (đều mono, ink-dim).
   const message = authMessage(error) ?? errors.identifier?.message ?? errors.password?.message ?? null;
+  const describedBy = message ? MSG_ID : undefined;
+  const invalid = message ? true : undefined;
 
   return (
     <AuthSurface
@@ -61,6 +83,10 @@ export default function LoginPage() {
     >
       <form
         onSubmit={handleSubmit((v) => login(v))}
+        // Gõ lại → xoá thông báo lỗi cũ (giữ 429 để không huỷ cooldown).
+        onInput={() => {
+          if (error && error.status !== 429) clearError();
+        }}
         aria-busy={isPending}
         className="flex flex-col gap-7"
         noValidate
@@ -69,21 +95,25 @@ export default function LoginPage() {
           label="Số báo danh / Email"
           autoComplete="username"
           autoFocus
+          aria-describedby={describedBy}
+          aria-invalid={invalid}
           {...register("identifier")}
         />
         <Input
           label="Mật khẩu"
           type="password"
           autoComplete="current-password"
+          aria-describedby={describedBy}
+          aria-invalid={invalid}
           {...register("password")}
         />
 
         <div className="mt-1 flex flex-col gap-3">
-          <Button type="submit" disabled={isPending || rateLimited} className="w-full">
+          <Button type="submit" disabled={!hydrated || isPending || rateLimited} className="w-full">
             {isPending ? "Đang vào…" : "Bước vào"}
           </Button>
           {message && (
-            <p role="alert" className="text-ink-3 font-mono text-xs">
+            <p id={MSG_ID} role="alert" className="text-ink-3 font-mono text-xs">
               {message}
             </p>
           )}
