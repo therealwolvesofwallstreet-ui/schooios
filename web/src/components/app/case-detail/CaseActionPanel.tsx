@@ -6,7 +6,7 @@
 // là khoảnh khắc signal DUY NHẤT ở trạng thái mở modal. Mutation lo 409 (reload-trước-retry)/toast.
 // Assign = self-assign: assignedToId = chính mình (hợp đồng đóng băng không có endpoint liệt kê user;
 // ADMIN-giao-người-khác = residual cần GET /api/users).
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useSession } from "@/hooks/useSession";
 import { useWorkflowTransitions } from "@/hooks/useWorkflowTransitions";
 import { useChangeStatus, useAssignCase, useFlagEmergency } from "@/hooks/useCaseActions";
@@ -35,6 +35,9 @@ export function CaseActionPanel({ detail }: { detail: CaseDetail }) {
   const [action, setAction] = useState<PendingAction | null>(null);
   const [reason, setReason] = useState("");
   const pending = changeStatus.isPending || assign.isPending || flagEmergency.isPending;
+  // Khoá ĐỒNG BỘ chống double-click "Xác nhận" (disabled={pending} là state async, chưa kịp flush) →
+  // tránh PATCH lần 2 (status: 409 stale-updatedAt + toast "đã tải lại" nhiễu; assign/emergency no-op).
+  const inFlight = useRef(false);
 
   // 0 hành động → KHÔNG render (AUDITOR/STUDENT, hoặc case CLOSED của STAFF…).
   if (nextStatuses.length === 0 && !showAssign && !canSetEmergency) return null;
@@ -49,7 +52,8 @@ export function CaseActionPanel({ detail }: { detail: CaseDetail }) {
   }
 
   async function confirm() {
-    if (!action) return;
+    if (!action || inFlight.current) return;
+    inFlight.current = true;
     try {
       if (action.type === "status") {
         await changeStatus.mutateAsync({
@@ -69,6 +73,7 @@ export function CaseActionPanel({ detail }: { detail: CaseDetail }) {
       // useOptimisticMutation đã xử lý 409 (reload hồ sơ)/403/429/503/… → chỉ cần đóng modal,
       // user thao tác lại trên bản đã tải mới.
     } finally {
+      inFlight.current = false;
       setAction(null);
     }
   }

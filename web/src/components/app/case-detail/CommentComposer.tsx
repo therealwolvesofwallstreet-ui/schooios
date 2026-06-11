@@ -3,7 +3,7 @@
 // Soạn bình luận (POST /comments). Quyền: comment:public (STUDENT/STAFF/ADMIN) → render; AUDITOR
 // (!comment:public) → null. Toggle "NỘI BỘ" CHỈ khi comment:internal (STAFF/ADMIN) — STUDENT không
 // thấy toggle & không gửi được isInternal. 400 → lỗi inline (KHÔNG toast); 409/429/503/403 → hook toast.
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { usePermissionView } from "@/hooks/usePermissionView";
 import { useCreateComment } from "@/hooks/useCreateComment";
 import { Textarea } from "@/components/ui/Textarea";
@@ -18,6 +18,9 @@ export function CommentComposer({ caseId }: { caseId: string }) {
   const [body, setBody] = useState("");
   const [isInternal, setIsInternal] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Khoá ĐỒNG BỘ chống double-submit: `disabled={submitting}` dựa trên mutation.isPending (state ASYNC)
+  // chưa flush kịp giữa 2 click đồng bộ → 2 POST → comment TRÙNG (POST không idempotent). Ref chặn ngay.
+  const inFlight = useRef(false);
 
   if (!can("comment:public")) return null; // AUDITOR chỉ lắng nghe
   const canInternal = can("comment:internal");
@@ -25,7 +28,8 @@ export function CommentComposer({ caseId }: { caseId: string }) {
 
   async function submit() {
     const trimmed = body.trim();
-    if (!trimmed) return;
+    if (!trimmed || inFlight.current) return;
+    inFlight.current = true;
     setError(null);
     try {
       await mutation.mutateAsync({
@@ -38,9 +42,10 @@ export function CommentComposer({ caseId }: { caseId: string }) {
       if (e instanceof ApiError && e.status === 400) {
         const b = e.body as { error?: string; details?: { message?: string }[] } | null;
         setError(b?.details?.[0]?.message ?? b?.error ?? "Nội dung chưa hợp lệ.");
-        return;
       }
       // 403/409/429/503/network → đã toast ở useOptimisticMutation.
+    } finally {
+      inFlight.current = false;
     }
   }
 
