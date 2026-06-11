@@ -9,7 +9,7 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { AuthSurface } from "@/components/auth/AuthSurface";
+import { ThresholdAuthSurface } from "@/components/auth/threshold/ThresholdAuthSurface";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { SignalDot } from "@/components/ui/SignalDot";
@@ -65,21 +65,20 @@ export default function LoginPage() {
   const invalid = message ? true : undefined;
 
   return (
-    <AuthSurface
-      aside={
-        <>
-          <div className="flex items-center gap-3">
-            <SignalDot tone="signal" size="lg" pulse />
-            <span className="text-ink-3 font-mono text-[11px] tracking-[0.18em] uppercase">
-              Đài Lặng
-            </span>
-          </div>
-          <h1 className="text-ink font-serif text-3xl leading-snug md:text-[2.5rem] md:leading-[1.15]">
-            Mỗi tiếng nói đều được lắng nghe, phân loại và theo dấu đến khi khép lại.
-          </h1>
-        </>
-      }
-    >
+    <ThresholdAuthSurface>
+      {/* Đầu thẻ TỐI GIẢN — wordmark + ink-field NỀN gánh khoảnh khắc; card chỉ là cổng vào.
+       * (KHÔNG nhồi manifesto vào thẻ — để hero immersive thở.) */}
+      <div className="mb-9 flex items-center gap-3">
+        <SignalDot tone="signal" size="md" pulse />
+        <span className="text-on-void-2 font-mono text-[11px] tracking-[0.22em] uppercase">
+          Bước vào lưu khố
+        </span>
+      </div>
+
+      {/*
+       * Lớp recolor cho dark scrim card (KHÔNG đổi logic/props của Input/Button — chỉ ghi đè màu qua
+       * descendant utility): label + input mực sáng on-void, gạch-chân hairline-void → focus sáng lên.
+       */}
       <form
         onSubmit={handleSubmit((v) => login(v))}
         // Gõ lại → xoá thông báo lỗi cũ (giữ 429 để không huỷ cooldown).
@@ -87,7 +86,7 @@ export default function LoginPage() {
           if (error && error.status !== 429) clearError();
         }}
         aria-busy={isPending}
-        className="flex flex-col gap-7"
+        className="flex flex-col gap-7 [&_input]:border-line-void [&_input]:text-on-void [&_input]:placeholder:text-on-void-3 [&_input:focus]:border-on-void [&_label]:text-on-void-2"
         noValidate
       >
         <Input
@@ -112,12 +111,12 @@ export default function LoginPage() {
             {isPending ? "Đang vào…" : "Bước vào"}
           </Button>
           {message && (
-            <p id={MSG_ID} role="alert" className="text-ink-3 font-mono text-xs">
+            <p id={MSG_ID} role="alert" className="text-on-void-2 font-mono text-xs">
               {message}
             </p>
           )}
         </div>
       </form>
-    </AuthSurface>
+    </ThresholdAuthSurface>
   );
 }
