@@ -35,7 +35,13 @@ hairline-first · permission = KHÔNG render · contract đóng băng. Mọi mà
     KHÔNG kéo `@/generated/prisma` vào bundle public) · hooks state-thuần (nhóm (public) không mount
     QueryClientProvider) · responsive 390/1280. KHÔNG schema/DB. **Verify**: tsc=0 · build=0 (login/change-password
     prerendered ○) · e2e `auth.spec` 2 pass (render + Zod client + no-crash) / 3 skip (login-flow cần E2E creds —
-    môi trường hiện tại không có; không fake PASS). Branch `f2-1-login`.
+    môi trường hiện tại không có; không fake PASS). **Audit đối kháng đa-agent (4 lens × skeptic-verify,
+    28 agent): 82/100, 0 critical/auth-bypass/PII-leak** — vá hardening (commit hardening): hydration-gate
+    (chặn rò credential qua native-GET trước hydrate) · 429 tự mở lại theo Retry-After (hết deadlock) ·
+    re-entrancy guard (chặn double-submit) · clear-error-on-edit · aria-describedby/aria-invalid.
+    **FROZEN — tag `f2-1-stable`; branch rollback `f2-1-login`.** Hoãn (sang phase sau): proxy↔landingForRole
+    chia helper role→path trước F2-4; change-password landing theo role (cần /me) ở F2-4; fixture
+    `E2E_FIRSTLOGIN_*` chạy luồng ép-đổi-MK trước F6; (tuỳ chọn) ESLint guard cấm toast/RQ trong (public).
   - [ ] F2-2: Create Report (+VOICE burst) — **CURRENT**
   - [ ] F2-3: Case Detail (Spine) — freeze layout+Spine+domain-hook sau màn này
   - [ ] F2-4: Dashboard role-aware (ADMIN/AUDITOR landing → `/dashboard`)
