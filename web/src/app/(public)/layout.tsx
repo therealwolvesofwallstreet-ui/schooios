@@ -1,9 +1,6 @@
-// Nhóm (public): nền cho login / change-password (KHÔNG sidebar, KHÔNG provider app).
-// Trang thật thuộc F2 — F1 chỉ khoá khung: giấy + canh giữa + nhẹ.
+// Nhóm (public): login / change-password (KHÔNG sidebar, KHÔNG provider app — giữ nhẹ, server-only).
+// Khung/bố cục/khoảng-thở do components/auth/AuthSurface lo (mỗi trang tự dựng split | cột hẹp);
+// layout này chỉ là lớp truyền qua tối giản.
 export default function PublicGroupLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="bg-paper flex min-h-screen items-center justify-center p-6">
-      <div className="w-full max-w-sm">{children}</div>
-    </div>
-  );
+  return <div className="bg-paper min-h-screen">{children}</div>;
 }

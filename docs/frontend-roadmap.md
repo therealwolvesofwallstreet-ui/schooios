@@ -28,6 +28,17 @@ hairline-first · permission = KHÔNG render · contract đóng băng. Mọi mà
 
 ### Core — **CURRENT**
 - [ ] F2: Login/Change-pw · Create Report (+VOICE burst) · Case Detail (Spine) · Dashboard role-aware
+  - [x] F2-1: Login + Change-password — split biên tập qua `components/auth/AuthSurface` (dùng chung 2 trang) ·
+    1 nút đỏ "Bước vào" DUY NHẤT · lỗi = dòng mono ink-dim (KHÔNG đỏ) · auth cookie httpOnly (KHÔNG đọc JWT) ·
+    login 200 → redirect (mustChangePassword → `/change-password`, còn lại `landingForRole` → `/`; "theo role"
+    sẵn khung, /dashboard ở F2-4) · 401/403-inactive/429(+Retry-After) dịu · Zod mirror inline (newPassword≥6,
+    KHÔNG kéo `@/generated/prisma` vào bundle public) · hooks state-thuần (nhóm (public) không mount
+    QueryClientProvider) · responsive 390/1280. KHÔNG schema/DB. **Verify**: tsc=0 · build=0 (login/change-password
+    prerendered ○) · e2e `auth.spec` 2 pass (render + Zod client + no-crash) / 3 skip (login-flow cần E2E creds —
+    môi trường hiện tại không có; không fake PASS). Branch `f2-1-login`.
+  - [ ] F2-2: Create Report (+VOICE burst) — **CURRENT**
+  - [ ] F2-3: Case Detail (Spine) — freeze layout+Spine+domain-hook sau màn này
+  - [ ] F2-4: Dashboard role-aware (ADMIN/AUDITOR landing → `/dashboard`)
 
 ### Vận hành
 - [ ] F3: Queue (signal gutter) · Emergency Lane · Audit · Notifications · Search(filter) · +backend search/attachment route
