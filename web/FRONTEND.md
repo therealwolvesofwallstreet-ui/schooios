@@ -54,6 +54,22 @@ Motion SSOT (luật chuyển động — stack/GSAP/R3F/Canvas/reduced-motion/bu
 4. RELEASE BURST — khi HS gửi report (VOICE): dấu đỏ lan → nối đúng người → mono Case ID.
 5. SERIF MOMENTS — Serif (Newsreader) chỉ ở khoảnh khắc con người (empty/milestone/lời HS/case-title).
 
+## Dashboard metric grammar (F2-4 — kế thừa cho "dashboard sống" F4)
+- **Số = đài-kỷ-niệm:** chỉ số tổng là số MONO LỚN (`font-mono tabular-nums`, ~text-4xl/5xl) + nhãn mono nhỏ
+  uppercase. KHÔNG donut/bar/line/pie — KHÔNG chart-junk. Quan hệ (theo trạng thái/ưu tiên/loại/nơi) =
+  **ledger hairline** (hàng + dot vai-trò + số mono phải), KHÔNG đồ thị.
+- **Signal HIẾM:** đỏ (`signal`/`emergency`) CHỈ cho dữ liệu KHẨN đang mở (emergencyOpen>0, CRITICAL). Số
+  bình thường = ink. Lỗi tải = ĐIỀM TĨNH (ink-dim, KHÔNG đỏ) — đỏ không bao giờ nghĩa "lỗi".
+- **First-paint stagger:** node danh sách/mini-spine vào theo `delay = Math.min(index*0.04, 0.4)`, ease-emerge;
+  GATE `useReducedMotion() ?? true` → reduced thì render TĨNH (no anim). Số/ledger không cần animate.
+- **Đọc đúng KEY DRIFT (đóng băng):** dashboard `byStatus`/`byPriority` = `_count`; `byCategory`/`byLocation` = `count`.
+  Đọc phòng thủ `?? []`/`?? 0` → thiếu mảng/field ra EmptyState ô đó, KHÔNG sập trang.
+- **Quyền = KHÔNG render:** AUDITOR (read-only) KHÔNG có affordance hành động (không nút mutation). `/dashboard`
+  CHỈ ADMIN/AUDITOR — STAFF/STUDENT dựng home từ `/cases`, 0 call `/dashboard` (cấu trúc: hook dashboard chỉ
+  sống trong nhánh AdminHome).
+- **PulseField = seam:** "mạch hệ thống" có `PulseFieldProps` + ngữ nghĩa ĐÓNG BĂNG; placeholder tĩnh (lưới
+  hairline + SignalDot ngủ), parent định kích thước, dynamic ssr:false. F4 thay RUỘT, GIỮ props + luật.
+
 ## CONTRACT — MUST NOT (docs/API.md đóng băng)
 - KHÔNG đổi tên field/enum/mã lỗi. KHÔNG enforce authz ở FE (server quyết; FE chỉ hiển thị theo role).
 - KHÔNG tự sinh id/caseCode. Create dùng `sensitive`/`emergency` (KHÔNG isSensitive/isEmergency).

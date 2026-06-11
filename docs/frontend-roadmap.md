@@ -26,8 +26,8 @@ hairline-first · permission = KHÔNG render · contract đóng băng. Mọi mà
   **FREEZE**: tokens + primitive contracts + status-theme/permission-table = HARD; AppShell *layout* = PROVISIONAL (chỉ
   role-nav contract + route-group khoá). Branch rollback `f1-foundation`.
 
-### Core — **CURRENT**
-- [ ] F2: Login/Change-pw · Create Report (+VOICE burst) · Case Detail (Spine) · Dashboard role-aware
+### Core
+- [x] F2: Login/Change-pw · Create Report (+VOICE burst) · Case Detail (Spine) · Dashboard role-aware
   - [x] F2-1: Login + Change-password — split biên tập qua `components/auth/AuthSurface` (dùng chung 2 trang) ·
     1 nút đỏ "Bước vào" DUY NHẤT · lỗi = dòng mono ink-dim (KHÔNG đỏ) · auth cookie httpOnly (KHÔNG đọc JWT) ·
     login 200 → redirect (mustChangePassword → `/change-password`, còn lại `landingForRole` → `/`; "theo role"
@@ -68,10 +68,22 @@ hairline-first · permission = KHÔNG render · contract đóng băng. Mọi mà
     (a) khử-trùng tuyệt đối khi user TỰ retry sau 503 cần **idempotency key phía server** (backend, không
     đổi được ở FE — hợp đồng đóng băng); (b) listener `webglcontextlost`→Canvas cho hỏng-WebGL-im-lặng.
     **⇒ F2.2 ĐÓNG BĂNG.** UNCERTAIN còn lại: GLSL high-tier chưa kiểm trên GPU thật (hỏng → degrade DOM, nghĩa nguyên).
-  - [ ] F2-3: Case Detail (Spine) — **CURRENT** — freeze layout+Spine+domain-hook sau màn này
-  - [ ] F2-4: Dashboard role-aware (ADMIN/AUDITOR landing → `/dashboard`)
+  - [x] F2-3: Case Detail (Spine) — server-shell→client-View · Spine stagger+reduced-motion · states ĐIỀM TĨNH
+    (DetailSkeleton/NotFoundState/ErrorState — F2-4 trích ra `components/app/states.tsx` để dùng chung, hành vi
+    bất biến). Commit `6603712`; freeze-tag `f2-3-stable` chờ adversarial audit (quy ước build→audit→freeze+tag).
+  - [x] F2-4: Dashboard role-aware (**BASELINE**) — server-shell `(app)/page.tsx`→`HomeView` branch theo role
+    (§1.6 fetch-boundary): **AdminHome** (ADMIN/AUDITOR; FILE DUY NHẤT import `useDashboardMetrics` ⇒ STAFF/STUDENT
+    **0 call /dashboard** về mặt CẤU TRÚC) · **StaffHome** 2 bucket chia client-side trên union /cases (Vụ của tôi =
+    assignedTo=me / Đang chờ nhận = NEW·TRIAGED unassigned) · **StudentHome** "Hoạt động gần đây" (preview client-lọc
+    createdById=me — KHÔNG nới list). Số MONO đài-kỷ-niệm + ledger hairline (đọc ĐÚNG `_count` byStatus/byPriority vs
+    `count` byCategory/byLocation) + rail loại/nơi — KHÔNG donut/chart-junk; signal đỏ CHỈ cho khẩn. `PulseField` =
+    placeholder seam (PulseFieldProps + semantics ĐÓNG BĂNG, dynamic ssr:false) — **bản sống → F4**. Cache chéo-role
+    đóng cứng: list queryKey scope theo `user.id` + `queryClient.clear()` lúc logout. ADMIN/AUDITOR vẫn landing `/`
+    (dashboard render TẠI home; `landingForRole` giữ nguyên). Ghi `web/FRONTEND.md` §Dashboard metric grammar.
+    **RESIDUAL CHẶN tính đúng:** backend **`GET /api/cases?mine`** (server-side ownership filter) CHƯA có → "của tôi"
+    chỉ là preview gần-đây, KHÔNG đầy đủ (case cũ ngoài limit không hiện); có route này mới làm "của tôi" ĐÚNG.
 
-### Vận hành
+### Vận hành — **CURRENT**
 - [ ] F3: Queue (signal gutter) · Emergency Lane · Audit · Notifications · Search(filter) · +backend search/attachment route
 
 ### Hoàn thiện

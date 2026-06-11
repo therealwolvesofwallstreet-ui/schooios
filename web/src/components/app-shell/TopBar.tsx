@@ -4,6 +4,7 @@
 // Badge unread = server-truth (nối ở F4); F1 chỉ đặt link chuông. Đăng xuất: POST /logout → /login.
 import { useState } from "react";
 import Link from "next/link";
+import { useQueryClient } from "@tanstack/react-query";
 import { List, Bell, SignOut } from "@phosphor-icons/react";
 import { api } from "@/lib/api";
 import type { Role } from "@/lib/api-types";
@@ -26,6 +27,7 @@ export function TopBar({
   onToggleNav: () => void;
 }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const queryClient = useQueryClient();
 
   async function logout() {
     try {
@@ -33,6 +35,10 @@ export function TopBar({
     } catch {
       // kệ — vẫn điều hướng về /login
     }
+    // Dọn cache phiên cũ TRƯỚC khi điều hướng: window.location.href đã reload (QueryClient mới) nên
+    // đây là phòng-thủ-thừa CHỦ Ý — giữ bất biến "không rò data chéo-role" kể cả khi sau này đổi sang
+    // điều hướng client-side (router.replace) không reload. Rẻ + làm hợp đồng tường minh.
+    queryClient.clear();
     window.location.href = "/login";
   }
 
