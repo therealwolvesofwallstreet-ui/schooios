@@ -27,7 +27,7 @@ KHÔNG shadcn để mặc định — rebuild primitives.
 
 ## Tokens (xem web/src/styles/tokens.css là nguồn) — vai trò
 paper #F6F2EA · paper-raised #FBF8F2 · sunken #EFE9DD
-ink #1A1611 · ink-2 #6B6457 · ink-3 #9A9384 · line #E4DCCB · line-2 #CFC5B0
+ink #1A1611 · ink-2 #6B6457 · ink-3 #706A5C (darkened cho WCAG AA — xem tokens.css) · line #E4DCCB · line-2 #CFC5B0
 signal #D72638 = MÀU BIỂU CẢM DUY NHẤT (voice/now/action) — HIẾM, chịu lực
 emergency #9E1B22 = oxblood, CHỈ emergency takeover (khác chất signal)
 gold #B8985A = hơi thở "đã ghi nhận/RESOLVED/CLOSED" (cực hiếm)

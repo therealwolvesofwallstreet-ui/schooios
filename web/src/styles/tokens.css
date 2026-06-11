@@ -1,0 +1,35 @@
+/* SchooIOS design tokens — "Đài Lặng / Editorial Operations".
+ * NGUỒN DUY NHẤT cho màu/typeface/radius/easing. Tailwind v4 @theme → sinh utility
+ * (bg-paper, text-ink, font-serif, rounded-md, ease-quiet…). CẤM hardcode hex ngoài file này.
+ * Vai trò màu: signal đỏ = biểu cảm DUY NHẤT (hiếm) · emergency oxblood = takeover ·
+ * gold = resolved/closed · authority navy = surface quyền lực. (xem web/FRONTEND.md) */
+
+@theme {
+  /* ---- Palette (theo VAI TRÒ, không theo sắc độ) ---- */
+  --color-paper: #f6f2ea; /* nền giấy mặc định */
+  --color-paper-raised: #fbf8f2; /* bề mặt nổi (card) */
+  --color-sunken: #efe9dd; /* bề mặt chìm (khảm nội bộ) */
+  --color-ink: #1a1611; /* mực chính */
+  --color-ink-2: #6b6457; /* mực phụ */
+  --color-ink-3: #706a5c; /* mực mờ / metadata — darkened từ #9a9384 để đạt WCAG AA 4.5:1
+                             trên paper/paper-raised (axe color-contrast); hierarchy nhờ size/uppercase, không nhờ độ nhạt */
+  --color-line: #e4dccb; /* hairline chính */
+  --color-line-2: #cfc5b0; /* hairline đậm */
+  --color-signal: #d72638; /* ĐỎ tín hiệu — voice/now/action (HIẾM) */
+  --color-emergency: #9e1b22; /* oxblood — CHỈ emergency takeover */
+  --color-gold: #b8985a; /* hơi thở resolved/closed (cực hiếm) */
+  --color-authority: #14202e; /* nền sâu surface quyền lực */
+
+  /* ---- Typeface (biến gốc do next/font gắn lên <html> ở layout.tsx) ---- */
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, "SFMono-Regular", monospace;
+  --font-serif: var(--font-newsreader), Georgia, "Times New Roman", serif;
+
+  /* ---- Radius (≤8px) ---- */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+
+  /* ---- Easing (chỉ ease-out — KHÔNG spring/bounce) ---- */
+  --ease-quiet: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-emerge: cubic-bezier(0.16, 1, 0.3, 1);
+}
