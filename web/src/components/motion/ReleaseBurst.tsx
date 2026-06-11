@@ -19,7 +19,10 @@ export interface ReleaseBurstProps {
 const EASE_EMERGE = [0.16, 1, 0.3, 1] as const;
 
 export default function ReleaseBurst({ caseCode, onDone }: ReleaseBurstProps) {
-  const reduced = useReducedMotion();
+  // §7 LAW: null (pre-hydration) coi như reduced → KHÔNG lóe fade trước khi hook resolve.
+  // Component tải qua dynamic(ssr:false) nên không cần mounted-gate; `?? true` chỉ chạm case null,
+  // KHÔNG tắt animation của user không-reduced (false ?? true = false → vẫn animate).
+  const reduced = useReducedMotion() ?? true;
 
   // Reduced-motion: hiện tĩnh tức thì (luật §7). Ngược lại: reveal nhẹ, tuần tự dot → ID → serif.
   const reveal = (delay: number) =>

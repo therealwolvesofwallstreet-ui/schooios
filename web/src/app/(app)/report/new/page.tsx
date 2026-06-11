@@ -1,0 +1,287 @@
+"use client";
+
+// CREATE REPORT ("Cất tiếng nói") — flow biên tập MỘT-CÂU-MỘT-MÀN (next/back). Khoảnh khắc cảm
+// xúc nhất của HS → kết bằng RELEASE BURST (stage moment, tải dynamic ssr:false).
+// HỢP ĐỒNG (docs/API.md, server là chân lý): POST /api/cases gửi `sensitive`/`emergency` (KHÔNG
+// isSensitive/isEmergency), KHÔNG gửi id/caseCode/status. priority/sensitive lấy TỪ category đã chọn
+// (echo dữ liệu server cấp, không tự chế luật). Client Zod chỉ là pre-check lịch sự; 400 → server
+// quyết, map details về field. Quyền: AUDITOR không tạo → KHÔNG render form (không disable giả).
+import { useMemo, useState } from "react";
+import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
+import { useSession } from "@/hooks/useSession";
+import { useCategories } from "@/hooks/useCategories";
+import { useLocations } from "@/hooks/useLocations";
+import { useCreateCase, type CreateCaseInput } from "@/hooks/useCreateCase";
+import { ChoiceList, type Choice } from "@/components/report/ChoiceList";
+import { Input } from "@/components/ui/Input";
+import { Textarea } from "@/components/ui/Textarea";
+import { Button } from "@/components/ui/Button";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { ApiError } from "@/lib/api";
+import { PRIORITY_LABEL } from "@/lib/case-display";
+import type { CaseListItem, CasePriority } from "@/lib/api-types";
+
+// Burst = stage moment → KHÔNG vào ops bundle (luật motion §6/§8).
+const ReleaseBurst = dynamic(() => import("@/components/motion/ReleaseBurst"), { ssr: false });
+
+const TITLE_MIN = 5;
+const DESC_MIN = 10;
+const STEP_PROMPTS = ["Chuyện gì đã xảy ra?", "Thuộc nhóm nào?", "Việc xảy ra ở đâu?", "Cần xử lý ngay?"] as const;
+
+type FieldKey = "title" | "description" | "categoryId";
+type FieldErrors = Partial<Record<FieldKey, string>>;
+
+// Map 400 của server (Zod issues) về field. Server là chân lý — chỉ đọc, không tự suy.
+function parse400(err: unknown): FieldErrors | null {
+  if (!(err instanceof ApiError) || err.status !== 400) return null;
+  const body = err.body as { details?: Array<{ path?: (string | number)[]; message?: string }> } | null;
+  const fields: FieldErrors = {};
+  for (const issue of body?.details ?? []) {
+    const key = issue.path?.[0];
+    if (key === "title" || key === "description" || key === "categoryId") {
+      fields[key] = issue.message ?? "Giá trị không hợp lệ.";
+    }
+  }
+  return fields;
+}
+
+export default function ReportNewPage() {
+  const router = useRouter();
+  const { user, role, isLoading: sessionLoading } = useSession();
+  const cats = useCategories();
+  const locs = useLocations();
+
+  const [step, setStep] = useState(0);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [categoryId, setCategoryId] = useState<string | null>(null);
+  const [locationId, setLocationId] = useState<string | null>(null);
+  const [emergency, setEmergency] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [formError, setFormError] = useState<string | null>(null);
+  const [created, setCreated] = useState<CaseListItem | null>(null);
+
+  const mutation = useCreateCase({ onCreated: setCreated });
+
+  const selectedCategory = useMemo(
+    () => cats.categories.find((c) => c.id === categoryId) ?? null,
+    [cats.categories, categoryId],
+  );
+  const derivedPriority: CasePriority = selectedCategory?.defaultPriority ?? "MEDIUM";
+
+  // ── 201 thành công → RELEASE BURST (thay cả màn form) ──
+  if (created) {
+    return <ReleaseBurst caseCode={created.caseCode} onDone={() => router.push("/")} />;
+  }
+
+  // ── Quyền / loading ──
+  if (sessionLoading) {
+    return (
+      <div className="mx-auto flex max-w-xl flex-col gap-6 py-12">
+        <Skeleton className="h-8 w-2/3" />
+        <Skeleton className="h-28 w-full" />
+      </div>
+    );
+  }
+  if (!user) return null; // api.ts đã điều hướng /login khi 401
+  if (role === "AUDITOR") {
+    return (
+      <div className="mx-auto flex max-w-xl flex-col gap-3 py-24 text-center">
+        <h1 className="text-ink font-serif text-2xl leading-snug">Mục này dành cho người cất tiếng nói.</h1>
+        <p className="text-ink-3 text-sm">Vai trò kiểm toán chỉ lắng nghe và lưu khố — không tạo báo cáo.</p>
+      </div>
+    );
+  }
+
+  // ── Dẫn xuất state ──
+  const titleOk = title.trim().length >= TITLE_MIN;
+  const descOk = description.trim().length >= DESC_MIN;
+  const stepValid = step === 0 ? titleOk && descOk : step === 1 ? !!categoryId : true;
+  const isLast = step === STEP_PROMPTS.length - 1;
+  const submitting = mutation.isPending;
+
+  const categoryChoices: Choice[] = cats.categories.map((c) => ({
+    id: c.id,
+    label: c.name,
+    hint: c.description ?? undefined,
+  }));
+  const locationChoices: Choice[] = locs.locations.map((l) => ({
+    id: l.id,
+    label: l.name,
+    hint: l.building ? `${l.code} · ${l.building.name}` : l.code,
+  }));
+
+  function goNext() {
+    setFormError(null);
+    if (stepValid && !isLast) setStep((s) => s + 1);
+  }
+  function goBack() {
+    setFormError(null);
+    if (step > 0) setStep((s) => s - 1);
+  }
+
+  async function submit() {
+    if (!categoryId) {
+      setStep(1);
+      return;
+    }
+    setFieldErrors({});
+    setFormError(null);
+    const payload: CreateCaseInput = {
+      title: title.trim(),
+      description: description.trim(),
+      categoryId,
+      ...(locationId ? { locationId } : {}),
+      priority: derivedPriority,
+      sensitive: selectedCategory?.defaultSensitive ?? false,
+      emergency,
+    };
+    try {
+      await mutation.mutateAsync(payload);
+      // thành công → onCreated set `created` → burst (xem nhánh trên).
+    } catch (e) {
+      const fields = parse400(e);
+      if (fields) {
+        setFieldErrors(fields);
+        if (fields.title || fields.description) setStep(0);
+        else if (fields.categoryId) setStep(1);
+        else setFormError("Thông tin chưa hợp lệ. Kiểm tra lại giúp mình.");
+      }
+      // lỗi khác (403/409/429/503/network): useOptimisticMutation đã toast.
+    }
+  }
+
+  return (
+    <div className="mx-auto flex min-h-[70vh] max-w-xl flex-col py-12">
+      <p className="text-ink-3 font-mono text-[11px] tracking-[0.18em] uppercase">
+        {String(step + 1).padStart(2, "0")} / {String(STEP_PROMPTS.length).padStart(2, "0")}
+      </p>
+      <h1 className="text-ink mt-3 font-serif text-3xl leading-snug md:text-4xl">
+        {STEP_PROMPTS[step]}
+      </h1>
+
+      <div className="mt-10 flex flex-1 flex-col gap-6">
+        {step === 0 && (
+          <>
+            <Input
+              label="Tiêu đề ngắn"
+              autoFocus
+              maxLength={200}
+              placeholder="Một câu tóm tắt việc đã xảy ra"
+              value={title}
+              error={fieldErrors.title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+            <Textarea
+              label="Kể lại chi tiết"
+              rows={5}
+              maxLength={5000}
+              placeholder="Chuyện diễn ra thế nào, khi nào, có ai liên quan…"
+              value={description}
+              error={fieldErrors.description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </>
+        )}
+
+        {step === 1 && (
+          <div className="flex flex-col gap-2">
+            <ChoiceList
+              aria-label="Nhóm sự vụ"
+              items={categoryChoices}
+              value={categoryId}
+              onChange={(id) => {
+                setFieldErrors((p) => ({ ...p, categoryId: undefined }));
+                setCategoryId(id);
+              }}
+              isLoading={cats.isLoading}
+              isError={cats.isError}
+              onRetry={cats.refetch}
+              emptyMessage="Chưa có nhóm sự vụ nào."
+            />
+            {fieldErrors.categoryId && (
+              <span role="alert" className="text-signal font-mono text-xs">
+                {fieldErrors.categoryId}
+              </span>
+            )}
+          </div>
+        )}
+
+        {step === 2 && (
+          <div className="flex flex-col gap-3">
+            <p className="text-ink-3 text-xs">Không bắt buộc — chọn nơi gần nhất hoặc bỏ qua.</p>
+            <ChoiceList
+              aria-label="Địa điểm"
+              items={locationChoices}
+              value={locationId}
+              onChange={setLocationId}
+              isLoading={locs.isLoading}
+              isError={locs.isError}
+              onRetry={locs.refetch}
+              emptyMessage="Chưa có địa điểm nào."
+            />
+            {locationId && (
+              <button
+                type="button"
+                onClick={() => setLocationId(null)}
+                className="text-ink-3 hover:text-ink self-start text-xs underline-offset-4 transition-colors duration-150 ease-quiet hover:underline"
+              >
+                Bỏ chọn địa điểm
+              </button>
+            )}
+          </div>
+        )}
+
+        {step === 3 && (
+          <div className="flex flex-col gap-8">
+            <ChoiceList
+              aria-label="Mức độ khẩn"
+              items={[
+                { id: "normal", label: "Bình thường", hint: "Trường sẽ tiếp nhận và sắp xếp xử lý." },
+                { id: "now", label: "Cần xử lý ngay", hint: "Đánh dấu để được ưu tiên xem xét." },
+              ]}
+              value={emergency ? "now" : "normal"}
+              onChange={(id) => setEmergency(id === "now")}
+            />
+
+            {selectedCategory && (
+              <p className="text-ink-3 font-mono text-xs">
+                Theo nhóm “{selectedCategory.name}” · ưu tiên {PRIORITY_LABEL[derivedPriority]}
+              </p>
+            )}
+
+            {/* Đính kèm — U2 BLOCKED: placeholder trang trí (KHÔNG control thật → KHÔNG aria-disabled
+                vô nghĩa trên div). Upload sẽ thêm ở F3 (Supabase signed-upload). */}
+            <div className="border-line flex items-center justify-between rounded-md border border-dashed px-4 py-3 opacity-60">
+              <span className="text-ink-3 text-sm">Tệp đính kèm (ảnh, tài liệu)</span>
+              <span className="text-ink-3 font-mono text-[10px] tracking-wider uppercase">Sắp có</span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {formError && (
+        <p role="alert" className="text-ink-3 mt-6 font-mono text-xs">
+          {formError}
+        </p>
+      )}
+
+      {/* Footer điều hướng — nút primary (đỏ) là dấu signal DUY NHẤT của màn. */}
+      <div className="mt-10 flex items-center justify-between gap-4">
+        <Button variant="ghost" onClick={goBack} disabled={step === 0 || submitting}>
+          Quay lại
+        </Button>
+        {isLast ? (
+          <Button onClick={submit} disabled={submitting}>
+            {submitting ? "Đang gửi…" : "Cất tiếng nói"}
+          </Button>
+        ) : (
+          <Button onClick={goNext} disabled={!stepValid}>
+            Tiếp
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
