@@ -42,8 +42,19 @@ hairline-first · permission = KHÔNG render · contract đóng băng. Mọi mà
     **FROZEN — tag `f2-1-stable`; branch rollback `f2-1-login`.** Hoãn (sang phase sau): proxy↔landingForRole
     chia helper role→path trước F2-4; change-password landing theo role (cần /me) ở F2-4; fixture
     `E2E_FIRSTLOGIN_*` chạy luồng ép-đổi-MK trước F6; (tuỳ chọn) ESLint guard cấm toast/RQ trong (public).
-  - [ ] F2-2: Create Report (+VOICE burst) — **CURRENT**
-  - [ ] F2-3: Case Detail (Spine) — freeze layout+Spine+domain-hook sau màn này
+  - [x] F2-2: Create Report (+VOICE burst) — flow MỘT-CÂU-MỘT-MÀN + RELEASE BURST (stage moment #3).
+    **F2-2A** (motion SSOT freeze `docs/motion-architecture.md` + burst shell reduced-tier). **F2-2B**
+    (form core 4-step, contract `sensitive`/`emergency`, AUDITOR=không-render, 400→field, 201→burst;
+    re-audit a11y 28-agent). **F2-2C** (burst 3-tier sau shell: High=R3F GPU point-particles curl-noise
+    scatter→converge→caseCode, GSAP CustomEase-token, glow soft-sprite KHÔNG Bloom, `frameloop=demand`,
+    dispose; Mid=Canvas 2D rAF; Reduced giữ nguyên. three LAZY-ONLY — `/report/new` ops bundle KHÔNG
+    chứa three/shader, §6/§8; tier-detect + ErrorBoundary high→mid; DOM confirmation luôn render +
+    focus/`aria-describedby`→caseCode §7; dev preview `/styleguide/burst`). +deps three/@react-three/fiber
+    (bỏ postprocessing). **Audit đối kháng 22-agent (6 dim × 2 skeptic): 8 finding → 5 vá** (idle GPU loop→
+    demand-loop · 1260ms>trần→1.18s · SR câm caseCode→describedby · styleguide hydration→dynamic ssr:false ·
+    resize restart→chốt dims 1 lần), **2 hoãn cosmetic** (fallback desync · slow-net chunk order; §7 nghĩa nguyên).
+    **Verify**: tsc 0 · eslint --max-warnings 0 · next build 0 · three-lazy proven. KHÔNG schema/DB.
+  - [ ] F2-3: Case Detail (Spine) — **CURRENT** — freeze layout+Spine+domain-hook sau màn này
   - [ ] F2-4: Dashboard role-aware (ADMIN/AUDITOR landing → `/dashboard`)
 
 ### Vận hành

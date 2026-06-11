@@ -94,17 +94,31 @@ Sân khấu chỉ mở ở năm khoảnh khắc sau. Thêm moment thứ sáu = �
 |---|---|---|---|
 | 1 | Threshold (route `/`) | R3F ink-field + GSAP wordmark | *future* |
 | 2 | First-paint Dashboard | GSAP stagger + light-sweep | *future* |
-| 3 | **Release Burst** | R3F particles + Canvas 2D + DOM | **ACTIVE (dựng ở F2-2C)** |
+| 3 | **Release Burst** | R3F particles + Canvas 2D + DOM | **BUILT (F2-2C)** |
 | 4 | Emergency tempo-shift | CSS var `--pulse` swap | *future* `[ONE-OFF]` phá ease-out duy nhất |
 | 5 | Empty / Milestone | serif emerge + mote + light pool | *future* |
 
-### 3 · Release Burst (chi tiết — moment đang dựng)
+### 3 · Release Burst (chi tiết — BUILT ở F2-2C)
 - **Trigger:** HS submit report thành công (201) → xác nhận "đã được lắng nghe".
 - **Verb:** Connect → Resolve. **Thời lượng:** cinematic 600–1200ms.
 - **3 tier (cùng một API `ReleaseBurst({ caseCode, onDone? })`):**
-  - **High `[ONE-OFF]`** — R3F GPU point-particles (curl-noise) bung từ tâm → tụ về mono `caseCode`;
-    Bloom tiết chế màu signal. GSAP drive timing (scatter → converge → reveal), ease-out only.
+  - **High `[ONE-OFF]`** — R3F GPU point-particles (curl-noise) bung từ tâm → tụ về impression của
+    mono `caseCode`. GSAP drive timing (scatter → converge → reveal), **CustomEase từ token** (ease-out only).
   - **Mid `[PATTERN]`** — Canvas 2D dots (rAF) cho mobile/máy yếu.
   - **Reduced-motion `[LAW]`** — bỏ particle, fade tĩnh mono `caseCode` + dòng serif
     "Tiếng nói của bạn đã được ghi nhận."
 - `[LAW]` Burst chỉ để **xác nhận**, không phải demo. Tiết chế hơn phô diễn — "resolve mới flourish".
+
+**As-built (F2-2C):** `components/motion/ReleaseBurst.tsx` (orchestrator chọn tier runtime + DOM confirmation
+luôn-render) + `release-burst/{ReleaseBurstStage(R3F high), ReleaseBurstCanvas(Canvas mid), sample-text,
+burst-tier}` + `lib/cubic-bezier.ts`. Quyết định khác plan đã chốt:
+- **Glow = soft-sprite (NormalBlending mực đỏ trên giấy), KHÔNG @react-three/postprocessing Bloom.** Lý do:
+  additive/bloom trên nền GIẤY sáng dễ bệt/đen, không kiểm được bằng mắt ở môi trường headless; soft-sprite
+  an toàn, đúng bản sắc, build-verifiable. (Bloom để mở khi có phiên tinh chỉnh thị giác trên GPU thật.)
+- **three/R3F chunk LAZY-ONLY** (kiểm: HTML prerender `/report/new` 12 script đầu KHÔNG chứa three/shader) — §6/§8.
+- **frameloop="demand"** + invalidate() drive từ GSAP onUpdate → hết burst là loop ngừng (KHÔNG đốt GPU nền).
+- **a11y:** DOM confirmation luôn render; SR đọc xác nhận qua focus tiêu đề + `aria-describedby`→caseCode (live
+  region tĩnh không tự announce); lớp particle `aria-hidden`. Total timeline 1.18s ≤ trần 1200ms.
+- **Hoãn (cosmetic, §7 nghĩa vẫn nguyên):** (a) path high→fail→mid: Canvas fallback mount muộn nên lệch nhịp
+  với DOM-reveal cố định; (b) mạng chậm: chunk high tải >~0.95s thì DOM hiện trước rồi particle mới bung. Cả
+  hai chỉ giảm chất "spectacle" trên nhánh hiếm, KHÔNG mất nghĩa/a11y.
