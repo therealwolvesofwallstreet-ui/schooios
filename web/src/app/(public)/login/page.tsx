@@ -5,7 +5,7 @@
 // (đỏ chỉ dành cho hành động). Auth bằng cookie httpOnly (api credentials:include) — KHÔNG đọc JWT.
 // Hydration gate: nút disabled tới khi mounted → chặn submit GET-tự-nhiên trước hydrate (rò mật khẩu
 // lên URL). 429: tự mở lại sau Retry-After. Lỗi cũ tự xoá khi user gõ lại (trừ 429 — giữ cooldown).
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { SignalDot } from "@/components/ui/SignalDot";
 import { useLogin } from "@/hooks/useLogin";
+import { useHydrated } from "@/hooks/useHydrated";
 import type { ApiError } from "@/lib/api";
 
 const MSG_ID = "login-msg";
@@ -45,11 +46,9 @@ export default function LoginPage() {
   } = useForm<FormValues>({ resolver: zodResolver(schema) });
 
   // Hydration gate: SSR render nút disabled → trước khi JS gắn onSubmit, click/Enter KHÔNG thể
-  // submit GET-tự-nhiên (vốn đẩy identifier+password lên URL). Sau mount → mở nút.
-  const [hydrated, setHydrated] = useState(false);
-  useEffect(() => {
-    setHydrated(true);
-  }, []);
+  // submit GET-tự-nhiên (vốn đẩy identifier+password lên URL). Sau hydrate → mở nút.
+  // useSyncExternalStore (hooks/useHydrated) → KHÔNG setState-in-effect.
+  const hydrated = useHydrated();
 
   // 429: tự mở lại nút sau Retry-After (không còn deadlock cần reload).
   useEffect(() => {

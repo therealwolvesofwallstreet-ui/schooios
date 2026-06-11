@@ -4,7 +4,7 @@
 // Lần đầu đăng nhập bị ép tới đây (proxy). Thành công → cookie mới (xoá cờ) → "/".
 // Nút đỏ DUY NHẤT; lỗi = dòng mono ink-dim, KHÔNG đỏ. Hydration gate + 429 auto-recover + clear-on-edit
 // (xem login/page.tsx — cùng quy ước).
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -12,6 +12,7 @@ import { AuthSurface } from "@/components/auth/AuthSurface";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { useChangePassword } from "@/hooks/useChangePassword";
+import { useHydrated } from "@/hooks/useHydrated";
 import type { ApiError } from "@/lib/api";
 
 const MSG_ID = "change-password-msg";
@@ -40,10 +41,8 @@ export default function ChangePasswordPage() {
     formState: { errors },
   } = useForm<FormValues>({ resolver: zodResolver(schema) });
 
-  const [hydrated, setHydrated] = useState(false);
-  useEffect(() => {
-    setHydrated(true);
-  }, []);
+  // Hydration gate (hooks/useHydrated — useSyncExternalStore, KHÔNG setState-in-effect).
+  const hydrated = useHydrated();
 
   useEffect(() => {
     if (error?.status !== 429) return;
