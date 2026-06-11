@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SchooIOS — Bảng màu v2 · Tyrsa × Immersive Garden</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500;1,9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* ── LIGHT surface (reading / ops) ── */
+    --paper:#F4F0E8; --paper-raised:#FBF8F1; --paper-sunken:#EAE3D5;
+    --ink:#17140F; --ink-2:#574F43; --ink-3:#867C6B;
+    --line:#E2D9C8; --line-2:#CDC2AC;
+    /* ── DARK cinematic surface (hero / spectacle / entry) ── */
+    --void:#100E0C; --void-raised:#1C1916; --void-sunken:#080706;
+    --on-void:#F3EEE3; --on-void-2:#B7AE9C; --on-void-3:#7C7464;
+    --line-void:rgba(243,238,227,.13); --line-void-2:rgba(243,238,227,.24);
+    /* ── ACCENTS (bold, role-named) ── */
+    --signal:#D72638;     /* THE VOICE / primary action — brand bone, kept */
+    --signal-hot:#F23142; /* signal on dark, slightly lifted for glow */
+    --cobalt:#2A4BF0;     /* system / interactive / links / focus — bold pop */
+    --cobalt-lift:#5E78FF;/* cobalt on dark */
+    --gold:#D2A53F;       /* acknowledged / resolved */
+    --emergency:#9E1B22;  /* oxblood — takeover only */
+    --violet:#6E45FF;     /* rare delight / milestone (optional accent-2) */
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --sans:'IBM Plex Sans',system-ui,sans-serif;
+    --disp:'Fraunces',Georgia,serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:var(--sans);background:#2a2622;color:var(--ink);line-height:1.5}
+  .wrap{max-width:1180px;margin:0 auto;padding:40px 32px 80px}
+  .topline{font-family:var(--mono);font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#cfc4ae;margin-bottom:8px}
+  h1.title{font-family:var(--disp);font-weight:600;font-size:42px;line-height:1.05;color:#f3eee3;letter-spacing:-.01em;margin-bottom:6px}
+  .sub{font-family:var(--mono);font-size:12px;color:#9a917f;letter-spacing:.04em;margin-bottom:36px}
+
+  /* dual surface panels */
+  .panels{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:40px}
+  .panel{border-radius:14px;overflow:hidden;border:1px solid rgba(0,0,0,.2)}
+  .panel.light{background:var(--paper);color:var(--ink)}
+  .panel.dark{background:var(--void);color:var(--on-void);
+    background-image:radial-gradient(120% 80% at 16% 8%, rgba(94,120,255,.10), transparent 55%),
+                     radial-gradient(90% 70% at 84% 92%, rgba(242,49,66,.09), transparent 60%);}
+  .pad{padding:30px 30px 34px}
+  .ptag{font-family:var(--mono);font-size:10px;letter-spacing:.26em;text-transform:uppercase;opacity:.6;margin-bottom:18px}
+  .panel.light .ptag{color:var(--ink-3)} .panel.dark .ptag{color:var(--on-void-3)}
+
+  /* two-voice wordmark */
+  .mark{font-size:46px;line-height:1;letter-spacing:-.02em;margin-bottom:6px}
+  .mark .serif{font-family:var(--disp);font-style:italic;font-weight:500}
+  .mark .sans{font-family:var(--sans);font-weight:600}
+  .panel.light .mark .sans{color:var(--cobalt)}
+  .panel.dark  .mark .sans{color:var(--cobalt-lift)}
+  .hero{font-family:var(--disp);font-weight:600;font-size:34px;line-height:1.08;letter-spacing:-.015em;margin:26px 0 4px}
+  .heroline{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;opacity:.55;margin-bottom:24px}
+
+  /* metric numbers */
+  .metrics{display:flex;gap:30px;margin-bottom:26px;flex-wrap:wrap}
+  .metric .n{font-family:var(--disp);font-weight:600;font-size:48px;line-height:.9;letter-spacing:-.02em}
+  .metric .n.sig{color:var(--signal)} .panel.dark .metric .n.sig{color:var(--signal-hot)}
+  .metric .l{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;opacity:.55;margin-top:8px}
+
+  /* buttons */
+  .btns{display:flex;gap:10px;align-items:center;margin-bottom:22px;flex-wrap:wrap}
+  .btn{font-family:var(--sans);font-weight:500;font-size:13px;padding:9px 16px;border-radius:7px;border:1px solid transparent;cursor:default}
+  .btn.primary{background:var(--signal);color:#fff}
+  .btn.cobalt{background:var(--cobalt);color:#fff} .panel.dark .btn.cobalt{background:var(--cobalt-lift)}
+  .panel.light .btn.secondary{background:transparent;border-color:var(--line-2);color:var(--ink)}
+  .panel.dark  .btn.secondary{background:transparent;border-color:var(--line-void-2);color:var(--on-void)}
+  .btn.ghost{background:transparent} .panel.light .btn.ghost{color:var(--ink-2)} .panel.dark .btn.ghost{color:var(--on-void-2)}
+
+  /* status pills */
+  .pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px}
+  .pill{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:500;padding:5px 11px;border-radius:999px;border:1px solid}
+  .panel.light .pill{border-color:var(--line-2);color:var(--ink-2)} .panel.dark .pill{border-color:var(--line-void-2);color:var(--on-void-2)}
+  .dot{width:7px;height:7px;border-radius:50%}
+  .d-sig{background:var(--signal)} .panel.dark .d-sig{background:var(--signal-hot)}
+  .d-cobalt{background:var(--cobalt)} .panel.dark .d-cobalt{background:var(--cobalt-lift)}
+  .d-gold{background:var(--gold)} .d-emg{background:var(--emergency)} .d-run{background:currentColor;opacity:.5}
+
+  /* sample card */
+  .card{border-radius:10px;padding:16px 18px;margin-bottom:6px}
+  .panel.light .card{background:var(--paper-raised);border:1px solid var(--line)}
+  .panel.dark  .card{background:var(--void-raised);border:1px solid var(--line-void)}
+  .code{font-family:var(--mono);font-size:11px;letter-spacing:.08em;opacity:.6}
+  .ctitle{font-size:14px;font-weight:500;margin-top:3px}
+  .body{font-size:13px;line-height:1.6;opacity:.8;margin-top:14px;max-width:42ch}
+
+  /* swatches */
+  .swhead{font-family:var(--mono);font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#cfc4ae;margin:6px 0 16px}
+  .sw{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+  .chip{border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,.08)}
+  .chip .cap{height:64px} .chip .meta{background:#1c1916;padding:9px 10px}
+  .chip .role{font-size:11px;font-weight:600;color:#f3eee3} .chip .hex{font-family:var(--mono);font-size:10px;color:#9a917f;margin-top:2px}
+  .grp{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#8a8170;margin:22px 0 10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topline">SchooIOS · Design Brain v2</div>
+  <h1 class="title">Bảng màu táo bạo — Tyrsa × Immersive Garden</h1>
+  <div class="sub">Giữ xương: 1 đỏ tín hiệu · two-voice wordmark · mono IDs. Mở: accent cobalt + nền tối điện ảnh + chữ Fraunces động.</div>
+
+  <div class="panels">
+    <!-- LIGHT -->
+    <div class="panel light">
+      <div class="pad">
+        <div class="ptag">Surface · Paper (đọc / vận hành)</div>
+        <div class="mark"><span class="serif">Schoo</span><span class="sans">IOS</span></div>
+        <div class="hero">Tiếng nói của bạn<br>rất quan trọng.</div>
+        <div class="heroline">CASE-2026-00135 · đã tiếp nhận</div>
+        <div class="metrics">
+          <div class="metric"><div class="n">128</div><div class="l">Tổng vụ</div></div>
+          <div class="metric"><div class="n sig">3</div><div class="l">Khẩn đang mở</div></div>
+          <div class="metric"><div class="n">76</div><div class="l">Đã ghi nhận</div></div>
+        </div>
+        <div class="btns">
+          <span class="btn primary">Cất một tiếng nói</span>
+          <span class="btn cobalt">Nhận xử lý</span>
+          <span class="btn secondary">Quay lại</span>
+          <span class="btn ghost">Bỏ qua</span>
+        </div>
+        <div class="pills">
+          <span class="pill"><span class="dot d-sig"></span>Chờ tiếp nhận</span>
+          <span class="pill"><span class="dot d-run"></span>Đang xử lý</span>
+          <span class="pill"><span class="dot d-gold"></span>Đã giải quyết</span>
+          <span class="pill"><span class="dot d-emg"></span>Khẩn cấp</span>
+        </div>
+        <div class="card">
+          <div class="code">CASE-2026-00142</div>
+          <div class="ctitle">Mất xe đạp ở nhà để xe khu B</div>
+        </div>
+        <div class="body">Cái đẹp đến từ thứ bậc chữ, chiều sâu vật liệu và một dấu đỏ duy nhất — giờ thêm chiều immersive: chuyển động, ánh sáng, độ tương phản.</div>
+      </div>
+    </div>
+
+    <!-- DARK -->
+    <div class="panel dark">
+      <div class="pad">
+        <div class="ptag">Surface · Void (hero / sân khấu / ngưỡng cửa)</div>
+        <div class="mark"><span class="serif">Schoo</span><span class="sans">IOS</span></div>
+        <div class="hero">Lưu khố sống<br>của những tiếng nói.</div>
+        <div class="heroline">Ngưỡng cửa · WebGL ink-field</div>
+        <div class="metrics">
+          <div class="metric"><div class="n">128</div><div class="l">Tổng vụ</div></div>
+          <div class="metric"><div class="n sig">3</div><div class="l">Khẩn đang mở</div></div>
+          <div class="metric"><div class="n">76</div><div class="l">Đã ghi nhận</div></div>
+        </div>
+        <div class="btns">
+          <span class="btn primary">Bước vào</span>
+          <span class="btn cobalt">Khám phá</span>
+          <span class="btn secondary">Sau</span>
+          <span class="btn ghost">Bỏ qua</span>
+        </div>
+        <div class="pills">
+          <span class="pill"><span class="dot d-sig"></span>Chờ tiếp nhận</span>
+          <span class="pill"><span class="dot d-cobalt"></span>Hệ thống</span>
+          <span class="pill"><span class="dot d-gold"></span>Đã giải quyết</span>
+          <span class="pill"><span class="dot d-emg"></span>Khẩn cấp</span>
+        </div>
+        <div class="card">
+          <div class="code">CASE-2026-00142</div>
+          <div class="ctitle">Mất xe đạp ở nhà để xe khu B</div>
+        </div>
+        <div class="body">Nền tối ấm + ánh sáng định hướng + đốm tín hiệu phát sáng = chiều sâu điện ảnh cho khoảnh khắc lớn, không bao giờ một frame phẳng.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="swhead">Token màu — đặt theo VAI TRÒ</div>
+  <div class="grp">Light · Paper (đọc/vận hành)</div>
+  <div class="sw">
+    <div class="chip"><div class="cap" style="background:#F4F0E8"></div><div class="meta"><div class="role">paper</div><div class="hex">#F4F0E8</div></div></div>
+    <div class="chip"><div class="cap" style="background:#FBF8F1"></div><div class="meta"><div class="role">paper-raised</div><div class="hex">#FBF8F1</div></div></div>
+    <div class="chip"><div class="cap" style="background:#EAE3D5"></div><div class="meta"><div class="role">paper-sunken</div><div class="hex">#EAE3D5</div></div></div>
+    <div class="chip"><div class="cap" style="background:#17140F"></div><div class="meta"><div class="role">ink</div><div class="hex">#17140F</div></div></div>
+    <div class="chip"><div class="cap" style="background:#574F43"></div><div class="meta"><div class="role">ink-2</div><div class="hex">#574F43</div></div></div>
+    <div class="chip"><div class="cap" style="background:#E2D9C8"></div><div class="meta"><div class="role">line</div><div class="hex">#E2D9C8</div></div></div>
+  </div>
+  <div class="grp">Dark · Void (hero/sân khấu)</div>
+  <div class="sw">
+    <div class="chip"><div class="cap" style="background:#100E0C"></div><div class="meta"><div class="role">void</div><div class="hex">#100E0C</div></div></div>
+    <div class="chip"><div class="cap" style="background:#1C1916"></div><div class="meta"><div class="role">void-raised</div><div class="hex">#1C1916</div></div></div>
+    <div class="chip"><div class="cap" style="background:#F3EEE3"></div><div class="meta"><div class="role">on-void</div><div class="hex">#F3EEE3</div></div></div>
+    <div class="chip"><div class="cap" style="background:#B7AE9C"></div><div class="meta"><div class="role">on-void-2</div><div class="hex">#B7AE9C</div></div></div>
+    <div class="chip"><div class="cap" style="background:rgba(243,238,227,.13)"></div><div class="meta"><div class="role">line-void</div><div class="hex">rgba(243,..,.13)</div></div></div>
+    <div class="chip"><div class="cap" style="background:#080706"></div><div class="meta"><div class="role">void-sunken</div><div class="hex">#080706</div></div></div>
+  </div>
+  <div class="grp">Accents · bold, theo vai trò</div>
+  <div class="sw">
+    <div class="chip"><div class="cap" style="background:#D72638"></div><div class="meta"><div class="role">signal · voice</div><div class="hex">#D72638</div></div></div>
+    <div class="chip"><div class="cap" style="background:#F23142"></div><div class="meta"><div class="role">signal-hot (dark)</div><div class="hex">#F23142</div></div></div>
+    <div class="chip"><div class="cap" style="background:#2A4BF0"></div><div class="meta"><div class="role">cobalt · system</div><div class="hex">#2A4BF0</div></div></div>
+    <div class="chip"><div class="cap" style="background:#D2A53F"></div><div class="meta"><div class="role">gold · resolved</div><div class="hex">#D2A53F</div></div></div>
+    <div class="chip"><div class="cap" style="background:#9E1B22"></div><div class="meta"><div class="role">emergency</div><div class="hex">#9E1B22</div></div></div>
+    <div class="chip"><div class="cap" style="background:#6E45FF"></div><div class="meta"><div class="role">violet · milestone?</div><div class="hex">#6E45FF</div></div></div>
+  </div>
+</div>
+</body>
+</html>

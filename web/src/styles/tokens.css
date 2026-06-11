@@ -1,35 +1,63 @@
-/* SchooIOS design tokens — "Đài Lặng / Editorial Operations".
+/* SchooIOS design tokens — "Immersive Archive" (Tyrsa × Immersive Garden).
  * NGUỒN DUY NHẤT cho màu/typeface/radius/easing. Tailwind v4 @theme → sinh utility
- * (bg-paper, text-ink, font-serif, rounded-md, ease-quiet…). CẤM hardcode hex ngoài file này.
- * Vai trò màu: signal đỏ = biểu cảm DUY NHẤT (hiếm) · emergency oxblood = takeover ·
- * gold = resolved/closed · authority navy = surface quyền lực. (xem web/FRONTEND.md) */
+ * (bg-paper, text-ink, bg-void, text-on-void, font-display, rounded-lg, ease-quiet…).
+ * CẤM hardcode hex ngoài file này.
+ *
+ * DUAL SURFACE (xem web/FRONTEND.md):
+ *   • Paper — bề mặt sáng cho ĐỌC/VẬN HÀNH (queue, detail, audit, form).
+ *   • Void  — bề mặt tối điện ảnh cho HERO/SÂN KHẤU/NGƯỠNG CỬA (login, dashboard hero, emergency).
+ * Vai trò màu: signal đỏ = THE VOICE / primary action · cobalt = hệ thống/tương tác ·
+ *   gold = đã ghi nhận/resolved · emergency oxblood = takeover · violet = milestone hiếm ·
+ *   authority navy = nền chrome quyền lực. */
 
 @theme {
-  /* ---- Palette (theo VAI TRÒ, không theo sắc độ) ---- */
-  --color-paper: #f6f2ea; /* nền giấy mặc định */
-  --color-paper-raised: #fbf8f2; /* bề mặt nổi (card) */
-  --color-sunken: #efe9dd; /* bề mặt chìm (khảm nội bộ) */
-  --color-ink: #1a1611; /* mực chính */
-  --color-ink-2: #6b6457; /* mực phụ */
-  --color-ink-3: #706a5c; /* mực mờ / metadata — darkened từ #9a9384 để đạt WCAG AA 4.5:1
-                             trên paper/paper-raised (axe color-contrast); hierarchy nhờ size/uppercase, không nhờ độ nhạt */
-  --color-line: #e4dccb; /* hairline chính */
-  --color-line-2: #cfc5b0; /* hairline đậm */
-  --color-signal: #d72638; /* ĐỎ tín hiệu — voice/now/action (HIẾM) */
+  /* ---- LIGHT · Paper (đọc / vận hành) ---- */
+  --color-paper: #f4f0e8;
+  --color-paper-raised: #fbf8f1;
+  --color-sunken: #eae3d5;
+  --color-ink: #17140f;
+  --color-ink-2: #574f43;
+  --color-ink-3: #6e665a; /* metadata/caption — WCAG AA ~4.5:1 trên paper; hierarchy nhờ size/uppercase */
+  --color-line: #e2d9c8;
+  --color-line-2: #cdc2ac;
+
+  /* ---- DARK · Void (hero / sân khấu / ngưỡng cửa) ---- */
+  --color-void: #100e0c; /* nền tối ấm điện ảnh */
+  --color-void-raised: #1c1916; /* card/panel trên void */
+  --color-void-sunken: #080706;
+  --color-on-void: #f3eee3; /* text chính trên void */
+  --color-on-void-2: #b7ae9c; /* text phụ trên void */
+  --color-on-void-3: #7c7464; /* metadata trên void */
+  --color-line-void: rgba(243, 238, 227, 0.13); /* hairline trên void */
+  --color-line-void-2: rgba(243, 238, 227, 0.24);
+
+  /* ---- ACCENTS (bold, theo VAI TRÒ) ---- */
+  --color-signal: #d72638; /* THE VOICE / primary action — brand bone */
+  --color-signal-hot: #f23142; /* signal trên void (nhấc nhẹ cho phát sáng) */
+  --color-cobalt: #2a4bf0; /* hệ thống / tương tác / link / focus — accent táo bạo */
+  --color-cobalt-lift: #5e78ff; /* cobalt trên void */
+  --color-gold: #d2a53f; /* đã ghi nhận / resolved */
   --color-emergency: #9e1b22; /* oxblood — CHỈ emergency takeover */
-  --color-gold: #b8985a; /* hơi thở resolved/closed (cực hiếm) */
-  --color-authority: #14202e; /* nền sâu surface quyền lực */
+  --color-violet: #6e45ff; /* milestone / delight hiếm */
+  --color-authority: #14202e; /* nền chrome quyền lực (sidebar) */
 
   /* ---- Typeface (biến gốc do next/font gắn lên <html> ở layout.tsx) ---- */
+  --font-display: var(--font-fraunces), var(--font-newsreader), Georgia, serif; /* hero kinetic (Tyrsa) */
   --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-plex-mono), ui-monospace, "SFMono-Regular", monospace;
-  --font-serif: var(--font-newsreader), Georgia, "Times New Roman", serif;
+  --font-serif: var(--font-newsreader), Georgia, "Times New Roman", serif; /* serif VN (khoảnh khắc người) */
 
-  /* ---- Radius (≤8px) ---- */
+  /* ---- Radius ---- */
   --radius-sm: 4px;
   --radius-md: 8px;
+  --radius-lg: 14px; /* card/panel immersive */
 
-  /* ---- Easing (chỉ ease-out — KHÔNG spring/bounce) ---- */
+  /* ---- Easing (chỉ ease-out — KHÔNG spring/bounce; mirror lib/cubic-bezier.ts) ---- */
   --ease-quiet: cubic-bezier(0.22, 0.61, 0.36, 1);
   --ease-emerge: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* ---- Depth / material (immersive — chiều sâu bằng layer/ánh sáng, không bóng nặng) ---- */
+  --depth-scrim: color-mix(in srgb, var(--color-paper) 80%, transparent); /* scrim form trên WebGL */
+  --depth-scrim-void: color-mix(in srgb, var(--color-void) 62%, transparent);
+  --material-grain-opacity: 0.02; /* mirror grain shader (DOM echo) */
 }
