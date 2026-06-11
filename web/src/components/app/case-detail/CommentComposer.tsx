@@ -70,7 +70,7 @@ export function CommentComposer({ caseId }: { caseId: string }) {
             aria-pressed={isInternal}
             onClick={() => setIsInternal((v) => !v)}
             className={cn(
-              "inline-flex items-center gap-2 rounded-md border px-3 py-1.5 font-mono text-[11px] tracking-wider uppercase transition-colors duration-150 ease-quiet",
+              "focus-visible:outline-ink inline-flex items-center gap-2 rounded-md border px-3 py-1.5 font-mono text-[11px] tracking-wider uppercase transition-colors duration-150 ease-quiet focus-visible:outline-2 focus-visible:outline-offset-2",
               isInternal ? "border-line-2 bg-sunken text-ink" : "border-line text-ink-3 hover:text-ink",
             )}
           >

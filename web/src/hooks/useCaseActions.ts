@@ -3,8 +3,10 @@
 // 3 mutation điều phối case (PATCH) qua useOptimisticMutation. CHUNG hợp đồng lỗi:
 //  409 (ai đó vừa đổi) → invalidate (RELOAD hồ sơ lấy updatedAt mới) + toast, user tự thử lại bản mới.
 // KHÔNG gửi updatedAt/expectedUpdatedAt: docs/API.md chốt body chỉ { ... } — lock là server-internal.
-// GIỮ retry mặc định (429/503 ×3): PATCH idempotent + lock-guarded (updatedAt cũ → 409) nên retry an
-// toàn (KHÁC POST create/comment phải retry:false). Invalidate cả ["cases"] (list) + ["notifications"]
+// GIỮ retry mặc định (429/503 ×3): retry một PATCH sau 503 commit-ambiguity KHÔNG thể sinh bản TRÙNG —
+// status/assign/emergency là ĐẶT-GIÁ-TRỊ idempotent + server enforce; lần retry hoặc re-apply đúng giá
+// trị (no-op) hoặc gặp trạng thái đã đổi → 409/400, KHÔNG có side-effect nhân đôi (KHÁC POST create/
+// comment KHÔNG idempotent → phải retry:false). Invalidate cả ["cases"] (list) + ["notifications"]
 // (badge server-truth) vì mutation sinh statusHistory/notification phía server.
 import { useOptimisticMutation } from "./useOptimisticMutation";
 import { caseDetailKey } from "./useCaseDetail";

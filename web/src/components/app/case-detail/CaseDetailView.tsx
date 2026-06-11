@@ -87,7 +87,7 @@ function NotFoundState() {
       </p>
       <Link
         href="/"
-        className="text-ink-2 hover:text-ink text-sm underline-offset-4 transition-colors duration-150 ease-quiet hover:underline"
+        className="text-ink-2 hover:text-ink focus-visible:outline-ink rounded-sm text-sm underline-offset-4 transition-colors duration-150 ease-quiet hover:underline focus-visible:outline-2 focus-visible:outline-offset-2"
       >
         ← Về trang chủ
       </Link>
@@ -102,7 +102,7 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
       <button
         type="button"
         onClick={onRetry}
-        className="text-ink-2 hover:text-ink text-xs underline-offset-4 transition-colors duration-150 ease-quiet hover:underline"
+        className="text-ink-2 hover:text-ink focus-visible:outline-ink rounded-sm text-xs underline-offset-4 transition-colors duration-150 ease-quiet hover:underline focus-visible:outline-2 focus-visible:outline-offset-2"
       >
         Thử lại
       </button>

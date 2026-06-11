@@ -26,7 +26,9 @@ export function CaseHeader({ detail }: { detail: CaseDetail }) {
           </span>
         )}
       </div>
-      <h1 className="text-ink font-serif text-3xl leading-snug md:text-4xl">{detail.title}</h1>
+      <h1 className="text-ink font-serif text-3xl leading-snug break-words md:text-4xl">
+        {detail.title}
+      </h1>
     </header>
   );
 }

@@ -5,7 +5,7 @@
 // màu dot theo VAI TRÒ (STATUS_TONE cho status; ink cho comment/origin — signal HIẾM). Node status có
 // note "nở" ra (disclosure, ease-emerge). Comment NỘI BỘ = khảm bg-sunken + tag mono "NỘI BỘ" (chỉ
 // render nếu server trả → STUDENT thấy 0 node nội bộ). Motion gate prefers-reduced-motion (null→reduced).
-import { useState } from "react";
+import { useId, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { SignalDot, type SignalTone } from "@/components/ui/SignalDot";
 import { STATUS_TONE } from "@/components/ui/status-theme";
@@ -63,7 +63,7 @@ function SpineNodeItem({
       {node.kind === "origin" && (
         <div className="flex flex-col gap-1.5">
           {meta(node.author.name, node.createdAt)}
-          <p className="text-ink font-serif text-lg leading-relaxed whitespace-pre-wrap">
+          <p className="text-ink font-serif text-lg leading-relaxed break-words whitespace-pre-wrap">
             {node.body}
           </p>
         </div>
@@ -83,7 +83,9 @@ function SpineNodeItem({
       {node.kind === "comment" && (
         <div className={cn("flex flex-col gap-1.5", node.isInternal && "bg-sunken rounded-md p-3")}>
           {meta(node.author.name, node.createdAt)}
-          <p className="text-ink text-sm leading-relaxed whitespace-pre-wrap">{node.body}</p>
+          <p className="text-ink text-sm leading-relaxed break-words whitespace-pre-wrap">
+            {node.body}
+          </p>
         </div>
       )}
     </motion.li>
@@ -93,20 +95,23 @@ function SpineNodeItem({
 // "nở" — note của status-change ẩn sau disclosure; mở ra emerge (height/opacity, ease-out, no bounce).
 function NoteDisclosure({ note, reduced }: { note: string; reduced: boolean }) {
   const [open, setOpen] = useState(false);
+  const noteId = useId();
   return (
     <div className="mt-1">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="text-ink-3 hover:text-ink text-xs underline-offset-4 transition-colors duration-150 ease-quiet hover:underline"
+        aria-controls={noteId}
+        className="text-ink-3 hover:text-ink focus-visible:outline-ink rounded-sm text-xs underline-offset-4 transition-colors duration-150 ease-quiet hover:underline focus-visible:outline-2 focus-visible:outline-offset-2"
       >
         {open ? "Ẩn ghi chú" : "Xem ghi chú"}
       </button>
       <AnimatePresence initial={false}>
         {open && (
           <motion.p
-            className="text-ink-2 bg-sunken mt-2 overflow-hidden rounded-md p-3 text-sm leading-relaxed whitespace-pre-wrap"
+            id={noteId}
+            className="text-ink-2 bg-sunken mt-2 overflow-hidden rounded-md p-3 text-sm leading-relaxed break-words whitespace-pre-wrap"
             initial={reduced ? false : { opacity: 0, height: 0 }}
             animate={reduced ? undefined : { opacity: 1, height: "auto" }}
             exit={reduced ? undefined : { opacity: 0, height: 0 }}
