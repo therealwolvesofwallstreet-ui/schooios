@@ -21,17 +21,37 @@ export function haveCreds(role: RoleKey): boolean {
 
 const baseURL = process.env.E2E_BASE_URL || "http://localhost:3000";
 
-/** Đăng nhập role → trả cookies (httpOnly) để addCookies vào browser context. */
-async function loginCookies(role: RoleKey) {
+// CACHE cookie theo role (per-worker): đăng nhập 1 lần/role rồi tái dùng — tránh đập POST /login
+// nhiều lần làm dính rate-limit P9 (429). JWT trong cookie sống đủ lâu cho 1 lần chạy suite.
+type CookieParam = Parameters<BrowserContext["addCookies"]>[0];
+const cookieCache = new Map<RoleKey, CookieParam>();
+
+/** Đăng nhập role → trả cookies (httpOnly) để addCookies vào browser context. Cache theo role.
+ * RETRY lỗi tạm (429 rate-limit / 5xx DB-busy lúc nhiều worker login đồng thời) như client thật. */
+const TRANSIENT = new Set([429, 500, 502, 503, 504]);
+async function loginCookies(role: RoleKey): Promise<CookieParam> {
+  const cached = cookieCache.get(role);
+  if (cached) return cached;
   const identifier = CREDENTIALS[role];
   const req = await request.newContext({ baseURL });
-  const res = await req.post("/api/auth/login", {
-    data: { identifier, password: PASSWORD },
-  });
-  expect(res.ok(), `login ${role} (${identifier}) thất bại: ${res.status()}`).toBeTruthy();
-  const { cookies } = await req.storageState();
+  let lastStatus = 0;
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    const res = await req.post("/api/auth/login", { data: { identifier, password: PASSWORD } });
+    if (res.ok()) {
+      const { cookies } = await req.storageState();
+      await req.dispose();
+      cookieCache.set(role, cookies);
+      return cookies;
+    }
+    lastStatus = res.status();
+    if (!TRANSIENT.has(lastStatus)) break; // lỗi thật (vd 401) → dừng ngay
+    const ra = Number(res.headers()["retry-after"]);
+    const waitMs = Math.min(Number.isFinite(ra) && ra > 0 ? ra * 1000 : 1200 * attempt, 5000);
+    await new Promise((r) => setTimeout(r, waitMs));
+  }
   await req.dispose();
-  return cookies;
+  expect(false, `login ${role} (${identifier}) thất bại sau 4 lần: HTTP ${lastStatus}`).toBeTruthy();
+  throw new Error("unreachable");
 }
 
 export async function authenticate(context: BrowserContext, role: RoleKey) {
