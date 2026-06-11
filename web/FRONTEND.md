@@ -33,6 +33,7 @@ emergency #9E1B22 = oxblood, CHỈ emergency takeover (khác chất signal)
 gold #B8985A = hơi thở "đã ghi nhận/RESOLVED/CLOSED" (cực hiếm)
 authority #14202E = nền sâu surface quyền lực (admin/archive)
 radius ≤8px · ease-quiet cubic-bezier(.22,.61,.36,1) · ease-emerge cubic-bezier(.16,1,.3,1)
+Motion SSOT (luật chuyển động — stack/GSAP/R3F/Canvas/reduced-motion/budget/5 spectacle): `docs/motion-architecture.md`
 
 ## UI Grammar (mỗi pattern 1 nghĩa, không trùng)
 - Status badge: pill viền hairline + label sans + dot. signal=cần-chú-ý · gold=resolved/closed
