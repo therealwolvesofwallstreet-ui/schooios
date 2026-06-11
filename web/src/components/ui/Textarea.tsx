@@ -14,6 +14,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
 ) {
   const reactId = useId();
   const textareaId = id ?? reactId;
+  const errorId = `${textareaId}-error`;
   return (
     <div className="flex flex-col gap-1.5">
       {label && (
@@ -29,6 +30,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
         id={textareaId}
         rows={rows}
         aria-invalid={error ? true : undefined}
+        aria-describedby={error ? errorId : undefined}
         className={cn(
           "border-line text-ink placeholder:text-ink-3 w-full resize-y border-0 border-b bg-transparent px-0 py-2 text-sm leading-relaxed transition-colors duration-150 ease-quiet outline-none",
           "focus:border-ink",
@@ -37,7 +39,11 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
         )}
         {...rest}
       />
-      {error && <span className="text-signal font-mono text-xs">{error}</span>}
+      {error && (
+        <span id={errorId} role="alert" className="text-signal font-mono text-xs">
+          {error}
+        </span>
+      )}
     </div>
   );
 });

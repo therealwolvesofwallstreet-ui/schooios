@@ -14,6 +14,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
 ) {
   const reactId = useId();
   const inputId = id ?? reactId;
+  const errorId = `${inputId}-error`;
   return (
     <div className="flex flex-col gap-1.5">
       {label && (
@@ -28,6 +29,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         ref={ref}
         id={inputId}
         aria-invalid={error ? true : undefined}
+        aria-describedby={error ? errorId : undefined}
         className={cn(
           "border-line text-ink placeholder:text-ink-3 w-full border-0 border-b bg-transparent px-0 py-2 text-sm transition-colors duration-150 ease-quiet outline-none",
           "focus:border-ink",
@@ -36,7 +38,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         )}
         {...rest}
       />
-      {error && <span className="text-signal font-mono text-xs">{error}</span>}
+      {error && (
+        <span id={errorId} role="alert" className="text-signal font-mono text-xs">
+          {error}
+        </span>
+      )}
     </div>
   );
 });

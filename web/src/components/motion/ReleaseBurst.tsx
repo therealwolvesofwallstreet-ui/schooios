@@ -4,6 +4,7 @@
 // 2.2A = SHELL: chỉ tier reduced-motion/DOM-fade (mono Case ID + dòng serif xác nhận). Một dấu
 // signal DUY NHẤT tụ lại làm tâm. Tier High (R3F particles) + Mid (Canvas 2D) sẽ thêm ở 2.2C.
 // Tải qua dynamic(() => import(...), { ssr: false }) — KHÔNG vào ops bundle (luật §6/§8).
+import { useEffect, useRef } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import { SignalDot } from "@/components/ui/SignalDot";
@@ -24,6 +25,13 @@ export default function ReleaseBurst({ caseCode, onDone }: ReleaseBurstProps) {
   // KHÔNG tắt animation của user không-reduced (false ?? true = false → vẫn animate).
   const reduced = useReducedMotion() ?? true;
 
+  // Burst là lời xác nhận DUY NHẤT (không toast) → KHÔNG được câm với SR (motion §7 LAW: motion không
+  // bao giờ là vật mang nghĩa duy nhất). Đưa focus về tiêu đề khi mount + bọc live region.
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    headingRef.current?.focus();
+  }, []);
+
   // Reduced-motion: hiện tĩnh tức thì (luật §7). Ngược lại: reveal nhẹ, tuần tự dot → ID → serif.
   const reveal = (delay: number) =>
     reduced
@@ -41,19 +49,23 @@ export default function ReleaseBurst({ caseCode, onDone }: ReleaseBurstProps) {
         <SignalDot tone="signal" size="lg" />
       </motion.div>
 
-      <motion.p
-        {...reveal(0.08)}
-        className="text-ink-3 mt-8 font-mono text-xs tracking-[0.18em] uppercase"
-      >
-        {caseCode}
-      </motion.p>
+      <div role="status" aria-live="polite" className="flex flex-col items-center">
+        <motion.p
+          {...reveal(0.08)}
+          className="text-ink-3 mt-8 font-mono text-xs tracking-[0.18em] uppercase"
+        >
+          {caseCode}
+        </motion.p>
 
-      <motion.h2
-        {...reveal(0.16)}
-        className="text-ink mt-3 max-w-md font-serif text-2xl leading-snug md:text-3xl"
-      >
-        Tiếng nói của bạn đã được ghi nhận.
-      </motion.h2>
+        <motion.h2
+          {...reveal(0.16)}
+          ref={headingRef}
+          tabIndex={-1}
+          className="text-ink mt-3 max-w-md font-serif text-2xl leading-snug outline-none md:text-3xl"
+        >
+          Tiếng nói của bạn đã được ghi nhận.
+        </motion.h2>
+      </div>
 
       {onDone && (
         <motion.div {...reveal(0.24)} className="mt-10">

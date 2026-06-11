@@ -6,7 +6,7 @@
 // isSensitive/isEmergency), KHÔNG gửi id/caseCode/status. priority/sensitive lấy TỪ category đã chọn
 // (echo dữ liệu server cấp, không tự chế luật). Client Zod chỉ là pre-check lịch sự; 400 → server
 // quyết, map details về field. Quyền: AUDITOR không tạo → KHÔNG render form (không disable giả).
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/hooks/useSession";
@@ -48,7 +48,13 @@ function parse400(err: unknown): FieldErrors | null {
 
 export default function ReportNewPage() {
   const router = useRouter();
-  const { user, role, isLoading: sessionLoading } = useSession();
+  const {
+    user,
+    role,
+    isLoading: sessionLoading,
+    isError: sessionError,
+    refetch: sessionRefetch,
+  } = useSession();
   const cats = useCategories();
   const locs = useLocations();
 
@@ -70,6 +76,15 @@ export default function ReportNewPage() {
   );
   const derivedPriority: CasePriority = selectedCategory?.defaultPriority ?? "MEDIUM";
 
+  // Focus + announce câu hỏi mỗi khi đổi bước (và khi form vừa hiện) — APG wizard focus-management +
+  // WCAG 4.1.3: <h1> đổi tại chỗ vốn CÂM với SR/keyboard nếu không dời focus. Hook gọi vô điều kiện
+  // (trước mọi early-return); khi form chưa hiện thì headingRef null → no-op.
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const showForm = !created && !sessionLoading && !!user && role !== "AUDITOR";
+  useEffect(() => {
+    if (showForm) headingRef.current?.focus();
+  }, [step, showForm]);
+
   // ── 201 thành công → RELEASE BURST (thay cả màn form) ──
   if (created) {
     return <ReleaseBurst caseCode={created.caseCode} onDone={() => router.push("/")} />;
@@ -81,6 +96,22 @@ export default function ReportNewPage() {
       <div className="mx-auto flex max-w-xl flex-col gap-6 py-12">
         <Skeleton className="h-8 w-2/3" />
         <Skeleton className="h-28 w-full" />
+      </div>
+    );
+  }
+  // /me lỗi KHÔNG-401 (503/mạng): api.ts CHỈ tự điều hướng khi 401 → ở đây phải hiện lỗi điềm tĩnh
+  // + "Thử lại", KHÔNG để màn trắng câm. UX-only (không nới quyền — server vẫn là nguồn quyền).
+  if (sessionError) {
+    return (
+      <div className="mx-auto flex max-w-xl flex-col items-start gap-3 py-24">
+        <p className="text-ink-3 font-mono text-xs">Không tải được phiên làm việc.</p>
+        <button
+          type="button"
+          onClick={() => void sessionRefetch()}
+          className="text-ink-2 hover:text-ink text-xs underline-offset-4 transition-colors duration-150 ease-quiet hover:underline"
+        >
+          Thử lại
+        </button>
       </div>
     );
   }
@@ -133,7 +164,9 @@ export default function ReportNewPage() {
       description: description.trim(),
       categoryId,
       ...(locationId ? { locationId } : {}),
-      priority: derivedPriority,
+      // Chỉ gửi priority KHI category cấp — KHÔNG tự chế default thay server (priority? là optional,
+      // defaultPriority nullable). derivedPriority (fallback MEDIUM) chỉ để hiển thị nhãn ở bước 4.
+      ...(selectedCategory?.defaultPriority ? { priority: selectedCategory.defaultPriority } : {}),
       sensitive: selectedCategory?.defaultSensitive ?? false,
       emergency,
     };
@@ -157,7 +190,11 @@ export default function ReportNewPage() {
       <p className="text-ink-3 font-mono text-[11px] tracking-[0.18em] uppercase">
         {String(step + 1).padStart(2, "0")} / {String(STEP_PROMPTS.length).padStart(2, "0")}
       </p>
-      <h1 className="text-ink mt-3 font-serif text-3xl leading-snug md:text-4xl">
+      <h1
+        ref={headingRef}
+        tabIndex={-1}
+        className="text-ink mt-3 font-serif text-3xl leading-snug outline-none md:text-4xl"
+      >
         {STEP_PROMPTS[step]}
       </h1>
 
@@ -166,12 +203,14 @@ export default function ReportNewPage() {
           <>
             <Input
               label="Tiêu đề ngắn"
-              autoFocus
               maxLength={200}
               placeholder="Một câu tóm tắt việc đã xảy ra"
               value={title}
               error={fieldErrors.title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => {
+                if (fieldErrors.title) setFieldErrors((p) => ({ ...p, title: undefined }));
+                setTitle(e.target.value);
+              }}
             />
             <Textarea
               label="Kể lại chi tiết"
@@ -180,7 +219,11 @@ export default function ReportNewPage() {
               placeholder="Chuyện diễn ra thế nào, khi nào, có ai liên quan…"
               value={description}
               error={fieldErrors.description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e) => {
+                if (fieldErrors.description)
+                  setFieldErrors((p) => ({ ...p, description: undefined }));
+                setDescription(e.target.value);
+              }}
             />
           </>
         )}

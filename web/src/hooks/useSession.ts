@@ -34,5 +34,6 @@ export function useSession() {
     role: q.data?.user.role ?? null,
     isLoading: q.isLoading,
     isError: q.isError,
+    refetch: q.refetch,
   };
 }
