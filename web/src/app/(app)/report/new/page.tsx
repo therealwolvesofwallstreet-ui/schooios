@@ -29,21 +29,26 @@ const TITLE_MIN = 5;
 const DESC_MIN = 10;
 const STEP_PROMPTS = ["Chuyện gì đã xảy ra?", "Thuộc nhóm nào?", "Việc xảy ra ở đâu?", "Cần xử lý ngay?"] as const;
 
-type FieldKey = "title" | "description" | "categoryId";
+type FieldKey = "title" | "description" | "categoryId" | "locationId";
 type FieldErrors = Partial<Record<FieldKey, string>>;
 
-// Map 400 của server (Zod issues) về field. Server là chân lý — chỉ đọc, không tự suy.
-function parse400(err: unknown): FieldErrors | null {
+// Map 400 của server (Zod issues) về field. Server là chân lý — chỉ đọc, không tự suy. Phủ TRỌN payload
+// có-thể-400 (docs/API.md POST /api/cases: "category·location sai" → 400). `message` = error verbatim
+// cho 400 không gắn được field (KHÔNG nuốt thành câu chung mơ hồ).
+function parse400(err: unknown): { fields: FieldErrors; message: string | null } | null {
   if (!(err instanceof ApiError) || err.status !== 400) return null;
-  const body = err.body as { details?: Array<{ path?: (string | number)[]; message?: string }> } | null;
+  const body = err.body as {
+    error?: string;
+    details?: Array<{ path?: (string | number)[]; message?: string }>;
+  } | null;
   const fields: FieldErrors = {};
   for (const issue of body?.details ?? []) {
     const key = issue.path?.[0];
-    if (key === "title" || key === "description" || key === "categoryId") {
+    if (key === "title" || key === "description" || key === "categoryId" || key === "locationId") {
       fields[key] = issue.message ?? "Giá trị không hợp lệ.";
     }
   }
-  return fields;
+  return { fields, message: typeof body?.error === "string" ? body.error : null };
 }
 
 export default function ReportNewPage() {
@@ -167,6 +172,9 @@ export default function ReportNewPage() {
       // Chỉ gửi priority KHI category cấp — KHÔNG tự chế default thay server (priority? là optional,
       // defaultPriority nullable). derivedPriority (fallback MEDIUM) chỉ để hiển thị nhãn ở bước 4.
       ...(selectedCategory?.defaultPriority ? { priority: selectedCategory.defaultPriority } : {}),
+      // `sensitive` chỉ là GỢI Ý từ category đã chọn. Server là CHÂN LÝ: sensitivity escalate-only từ
+      // category (CLAUDE.md/API.md) → KHÔNG thể bị hạ phân loại bởi giá trị FE (privacy-safe kể cả khi
+      // category read cũ). Gửi vì là field hợp đồng hợp lệ; server vẫn tự escalate.
       sensitive: selectedCategory?.defaultSensitive ?? false,
       emergency,
     };
@@ -174,12 +182,19 @@ export default function ReportNewPage() {
       await mutation.mutateAsync(payload);
       // thành công → onCreated set `created` → burst (xem nhánh trên).
     } catch (e) {
-      const fields = parse400(e);
-      if (fields) {
-        setFieldErrors(fields);
-        if (fields.title || fields.description) setStep(0);
-        else if (fields.categoryId) setStep(1);
-        else setFormError("Thông tin chưa hợp lệ. Kiểm tra lại giúp mình.");
+      const parsed = parse400(e);
+      if (parsed) {
+        const { fields, message } = parsed;
+        if (Object.keys(fields).length > 0) {
+          setFieldErrors(fields);
+          // Nhảy về bước SAI ĐẦU TIÊN (title/desc→0, category→1, location→2).
+          if (fields.title || fields.description) setStep(0);
+          else if (fields.categoryId) setStep(1);
+          else if (fields.locationId) setStep(2);
+        } else {
+          // 400 không gắn field → message server verbatim (không nuốt thành câu chung mơ hồ).
+          setFormError(message ?? "Thông tin chưa hợp lệ. Kiểm tra lại giúp mình.");
+        }
       }
       // lỗi khác (403/409/429/503/network): useOptimisticMutation đã toast.
     }
@@ -258,16 +273,27 @@ export default function ReportNewPage() {
               aria-label="Địa điểm"
               items={locationChoices}
               value={locationId}
-              onChange={setLocationId}
+              onChange={(id) => {
+                if (fieldErrors.locationId) setFieldErrors((p) => ({ ...p, locationId: undefined }));
+                setLocationId(id);
+              }}
               isLoading={locs.isLoading}
               isError={locs.isError}
               onRetry={locs.refetch}
               emptyMessage="Chưa có địa điểm nào."
             />
+            {fieldErrors.locationId && (
+              <span role="alert" className="text-signal font-mono text-xs">
+                {fieldErrors.locationId} — chọn lại hoặc bỏ chọn để tiếp tục.
+              </span>
+            )}
             {locationId && (
               <button
                 type="button"
-                onClick={() => setLocationId(null)}
+                onClick={() => {
+                  if (fieldErrors.locationId) setFieldErrors((p) => ({ ...p, locationId: undefined }));
+                  setLocationId(null);
+                }}
                 className="text-ink-3 hover:text-ink self-start text-xs underline-offset-4 transition-colors duration-150 ease-quiet hover:underline"
               >
                 Bỏ chọn địa điểm

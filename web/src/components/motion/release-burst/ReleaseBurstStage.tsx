@@ -18,11 +18,12 @@ import gsap from "gsap";
 import { CustomEase } from "gsap/CustomEase";
 import { BufferGeometry, Color, Float32BufferAttribute, NormalBlending, ShaderMaterial } from "three";
 import { sampleText } from "./sample-text";
+import { EASE_EMERGE_BEZIER, EASE_QUIET_BEZIER, gsapEasePath } from "@/lib/cubic-bezier";
 
 gsap.registerPlugin(useGSAP, CustomEase);
-// Ease token (tokens.css) → GSAP CustomEase: cubic-bezier(x1,y1,x2,y2) ≡ "M0,0 C x1,y1 x2,y2 1,1".
-CustomEase.create("burstEmerge", "M0,0 C0.16,1 0.3,1 1,1"); // --ease-emerge (0.16,1,0.3,1)
-CustomEase.create("burstQuiet", "M0,0 C0.22,0.61 0.36,1 1,1"); // --ease-quiet (0.22,0.61,0.36,1)
+// Ease lấy TỪ nguồn duy nhất (lib/cubic-bezier) → KHÔNG hardcode lại số bezier (chống drift token §SSOT).
+CustomEase.create("burstEmerge", gsapEasePath(EASE_EMERGE_BEZIER));
+CustomEase.create("burstQuiet", gsapEasePath(EASE_QUIET_BEZIER));
 
 // ShaderMaterial tự inject position/modelViewMatrix/projectionMatrix — KHÔNG khai lại.
 const VERT = /* glsl */ `

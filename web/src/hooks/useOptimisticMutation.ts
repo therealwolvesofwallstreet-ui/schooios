@@ -16,6 +16,12 @@ interface OptimisticOptions<TData, TVars> {
   onSuccess?: (data: TData, vars: TVars) => void;
   successMessage?: string;
   conflictMessage?: string;
+  /**
+   * Ghi đè retry mặc định của queryClient (429/503 ×3). Đặt `false` cho mutation **KHÔNG idempotent**
+   * (vd POST create): retry trên 503 do commit-ambiguity có thể sinh bản ghi TRÙNG. PATCH có
+   * optimistic-lock thì retry-safe (updatedAt cũ → 409) nên giữ mặc định. Mặc định: kế thừa queryClient.
+   */
+  retry?: boolean | ((failureCount: number, error: unknown) => boolean);
 }
 
 export function useOptimisticMutation<TData, TVars>(opts: OptimisticOptions<TData, TVars>) {
@@ -29,6 +35,8 @@ export function useOptimisticMutation<TData, TVars>(opts: OptimisticOptions<TDat
 
   return useMutation<TData, unknown, TVars>({
     mutationFn: opts.mutationFn,
+    // Chỉ override khi caller chỉ định; nếu không → kế thừa default (shouldRetry 429/503) của queryClient.
+    ...(opts.retry !== undefined ? { retry: opts.retry } : {}),
     onSuccess: (data, vars) => {
       invalidate();
       if (opts.successMessage) push(opts.successMessage, "success");

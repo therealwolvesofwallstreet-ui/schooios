@@ -54,6 +54,20 @@ hairline-first · permission = KHÔNG render · contract đóng băng. Mọi mà
     demand-loop · 1260ms>trần→1.18s · SR câm caseCode→describedby · styleguide hydration→dynamic ssr:false ·
     resize restart→chốt dims 1 lần), **2 hoãn cosmetic** (fallback desync · slow-net chunk order; §7 nghĩa nguyên).
     **Verify**: tsc 0 · eslint --max-warnings 0 · next build 0 · three-lazy proven. KHÔNG schema/DB.
+    **F2-2D (Hardening & Closure)** — re-audit tư duy-ngược (contract>correctness>a11y>perf>polish) → khóa
+    findings đường-ghi-dữ-liệu: **(#1)** POST create KHÔNG idempotent bị `mutations.retry` auto-retry trên
+    503 (commit-ambiguity qua pooler) → case TRÙNG âm thầm; vá: `useCreateCase` `retry:false` (PATCH giữ
+    retry vì optimistic-lock tự an toàn). **(#3)** `parse400` chỉ map 3/4 field → 400 `locationId` (location
+    deactivate) rơi câu chung mơ hồ; vá: phủ `locationId`→bước 2 + hiển thị lỗi + recovery (chọn lại/bỏ chọn)
+    + fallback message server verbatim. **(#4 resolved, KHÔNG bug)** `sensitive` FE gửi là gợi-ý; server
+    escalate-only từ category là chân lý → không thể hạ phân loại (privacy-safe) — thêm comment, KHÔNG đổi
+    hành vi. **(SSOT)** gộp control-point ease về 1 nguồn `lib/cubic-bezier` (Framer tuple + GSAP CustomEase +
+    mid-tier import chung, hết 3-nơi-lệch); §2 đánh dấu postprocessing GỠ; §3 nói THẬT: fallback chỉ phủ lỗi
+    NÉM (chunk/throw), hỏng-WebGL-im-lặng → DOM-only. **Verify**: tsc 0 · eslint 0 · build 0 · three+gsap
+    lazy-only · static-assert `retry:false` create + reads/PATCH giữ retry. **RESIDUAL (ngoài FE/F2.2):**
+    (a) khử-trùng tuyệt đối khi user TỰ retry sau 503 cần **idempotency key phía server** (backend, không
+    đổi được ở FE — hợp đồng đóng băng); (b) listener `webglcontextlost`→Canvas cho hỏng-WebGL-im-lặng.
+    **⇒ F2.2 ĐÓNG BĂNG.** UNCERTAIN còn lại: GLSL high-tier chưa kiểm trên GPU thật (hỏng → degrade DOM, nghĩa nguyên).
   - [ ] F2-3: Case Detail (Spine) — **CURRENT** — freeze layout+Spine+domain-hook sau màn này
   - [ ] F2-4: Dashboard role-aware (ADMIN/AUDITOR landing → `/dashboard`)
 

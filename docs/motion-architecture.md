@@ -28,7 +28,8 @@
 | **Framer Motion** | active | DOM enter/exit, list stagger, panel/page transition | particle, 3D, scroll-jack |
 | **GSAP + @gsap/react** | active | choreography timeline, ease tùy biến, stage timing | layout DOM thường (để Framer) |
 | **Canvas 2D** | active | particle tier-giữa / fallback của stage | bề mặt vận hành |
-| **three + R3F + @react-three/postprocessing** | **stage-only** (cài KHI dựng moment dùng nó) | đúng 5 stage moment | bất kỳ bề mặt vận hành nào |
+| **three + R3F** | **active stage-only** (cài F2-2C cho Release Burst) | đúng 5 stage moment | bất kỳ bề mặt vận hành nào |
+| **@react-three/postprocessing** (Bloom/DOF…) | **RESERVED — chưa cài** (đã thử & GỠ ở F2-2C: additive/bloom trên nền GIẤY sáng dễ bệt; Burst dùng soft-sprite) | post-FX cho stage moment khi tinh chỉnh trên GPU thật | ops surface |
 | **Lenis** (smooth scroll) | **RESERVED — chưa cài** | chỉ landing/threshold khi có scroll moment thật | ops surface (CẤM scroll-jack) |
 
 - `[LAW]` three/R3F **KHÔNG bao giờ** vào ops bundle — chỉ qua `dynamic(..., { ssr: false })`.
@@ -119,6 +120,10 @@ burst-tier}` + `lib/cubic-bezier.ts`. Quyết định khác plan đã chốt:
 - **frameloop="demand"** + invalidate() drive từ GSAP onUpdate → hết burst là loop ngừng (KHÔNG đốt GPU nền).
 - **a11y:** DOM confirmation luôn render; SR đọc xác nhận qua focus tiêu đề + `aria-describedby`→caseCode (live
   region tĩnh không tự announce); lớp particle `aria-hidden`. Total timeline 1.18s ≤ trần 1200ms.
+- **Fallback chỉ phủ lỗi NÉM:** `StageBoundary` bắt chunk-import reject + throw lúc R3F render → rơi Canvas 2D.
+  Hỏng WebGL IM LẶNG (context-loss, shader compile/link fail — three log + no-op, KHÔNG ném) → high layer
+  rỗng, KHÔNG tự rơi Canvas. Chấp nhận được vì DOM confirmation luôn hiện (nghĩa nguyên); **RESIDUAL F2-2D:**
+  thêm listener `webglcontextlost` → degrade Canvas, để mở.
 - **Hoãn (cosmetic, §7 nghĩa vẫn nguyên):** (a) path high→fail→mid: Canvas fallback mount muộn nên lệch nhịp
-  với DOM-reveal cố định; (b) mạng chậm: chunk high tải >~0.95s thì DOM hiện trước rồi particle mới bung. Cả
+  với DOM-reveal cố định; (b) mạng chậm: chunk high tải >~0.86s thì DOM hiện trước rồi particle mới bung. Cả
   hai chỉ giảm chất "spectacle" trên nhánh hiếm, KHÔNG mất nghĩa/a11y.

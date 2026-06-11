@@ -9,8 +9,9 @@
 // DOM confirmation LUÔN render = vật mang nghĩa DUY NHẤT; lớp particle chỉ TRANG TRÍ (aria-hidden,
 // pointer-events-none). SR nghe xác nhận qua FOCUS tiêu đề lúc mount (đọc accessible name dù opacity 0)
 // + aria-describedby trỏ tới <p> caseCode → đọc luôn MÃ hồ sơ (live region tĩnh KHÔNG tự announce, nên
-// cơ chế thật là focus+describedby). Tier high lỗi (chunk/WebGL) → ErrorBoundary rơi xuống Canvas 2D
-// (§6 graceful degrade). Tải qua dynamic(ssr:false) từ trang → client-only.
+// cơ chế thật là focus+describedby). Tier high lỗi NÉM (chunk-load reject / throw lúc render) →
+// ErrorBoundary rơi xuống Canvas 2D; hỏng WebGL IM LẶNG (context-loss/shader-fail) → high rỗng nhưng
+// DOM confirmation vẫn đủ (motion §3 RESIDUAL). Tải qua dynamic(ssr:false) từ trang → client-only.
 import { Component, Suspense, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
@@ -18,6 +19,7 @@ import { Button } from "@/components/ui/Button";
 import { SignalDot } from "@/components/ui/SignalDot";
 import ReleaseBurstCanvas from "./release-burst/ReleaseBurstCanvas";
 import { detectBurstTier, type BurstTier } from "./release-burst/burst-tier";
+import { EASE_EMERGE_BEZIER } from "@/lib/cubic-bezier";
 
 // Chunk three/R3F — nạp CHỈ khi tier=high (ssr:false). KHÔNG import tĩnh ở đây.
 const ReleaseBurstStage = dynamic(() => import("./release-burst/ReleaseBurstStage"), { ssr: false });
@@ -31,8 +33,8 @@ export interface ReleaseBurstProps {
   forceTier?: BurstTier;
 }
 
-// ease-emerge (tokens.css) cho reveal — ease-out, KHÔNG spring/bounce.
-const EASE_EMERGE = [0.16, 1, 0.3, 1] as const;
+// ease-emerge cho reveal lấy TỪ nguồn duy nhất (lib/cubic-bezier) — KHÔNG hardcode lại số bezier.
+const EASE_EMERGE = EASE_EMERGE_BEZIER;
 
 // Tier high lỗi runtime (chunk-load/WebGL throw) → rơi xuống fallback (Canvas 2D), §6 graceful degrade.
 class StageBoundary extends Component<{ fallback: ReactNode; children: ReactNode }, { failed: boolean }> {

@@ -32,6 +32,16 @@ export function cubicBezier(
   };
 }
 
-// Mirror của tokens.css (giữ đồng bộ nếu token đổi).
-export const easeEmerge = cubicBezier(0.16, 1, 0.3, 1); // --ease-emerge (reveal)
-export const easeQuiet = cubicBezier(0.22, 0.61, 0.36, 1); // --ease-quiet (interactive)
+// ── NGUỒN DUY NHẤT (JS) cho control points ease — mirror tokens.css. Đổi token ⇒ SỬA Ở ĐÂY; mọi nơi
+// dùng ease (Framer tuple, GSAP CustomEase, easeEmerge/easeQuiet mid-tier) import từ đây, KHÔNG hardcode
+// lại số bezier (chống 3-nơi-lệch-nhau). CSS `--ease-*` là mirror song song — giữ đồng bộ thủ công. ──
+export const EASE_EMERGE_BEZIER = [0.16, 1, 0.3, 1] as const; // --ease-emerge (reveal)
+export const EASE_QUIET_BEZIER = [0.22, 0.61, 0.36, 1] as const; // --ease-quiet (interactive)
+
+export const easeEmerge = cubicBezier(...EASE_EMERGE_BEZIER);
+export const easeQuiet = cubicBezier(...EASE_QUIET_BEZIER);
+
+/** Đường SVG cho GSAP CustomEase từ control points cubic-bezier(x1,y1,x2,y2). */
+export function gsapEasePath([x1, y1, x2, y2]: readonly [number, number, number, number]): string {
+  return `M0,0 C${x1},${y1} ${x2},${y2} 1,1`;
+}
