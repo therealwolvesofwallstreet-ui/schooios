@@ -269,6 +269,8 @@ Khách hit root `/` (chưa auth) → proxy đẩy `/login` → thấy Landing tr
 
 ## 14. Trạng thái & resume
 
-- **Đã xong (branch `feature/immersive`):** `7a94664` palette dark (→ sơn lại warm ở **F1**) · `5fbe31d` Stage scaffold + Threshold login dark (scaffold GIỮ, shader sơn lại ở **F2**) · `c5499df`/`0727f0e` design-vision + mockup warm.
-- **Điểm xuất phát:** `design-vision/landing-warm.html` (đúng hướng, relief cần SẮC hơn) · `login-warm-a.html` (ấm, cần thêm nét + liên kết). Mở trực tiếp bằng trình duyệt.
-- **Resume:** `/clear` → "**continue F1**" (rồi F2 → F3 → F4 → F5 → F6 → F7). Mỗi phase = 1 context sạch, commit + tag (`warm-f1`…`immersive-warm-complete`) trước clear.
+- **✅ F1 — Nền Warm** (`warm-f1`): token/font/grain/primitives/styleguide warm.
+- **✅ F2 — Threshold** (`warm-f2` @ `20588fa`): Landing 3-tier IG-grade (`warm-f2a1` relief high · `warm-f2a2` mid/reduced+nav) + Login re-shader warm (`warm-f2b`) + **cuộn→login một cảnh trên `/login`** (`warm-f2`, Lenis+GSAP). GATE F2 đạt: 3-tier · auth.spec xanh (4 pass/6 skip) · axe 0 · hero ≈9/10 · tsc/lint/build. Components: `components/landing/*`, `components/auth/threshold/*` (warm), `components/motion/landing/{ScrollController,ThresholdScene}`. Verify rig: `.verify/{shoot-landing,shoot-threshold,a11y-login}.cjs` (gitignored).
+  - **Nợ kỹ thuật (mang sang sau):** React #418 hydration trên `/login` full-motion (high/mid) — `Stage` chọn tier SSR(reduced)↔client(high) lệch; PRE-EXISTING (không do F2c). Fix sạch cần gate tier ở tầng `Stage` (useState khóa tier 1 lần → cần remount → re-fire autoFocus form). Xử ở pass `Stage`-level (cân nhắc F3/F5).
+- **Điểm xuất phát (lịch sử):** `design-vision/landing-warm.html` · `login-warm-a.html`.
+- **Resume:** `/clear` → "**continue F3**" (Core surfaces re-skin: AppShell + 3 dashboard + case-detail/Spine + report/burst) → F4 → F5 → F6 → F7. Mỗi phase = 1 context sạch, commit + tag trước clear.
