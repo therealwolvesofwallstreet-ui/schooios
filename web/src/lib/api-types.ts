@@ -197,6 +197,14 @@ export interface AttachmentDeleteResponse {
   deleted: boolean;
 }
 
+// ---- Users (F6 Đợt 1.5) — ADMIN-only picker; 0 PII ----
+export interface UsersResponse {
+  users: UserRef[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
 export interface DashboardResponse {
   totalCases: number;
   newToday: number;

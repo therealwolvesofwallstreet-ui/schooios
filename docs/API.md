@@ -165,10 +165,12 @@ này TRƯỚC): **tên field** trong shape, **giá trị enum** (chuỗi), **ng�
 | GET `/api/categories` | mọi role đã đăng nhập | – | 200 `{ categories[] }` | 401 · 503 |
 | GET `/api/locations` | mọi role đã đăng nhập | – | 200 `{ locations[] }` | 401 · 503 |
 | GET `/api/audit` | **CHỈ ADMIN/AUDITOR** (role khác → 403) | `?page&limit(1–100)&entityType?&entityId?` | 200 `{ logs[], total, page, totalPages }` | 400 · 401 · 403 · 503 |
+| GET `/api/users` | **CHỈ ADMIN** (role khác → 403) | `?role∈{STAFF,ADMIN}(def STAFF)&page(≥1)&limit(1–100,def50)` | 200 `{ users[], total, page, totalPages }` | 400 (role rác/STUDENT/AUDITOR · limit ngoài biên) · 401 · 403 · 503 |
 
 **Category (lookup item)** — `{ id, name, description|null, defaultPriority|null, defaultSensitive }` (chỉ `isActive=true`, sắp theo `name`). Dùng nạp dropdown form tạo case.
 **Location (lookup item)** — `{ id, code, name, floor|null, type, buildingId|null, building{id,code,name}|null }` (chỉ `isActive=true`, sắp theo `code`). Dùng nạp dropdown form tạo case.
 **AuditLog (list item)** — `{ id, action, entityType, entityId, metadata, createdAt, actorId|null, actor{id,name,role}|null }` (append-only/immutable; mới nhất trước, tiebreaker `id` cho paging tất định; KHÔNG phơi PII ngoài `{id,name,role}` của actor).
+**User (assignable)** — `{ id, name, role }` · 0 PII (KHÔNG email/sbd/dob/passwordHash) · chỉ `isActive=true` · sắp `(name asc, id asc)` tất định · dùng nạp picker giao việc + cân tải ADMIN.
 
 ---
 
