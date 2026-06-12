@@ -10,8 +10,9 @@
 //  KHÔNG chart, KHÔNG /dashboard.
 import Link from "next/link";
 import { Fragment } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import { useCaseList } from "@/hooks/useCaseList";
+import { useHydrated } from "@/hooks/useHydrated";
 import { EASE_EMERGE_BEZIER } from "@/lib/cubic-bezier";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -23,15 +24,16 @@ import type { SessionUser } from "@/hooks/useSession";
 
 const PREVIEW_LIMIT = 6;
 
-// Hero "cất tiếng nói" — chữ HIỆN theo từng từ (reveal), gate prefers-reduced-motion (null→reduced)
-// như MiniSpine/Spine. Chữ Việt GIỮ Newsreader (font-serif) — Cormorant thiếu dấu thanh.
+// Hero "cất tiếng nói" — chữ HIỆN theo từng từ (reveal). Gate theo HYDRATE (KHÔNG prefers-reduced-motion
+// — owner "immersive cho mọi người"): SSR/first-paint render TĨNH (hiện rõ, không flash/ẩn), sau hydrate
+// thì reveal cho MỌI người. Chữ Việt GIỮ Newsreader (font-serif) — Cormorant thiếu dấu thanh.
 const HERO_TEXT = "Tiếng nói của bạn rất quan trọng.";
 const HERO_WORDS = HERO_TEXT.split(" ");
 
 function KineticHero() {
-  const reduced = useReducedMotion() ?? true;
+  const staticFirst = !useHydrated();
   const className = "text-ink max-w-xl font-serif text-3xl leading-snug md:text-4xl";
-  if (reduced) {
+  if (staticFirst) {
     return <h1 className={className}>{HERO_TEXT}</h1>;
   }
   return (

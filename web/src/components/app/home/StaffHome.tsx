@@ -7,8 +7,9 @@
 // Hai bucket nằm TRỌN trong union → không rò case ngoài quyền. Empty RIÊNG mỗi bucket.
 // GIẢ ĐỊNH (đóng băng hôm nay): "đang chờ nhận" = NEW/TRIAGED chưa giao — bám luật self-assign ở
 // CLAUDE.md state machine; nếu luật workflow đổi thì cách suy ra bucket này đổi theo. KHÔNG /dashboard.
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import { useCaseList } from "@/hooks/useCaseList";
+import { useHydrated } from "@/hooks/useHydrated";
 import { EASE_EMERGE_BEZIER } from "@/lib/cubic-bezier";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -19,7 +20,8 @@ import type { SessionUser } from "@/hooks/useSession";
 
 export function StaffHome({ user }: { user: SessionUser }) {
   const { cases, isLoading, isError, refetch } = useCaseList(user.id, { limit: 100 });
-  const reduced = useReducedMotion() ?? true;
+  // Gate theo HYDRATE (KHÔNG prefers-reduced-motion): SSR tĩnh, sau hydrate emerge cho MỌI người.
+  const staticFirst = !useHydrated();
 
   const mine = cases.filter((c) => c.assignedToId === user.id);
   const waiting = cases.filter(
@@ -31,8 +33,8 @@ export function StaffHome({ user }: { user: SessionUser }) {
       {/* Header emerge — micro motion (Refined tier), gate reduced-motion. */}
       <motion.header
         className="flex flex-col gap-2"
-        initial={reduced ? false : { opacity: 0, y: 8 }}
-        animate={reduced ? undefined : { opacity: 1, y: 0 }}
+        initial={staticFirst ? false : { opacity: 0, y: 8 }}
+        animate={staticFirst ? undefined : { opacity: 1, y: 0 }}
         transition={{ duration: 0.28, ease: EASE_EMERGE_BEZIER }}
       >
         <h1 className="text-ink font-serif text-3xl leading-snug">Bàn điều phối của bạn</h1>

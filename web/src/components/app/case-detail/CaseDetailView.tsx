@@ -5,8 +5,9 @@
 // 404 ĐỒNG NHẤT (serif 1 dòng — không phân biệt không-tồn-tại vs không-quyền) · lỗi tải (điềm tĩnh +
 // Thử lại). Quyền hiển thị do từng component con tự quyết (panel/composer null khi không phép).
 import dynamic from "next/dynamic";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import { useCaseDetail } from "@/hooks/useCaseDetail";
+import { useHydrated } from "@/hooks/useHydrated";
 import { EASE_EMERGE_BEZIER } from "@/lib/cubic-bezier";
 import { CaseHeader } from "./CaseHeader";
 import { Spine } from "./Spine";
@@ -17,13 +18,15 @@ import { DetailSkeleton, NotFoundState, ErrorState } from "@/components/app/stat
 import { formatDateTime } from "@/lib/case-display";
 import type { CaseDetail } from "@/lib/api-types";
 
-// Cuộn điện ảnh Lenis (client-only) — nạp lazy, CHỈ mount khi KHÔNG reduced-motion (reduced → cuộn
-// thường/anchor, motion §7). KHÔNG đụng dữ liệu/quyền — chỉ vòng đời smooth-scroll trên window.
+// Cuộn điện ảnh Lenis (client-only) — nạp lazy, mount sau HYDRATE cho MỌI người (KHÔNG gate prefers-
+// reduced-motion — owner "immersive cho mọi người"). SSR/first-paint = cuộn thường (no flash). KHÔNG
+// đụng dữ liệu/quyền — chỉ vòng đời smooth-scroll trên window.
 const CinematicScroll = dynamic(() => import("@/components/motion/CinematicScroll"), { ssr: false });
 
 export function CaseDetailView({ caseId }: { caseId: string }) {
   const { case: detail, isLoading, isError, notFound, refetch } = useCaseDetail(caseId);
-  const reduced = useReducedMotion() ?? true;
+  // `staticFirst` = pre-hydrate (SSR-safe), KHÔNG prefers-reduced-motion.
+  const staticFirst = !useHydrated();
 
   if (isLoading) return <DetailSkeleton />;
   if (notFound) return <NotFoundState />;
@@ -35,8 +38,8 @@ export function CaseDetailView({ caseId }: { caseId: string }) {
       {/* Đầu hồ sơ "hiện" lên (Rich tier) — gate reduced-motion; tiêu đề GIỮ Newsreader (font-serif):
           tên case là tiếng Việt tuỳ ý có dấu thanh, Cormorant thiếu glyph → vỡ dấu (quyết định như F3a). */}
       <motion.div
-        initial={reduced ? false : { opacity: 0, y: 10 }}
-        animate={reduced ? undefined : { opacity: 1, y: 0 }}
+        initial={staticFirst ? false : { opacity: 0, y: 10 }}
+        animate={staticFirst ? undefined : { opacity: 1, y: 0 }}
         transition={{ duration: 0.32, ease: EASE_EMERGE_BEZIER }}
       >
         <CaseHeader detail={detail} />
@@ -54,7 +57,7 @@ export function CaseDetailView({ caseId }: { caseId: string }) {
     </div>
   );
 
-  return reduced ? content : <CinematicScroll>{content}</CinematicScroll>;
+  return staticFirst ? content : <CinematicScroll>{content}</CinematicScroll>;
 }
 
 function CaseMeta({ detail }: { detail: CaseDetail }) {

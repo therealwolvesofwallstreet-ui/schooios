@@ -1,6 +1,6 @@
 "use client";
 
-// Sidebar = surface quyền lực (authority navy). Nav theo role; mục active = dấu signal + mực sáng.
+// Sidebar = surface quyền lực (authority = Cowhide #442d1c, KHÔNG navy). Nav theo role; active = signal + mực sáng.
 // Icon Phosphor weight "light" (~1.5px). Dùng chung cho rail desktop & drawer mobile.
 import Link from "next/link";
 import { usePathname } from "next/navigation";

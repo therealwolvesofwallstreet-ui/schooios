@@ -2,7 +2,7 @@
 
 // Khung 4 role: rail Sidebar (desktop) / drawer (mobile) + TopBar + main.
 // Nguồn role = useSession (server-truth). Đang tải → skeleton thở. min-w-0 ở cột nội dung
-// để mobile KHÔNG cuộn ngang. Drawer mobile trượt ease-emerge (tắt dưới reduced-motion).
+// để mobile KHÔNG cuộn ngang. Drawer mobile trượt ease-emerge (framer-motion, chạy cho mọi người).
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useSession } from "@/hooks/useSession";

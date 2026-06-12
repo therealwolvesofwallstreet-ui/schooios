@@ -320,8 +320,8 @@ export default function ReportNewPage() {
               </p>
             )}
 
-            {/* Đính kèm — U2 BLOCKED: placeholder trang trí (KHÔNG control thật → KHÔNG aria-disabled
-                vô nghĩa trên div). Upload sẽ thêm ở F3 (Supabase signed-upload). */}
+            {/* Đính kèm — placeholder trang trí (KHÔNG control thật → KHÔNG aria-disabled vô nghĩa
+                trên div). Upload (Supabase signed-upload) hoãn sang F4+ operational. */}
             <div className="border-line flex items-center justify-between rounded-md border border-dashed px-4 py-3 opacity-60">
               <span className="text-ink-3 text-sm">Tệp đính kèm (ảnh, tài liệu)</span>
               <span className="text-ink-3 font-mono text-[10px] tracking-wider uppercase">Sắp có</span>

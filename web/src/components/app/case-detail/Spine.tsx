@@ -4,9 +4,11 @@
 // statusHistory + comments (gộp & sắp tăng theo lib/spine.buildSpine). Dot straddle đường spine;
 // màu dot theo VAI TRÒ (STATUS_TONE cho status; ink cho comment/origin — signal HIẾM). Node status có
 // note "nở" ra (disclosure, ease-emerge). Comment NỘI BỘ = khảm bg-sunken + tag mono "NỘI BỘ" (chỉ
-// render nếu server trả → STUDENT thấy 0 node nội bộ). Motion gate prefers-reduced-motion (null→reduced).
+// render nếu server trả → STUDENT thấy 0 node nội bộ). Motion gate theo HYDRATE (KHÔNG prefers-reduced-
+// motion — owner "immersive cho mọi người"): SSR tĩnh, sau hydrate emerge cho MỌI người.
 import { useId, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { useHydrated } from "@/hooks/useHydrated";
 import { SignalDot, type SignalTone } from "@/components/ui/SignalDot";
 import { STATUS_TONE } from "@/components/ui/status-theme";
 import { STATUS_LABEL, formatDateTime } from "@/lib/case-display";
@@ -18,7 +20,8 @@ const EMERGE = { duration: 0.28, ease: [0.16, 1, 0.3, 1] as const };
 
 export function Spine({ detail }: { detail: CaseDetail }) {
   const nodes = buildSpine(detail);
-  const reduced = useReducedMotion() ?? true;
+  // `reduced` = static-first (pre-hydrate), KHÔNG prefers-reduced-motion (gate theo HYDRATE).
+  const reduced = !useHydrated();
   return (
     <ol className="border-line-2 relative ml-1.5 flex flex-col border-l">
       {nodes.map((node, i) => (
