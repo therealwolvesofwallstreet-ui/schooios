@@ -46,6 +46,29 @@ export function DetailSkeleton() {
   );
 }
 
+/** 403 ĐIỀM TĨNH — mục ngoài quyền (serif 1 dòng, KHÔNG đỏ). Server là nguồn quyền duy nhất; đây chỉ
+ *  là mặt UX (nav đã ẩn mục theo role; đây là lưới chắn khi vào thẳng URL). */
+export function PermissionDenied({
+  message = "Mục này nằm ngoài quyền của bạn.",
+}: {
+  message?: string;
+}) {
+  return (
+    <div className="mx-auto flex max-w-xl flex-col items-start gap-4 py-24">
+      <h1 className="text-ink font-serif text-2xl leading-snug">{message}</h1>
+      <p className="text-ink-3 text-sm">
+        Nếu bạn cho rằng đây là nhầm lẫn, hãy liên hệ quản trị viên.
+      </p>
+      <Link
+        href="/"
+        className="text-ink-2 hover:text-ink focus-visible:outline-ink rounded-sm text-sm underline-offset-4 transition-colors duration-150 ease-quiet hover:underline focus-visible:outline-2 focus-visible:outline-offset-2"
+      >
+        ← Về trang chủ
+      </Link>
+    </div>
+  );
+}
+
 /** 404 ĐỒNG NHẤT (serif 1 dòng) — không phân biệt không-tồn-tại vs không-quyền. */
 export function NotFoundState() {
   return (

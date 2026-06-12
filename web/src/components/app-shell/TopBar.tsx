@@ -9,6 +9,7 @@ import { List, Bell, SignOut } from "@phosphor-icons/react";
 import { api } from "@/lib/api";
 import type { Role } from "@/lib/api-types";
 import type { SessionUser } from "@/hooks/useSession";
+import { useUnreadCount } from "@/hooks/useNotifications";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 
@@ -28,6 +29,8 @@ export function TopBar({
 }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const queryClient = useQueryClient();
+  // Badge = server-truth (useUnreadCount). Chỉ bắn khi có phiên (tránh /notifications lúc đăng xuất).
+  const { unreadCount } = useUnreadCount(!!user);
 
   async function logout() {
     try {
@@ -57,10 +60,19 @@ export function TopBar({
 
       <Link
         href="/notifications"
-        aria-label="Thông báo"
-        className="text-ink-2 hover:text-ink rounded-md p-1.5 transition-colors duration-150 ease-quiet focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+        aria-label={unreadCount > 0 ? `Thông báo, ${unreadCount} chưa đọc` : "Thông báo"}
+        className="text-ink-2 hover:text-ink relative rounded-md p-1.5 transition-colors duration-150 ease-quiet focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
       >
         <Bell size={20} weight="light" />
+        {unreadCount > 0 && (
+          <span
+            data-testid="unread-badge"
+            aria-hidden="true"
+            className="bg-signal text-paper absolute top-0 right-0 flex h-4 min-w-4 items-center justify-center rounded-full px-1 font-mono text-[10px] leading-none tabular-nums"
+          >
+            {unreadCount > 9 ? "9+" : unreadCount}
+          </span>
+        )}
       </Link>
 
       {user && (
