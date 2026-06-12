@@ -6,9 +6,10 @@
 //   • mid    → <Mid/> (hoặc reduced nếu không có mid).
 //   • reduced→ render `reduced` tĩnh, KHÔNG canvas (prefers-reduced-motion / SSR).
 // high/mid do CALLER bọc sẵn dynamic(ssr:false) → three/R3F KHÔNG vào server bundle (motion §6/§8).
-import { Suspense, useState, type ComponentType, type ReactNode } from "react";
+import { Suspense, useMemo, type ComponentType, type ReactNode } from "react";
 import { StageBoundary } from "./StageBoundary";
 import { detectStageTier, type StageTier } from "./stage-tier";
+import { useHydrated } from "@/hooks/useHydrated";
 
 export interface StageProps {
   /** Tier high — R3F/WebGL. Caller truyền vào ĐÃ bọc dynamic(ssr:false). */
@@ -26,9 +27,14 @@ export interface StageProps {
 }
 
 export function Stage({ high: High, mid: Mid, reduced, children, forceTier, className }: StageProps) {
-  // Client-only (caller nạp qua dynamic ssr:false) → tính tier NGAY ở initializer: không flash,
-  // không null branch, reduced bắt đúng từ render đầu (không lóe motion — motion §7 LAW).
-  const [tier] = useState<StageTier>(() => forceTier ?? detectStageTier());
+  // #418 FIX (F5c): tier hydration-gated. Render client ĐẦU TIÊN (useHydrated=false) → "reduced", KHỚP
+  // server (detectStageTier SSR→"reduced") ⇒ 0 hydration mismatch. Sau hydrate → tier NĂNG LỰC thật.
+  // Children (z-10) LUÔN render BẤT KỂ tier (dưới) → KHÔNG remount (autoFocus input KHÔNG re-fire).
+  const hydrated = useHydrated();
+  const tier: StageTier = useMemo(
+    () => forceTier ?? (hydrated ? detectStageTier() : "reduced"),
+    [forceTier, hydrated],
+  );
 
   // Lớp TRANG TRÍ: WebGL/Canvas dưới nội dung, aria-hidden + pointer-events-none (SR bỏ qua, không
   // chắn click form). reduced KHÔNG render canvas nào.

@@ -21,6 +21,7 @@ import { Color, ShaderMaterial, Vector2, type Texture } from "three";
 import { THRESHOLD_FRAG, THRESHOLD_VERT } from "./threshold-shaders";
 import { buildWordTexture, drawWord, ensureWordFonts } from "./word-texture";
 import { EASE_EMERGE_BEZIER, EASE_QUIET_BEZIER, gsapEasePath } from "@/lib/cubic-bezier";
+import { useCanvasActive, bumpFrame } from "@/components/motion/landing/scene-phase";
 
 gsap.registerPlugin(useGSAP, CustomEase);
 // Ease lấy TỪ nguồn duy nhất (lib/cubic-bezier) → KHÔNG hardcode lại số bezier (chống drift token §SSOT).
@@ -45,6 +46,9 @@ function tokenColor(name: string, fallback: string): Color {
 
 function ThresholdField({ wordTex }: { wordTex: Texture }) {
   const { size, invalidate } = useThree();
+  // F5c: login đang hiển thị KHÔNG (∧ tab visible). Khi đang ở landing → KHÔNG tự invalidate vòng "thở"
+  // (single active canvas); reveal timeline VẪN chạy (transient ~5s, giữ nguyên beat). Resume = kick 1 frame.
+  const active = useCanvasActive("login");
 
   // Vòng chuột rẻ: lưu mục tiêu + thời điểm di chuyển cuối trong ref (không setState/re-render).
   const mouseTarget = useRef(new Vector2(0.5, 0.5));
@@ -121,17 +125,24 @@ function ThresholdField({ wordTex }: { wordTex: Texture }) {
     { dependencies: [material] },
   );
 
+  // Resume: khi login hiển thị TRỞ LẠI (scroll vào / tab hiện) → kick 1 frame để vòng demand sống lại.
+  useEffect(() => {
+    if (active) invalidate();
+  }, [active, invalidate]);
+
   // uTime tiến + lerp mouse mỗi frame được invalidate. mouseStr "thở" theo lần di chuyển gần nhất; còn
   // chênh lệch → invalidate frame kế (giữ ripple/Pulse breathe sống một nhịp ngắn sau khi chuột dừng).
   useFrame((_, delta) => {
+    bumpFrame("threshold"); // nhịp VERIFY (paused → vòng demand dừng → Δ=0)
     const u = material.uniforms;
     u.uTime.value = (u.uTime.value as number) + delta; // tiến từ pha ngẫu nhiên ban đầu
     (u.uMouse.value as Vector2).lerp(mouseTarget.current, 0.045);
     const since = (u.uTime.value as number) - lastMove.current;
     const wantStr = since < 0.1 ? 1.0 : Math.max(0, 1 - since * 0.8);
     u.uMouseStr.value += (wantStr - u.uMouseStr.value) * 0.06;
-    // Pulse luôn thở + ink-field luôn trôi rất khẽ → giữ vòng demand sống bằng invalidate liên tục.
-    invalidate();
+    // Pulse luôn thở + ink-field luôn trôi rất khẽ → giữ vòng demand sống bằng invalidate liên tục —
+    // NHƯNG CHỈ khi login đang hiển thị (F5c single-active; ở landing thì threshold idle, hết LAG).
+    if (active) invalidate();
   });
 
   return (

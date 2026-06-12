@@ -19,6 +19,7 @@ import {
   drawLandingWord,
   ensureLandingWordFonts,
 } from "./landing-word-texture";
+import { useCanvasActive, bumpFrame } from "@/components/motion/landing/scene-phase";
 
 // Đọc --color-* từ tokens (SSOT) → bytes sRGB truyền THẲNG (ShaderMaterial KHÔNG color-managed → không
 // để Color convert sang linear) để khớp đúng màu CSS trên màn hình.
@@ -73,8 +74,10 @@ function LandingField({ wordTex }: { wordTex: Texture }) {
   // R3F KHÔNG auto-dispose material truyền qua biến → tự dispose khi unmount (motion §6: tránh leak).
   useEffect(() => () => material.dispose(), [material]);
 
-  // frameloop="always" → drift sống liên tục (rất khẽ). uTime tiến theo delta thực.
+  // frameloop="always" → drift sống liên tục (rất khẽ). uTime tiến theo delta thực. bumpFrame = nhịp
+  // VERIFY (paused → useFrame dừng → Δ=0). frameloop bị cha tắt khi landing KHÔNG hiển thị (F5c).
   useFrame((_, delta) => {
+    bumpFrame("landing");
     material.uniforms.uTime.value = (material.uniforms.uTime.value as number) + delta;
   });
 
@@ -86,6 +89,9 @@ function LandingField({ wordTex }: { wordTex: Texture }) {
 }
 
 export default function LandingStage() {
+  // F5c: chỉ render khi landing đang hiển thị (∧ tab visible). Khi crossfade sang login → frameloop
+  // "never" (đóng băng frame cuối — landing lúc đó autoAlpha 0 nên KHÔNG thấy gì đổi). Single active canvas.
+  const active = useCanvasActive("landing");
   // Xây word texture MỘT lần (sau khi font về) — tránh đo sai khi font chưa nạp. useState giữ ổn định.
   const [word, setWord] = useState<{ texture: Texture; canvas: HTMLCanvasElement } | null>(null);
 
@@ -120,7 +126,7 @@ export default function LandingStage() {
 
   return (
     <Canvas
-      frameloop="always"
+      frameloop={active ? "always" : "never"}
       orthographic
       camera={{ position: [0, 0, 1] }}
       dpr={[1, 1.6]}

@@ -8,6 +8,7 @@ import { useEffect, useRef, type ReactNode } from "react";
 import Lenis from "lenis";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { emitScenePhase, type ScenePhase } from "./scene-phase";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -31,6 +32,17 @@ export default function ScrollController({ children }: { children: ReactNode }) 
     const landing = root.querySelector<HTMLElement>("[data-landing-layer]");
     const loginLayer = root.querySelector<HTMLElement>("[data-login-layer]");
 
+    // F5c MOTION-BUDGET: phát phiên hiệu pha crossfade khi ĐỔI (KHÔNG mỗi frame) → LandingStage/
+    // ThresholdStage tự pause frameloop của layer KHÔNG hiển thị ⇒ ở nghỉ chỉ 1 canvas render.
+    let lastPhase: ScenePhase | null = null;
+    const setPhase = (p: ScenePhase) => {
+      if (p !== lastPhase) {
+        lastPhase = p;
+        emitScenePhase(p);
+      }
+    };
+    setPhase("landing"); // khởi đầu ở landing → threshold canvas idle ngay từ đầu
+
     const ctx = gsap.context(() => {
       if (driver && landing && loginLayer) {
         // Login bắt đầu ẩn (autoAlpha 0 → visibility:hidden → form KHÔNG tab được tới khi hiện) + phóng khẽ.
@@ -38,7 +50,15 @@ export default function ScrollController({ children }: { children: ReactNode }) 
         // Crossfade scrub theo cuộn: landing TAN (mờ + zoom ra), login HIỆN (mờ→rõ + về scale 1).
         gsap
           .timeline({
-            scrollTrigger: { trigger: driver, start: "top top", end: "bottom bottom", scrub: 0.6 },
+            scrollTrigger: {
+              trigger: driver,
+              start: "top top",
+              end: "bottom bottom",
+              scrub: 0.6,
+              // Pha theo tiến trình: đỉnh=landing, đáy=login, giữa=both (crossfade cần CẢ HAI render).
+              onUpdate: (self) =>
+                setPhase(self.progress < 0.02 ? "landing" : self.progress > 0.98 ? "login" : "both"),
+            },
           })
           .to(landing, { autoAlpha: 0, scale: 1.08, ease: "none" }, 0)
           .to(loginLayer, { autoAlpha: 1, scale: 1, ease: "none" }, 0);

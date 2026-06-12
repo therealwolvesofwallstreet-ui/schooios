@@ -18,6 +18,7 @@ import {
   NormalBlending,
   ShaderMaterial,
 } from "three";
+import { useCanvasActive } from "@/components/motion/landing/scene-phase";
 import {
   DESIGN_HALF_W,
   buildLinks,
@@ -283,9 +284,11 @@ function PulseNetwork({ metrics }: { metrics: DashboardResponse | null }) {
 }
 
 export default function PulseFieldStage({ metrics }: { metrics: DashboardResponse | null }) {
+  // F5c idle-pause: KHÔNG crossfade (layer=null) → chỉ pause khi tab ẩn (visibility). Tab hiện lại → resume.
+  const active = useCanvasActive(null);
   return (
     <Canvas
-      frameloop="always"
+      frameloop={active ? "always" : "never"}
       camera={{ position: [0, 0, 6], fov: 50 }}
       dpr={[1, 2]}
       gl={{ alpha: true, antialias: true, powerPreference: "high-performance" }}
