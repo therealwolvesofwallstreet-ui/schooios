@@ -77,7 +77,7 @@ export function AuditView() {
       <header className="flex flex-col gap-2">
         <h1 className="text-ink font-serif text-3xl leading-snug">Nhật ký</h1>
         <p className="text-ink-3 text-sm">
-          Lưu vết bất biến mọi thay đổi trong hệ thống — chỉ đọc, không thể sửa.
+          Truy vết hoạt động
         </p>
       </header>
 

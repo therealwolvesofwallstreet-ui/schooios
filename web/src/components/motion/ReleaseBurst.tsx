@@ -245,7 +245,7 @@ export default function ReleaseBurst({ caseCode, onDone, forceTier }: ReleaseBur
           transition={{ duration: 0.4, ease: EASE, delay: 0.06 }}
           className="text-ink mt-3 max-w-md font-serif text-2xl leading-snug outline-none md:text-3xl"
         >
-          Tiếng nói của bạn đã được ghi nhận.
+          Báo cáo của bạn đã được ghi nhận
         </motion.h2>
 
         <motion.p

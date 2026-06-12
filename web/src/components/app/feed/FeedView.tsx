@@ -37,7 +37,7 @@ export function FeedView() {
     <div className="mx-auto flex max-w-3xl flex-col gap-8 py-6">
       <header className="flex flex-col gap-2">
         <h1 className="text-ink font-serif text-3xl leading-snug">Bảng tin</h1>
-        <p className="text-ink-3 text-sm">Những tiếng nói đang vang trong trường, mới nhất trước.</p>
+        <p className="text-ink-3 text-sm">Những báo cáo gần đây</p>
       </header>
 
       {isLoading ? (

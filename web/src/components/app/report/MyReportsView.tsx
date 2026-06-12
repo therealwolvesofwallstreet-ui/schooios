@@ -50,7 +50,7 @@ export function MyReportsView() {
         </div>
         <Link href="/report/new">
           <Button variant="primary" size="md">
-            Cất một tiếng nói
+            Báo cáo vấn đề
           </Button>
         </Link>
       </header>
@@ -65,7 +65,7 @@ export function MyReportsView() {
           action={
             <Link href="/report/new">
               <Button variant="secondary" size="sm">
-                Cất một tiếng nói
+                Báo cáo vấn đề
               </Button>
             </Link>
           }

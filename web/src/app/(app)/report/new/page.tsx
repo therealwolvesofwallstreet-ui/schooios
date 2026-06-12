@@ -358,7 +358,7 @@ export default function ReportNewPage() {
         </Button>
         {isLast ? (
           <Button onClick={submit} disabled={submitting}>
-            {submitting ? "Đang gửi…" : "Cất tiếng nói"}
+            {submitting ? "Đang gửi…" : "Báo cáo"}
           </Button>
         ) : (
           <Button onClick={goNext} disabled={!stepValid}>

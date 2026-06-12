@@ -90,7 +90,7 @@ export function AllCasesView({ initial = {} }: { initial?: AllCasesInitial }) {
       <header className="flex flex-col gap-2">
         <h1 className="text-ink font-serif text-3xl leading-snug">Tất cả vụ việc</h1>
         <p className="text-ink-3 text-sm">
-          Toàn bộ dòng sự vụ — lọc theo trạng thái, mức khẩn hoặc loại.
+          Toàn bộ sự vụ được lọc theo trạng thái, mức ưu tiên và thể loại
         </p>
       </header>
 

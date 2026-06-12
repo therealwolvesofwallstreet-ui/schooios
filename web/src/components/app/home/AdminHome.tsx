@@ -47,7 +47,7 @@ export function AdminHome({ readOnly = false }: { readOnly?: boolean }) {
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-12 py-6">
       <header className="flex flex-col gap-2">
-        <h1 className="text-ink font-serif text-3xl leading-snug">Đài quan sát</h1>
+        <h1 className="text-ink font-serif text-3xl leading-snug">TỔNG QUAN</h1>
         <p className="text-ink-3 text-sm">
           {readOnly ? "Chế độ chỉ xem — toàn cảnh hệ thống." : "Toàn cảnh hệ thống sự vụ."}
         </p>

@@ -35,7 +35,7 @@ export function EmergencyView() {
               <h1 className="text-on-depth font-serif text-3xl leading-snug">Tuyến khẩn cấp</h1>
             </div>
             <p className="text-on-depth-3 text-sm">
-              Những vụ việc được xác nhận khẩn — cần xử lý trước hết.
+              Những vụ việc được ưu tiên khẩn cấp xử lý
             </p>
           </div>
           <p

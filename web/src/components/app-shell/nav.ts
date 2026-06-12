@@ -35,7 +35,7 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { label: "Trang chủ", href: "/", icon: House },
     { label: "Bảng tin", href: "/feed", icon: Newspaper },
     { label: "Báo cáo của tôi", href: "/report", icon: Files },
-    { label: "Cất tiếng nói", href: "/report/new", icon: Megaphone },
+    { label: "Báo cáo", href: "/report/new", icon: Megaphone },
     { label: "Thông báo", href: "/notifications", icon: Bell },
   ],
   STAFF: [

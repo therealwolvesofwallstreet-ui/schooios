@@ -28,7 +28,7 @@ export function Sidebar({
     >
       <div className="px-2 py-4">
         <span className="text-paper text-base font-semibold tracking-tight">SchooIOS</span>
-        <p className="text-[11px] tracking-wider text-white/60 uppercase">Lưu khố sống</p>
+        <p className="text-[11px] tracking-wider text-white/60 uppercase">VÌ MỘT NGÔI TRƯỜNG TỐT ĐẸP HƠN</p>
       </div>
 
       <ul className="flex flex-col gap-0.5">
