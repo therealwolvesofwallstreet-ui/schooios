@@ -26,6 +26,7 @@ export default function LandingCanvas() {
     const raised = root.getPropertyValue("--color-paper-raised").trim() || "#fbf8f1";
     const sunken = root.getPropertyValue("--color-sunken").trim() || "#eae3d5";
     const cocoa = root.getPropertyValue("--color-ink-2").trim() || "#7d5a44";
+    const mute = root.getPropertyValue("--color-mute").trim() || "#b2967d";
     const serifFam = cssVar("--font-cormorant", '"Cormorant Garamond", Georgia, serif');
     const sansFam = cssVar("--font-plex-sans", '"IBM Plex Sans", system-ui, sans-serif');
 
@@ -42,12 +43,22 @@ export default function LandingCanvas() {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
       // nền thạch cao ấm: sáng góc trên-trái (≈22%/18%, khớp ánh sáng high) → tối ấm góc dưới-phải.
+      // [F2-audit M1] dải rộng hơn + mép ngả camel → có modeling thật, KHÔNG bệt kem (chống washed-out).
       const g = ctx.createRadialGradient(W * 0.24, H * 0.2, 0, W * 0.5, H * 0.5, Math.max(W, H) * 0.95);
       g.addColorStop(0, raised);
-      g.addColorStop(0.55, paper);
-      g.addColorStop(1, sunken);
+      g.addColorStop(0.42, paper);
+      g.addColorStop(0.82, sunken);
+      g.addColorStop(1, mute);
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, W, H);
+      // gờ phù điêu mềm (gợi khối) — bóng camel khẽ ở dưới-phải để mid không trống trải.
+      const blob = ctx.createRadialGradient(W * 0.72, H * 0.66, 0, W * 0.72, H * 0.66, Math.max(W, H) * 0.5);
+      blob.addColorStop(0, mute);
+      blob.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.globalAlpha = 0.22;
+      ctx.fillStyle = blob;
+      ctx.fillRect(0, 0, W, H);
+      ctx.globalAlpha = 1;
 
       // wordmark hai giọng — căn giữa, khắc nổi giả-relief (shadow + highlight + thân plaster).
       const fs = Math.min(W * 0.13, 150);
@@ -82,10 +93,11 @@ export default function LandingCanvas() {
         ctx.fillText("IOS", xB + dx, y - fs * 0.02 + dy);
       };
 
-      const off = Math.max(1.2, fs * 0.012);
-      stroke(off, off, cocoa, 0.5); // shadow dưới-phải (hốc)
-      stroke(-off, -off, raised, 0.95); // highlight trên-trái (gờ bắt sáng)
-      stroke(0, 0, paper, 0.92); // thân chữ = plaster (nổi khỏi nền nhờ bevel)
+      // [F2-audit M1] emboss MẠNH hơn: offset lớn + bóng cocoa đậm → wordmark tách rõ khỏi nền kem.
+      const off = Math.max(2, fs * 0.022);
+      stroke(off, off, cocoa, 0.72); // shadow dưới-phải (hốc) — đậm để đọc rõ
+      stroke(-off, -off, raised, 1.0); // highlight trên-trái (gờ bắt sáng)
+      stroke(0, 0, paper, 0.95); // thân chữ = plaster (nổi khỏi nền nhờ bevel)
       ctx.globalAlpha = 1;
     };
 

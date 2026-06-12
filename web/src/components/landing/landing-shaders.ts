@@ -94,11 +94,12 @@ export const LANDING_FRAG = /* glsl */ `
     lit += clamp(h, -0.6, 0.6) * uHeightTint;
 
     // MỘT chất thạch cao kem ấm: ánh sáng điều biến ĐỘ SÁNG quanh nó (KHÔNG nhảy sang chất khác → tránh
-    // mảng 2-tông như da bò). Bóng = kem ngả camel ấm; chỉ KẼ NỨT sâu nhất hé cocoa (rất tiết chế).
-    vec3 lo = mix(uSunken, uMute, 0.55);
+    // mảng 2-tông như da bò). Bóng = kem ngả camel ĐẬM hơn; KẼ NỨT + gờ chữ (mặt khuất) hé cocoa rõ hơn
+    // → tăng tương phản "điêu khắc" + tách wordmark khỏi nền kem (chống cream-on-cream mờ). [F2-audit M1]
+    vec3 lo = mix(uSunken, uMute, 0.72);
     vec3 col = mix(lo, uSunken, smoothstep(0.0, 0.50, lit));
     col = mix(col, uRaised, smoothstep(0.50, 1.0, lit));
-    col = mix(col, uInk2, smoothstep(0.10, 0.0, diff) * 0.22);
+    col = mix(col, uInk2, smoothstep(0.20, 0.0, diff) * 0.40);
 
     // patina thạch cao: vân tông LỚN rất khẽ (theo MÀU, KHÔNG theo sáng) → chất liệu vôi vữa thật, không
     // bóng, không sinh micro-relief. ±~2% quanh tông hiện tại.

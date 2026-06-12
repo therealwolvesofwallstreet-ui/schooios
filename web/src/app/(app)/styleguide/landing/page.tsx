@@ -4,7 +4,7 @@
 // auto-detect như prod (reducedMotion=reduce → reduced). ?break=1 → ép `high` NÉM để chứng minh
 // StageBoundary rơi xuống fallback (mid). Full-bleed (fixed inset-0) phủ AppShell → ảnh chụp sạch.
 // KHÔNG phải màn nghiệp vụ; auth gate qua proxy như mọi route (app). high = LandingStage (F2a-1, frozen).
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import dynamic from "next/dynamic";
 import { Stage } from "@/components/motion/stage/Stage";
 import { LandingNav } from "@/components/landing/LandingNav";
@@ -37,10 +37,6 @@ export default function LandingPreviewPage() {
   // Harness phụ thuộc query (?tier/?break) chỉ có ở client → gate hydrate (useSyncExternalStore, KHÔNG
   // setState-in-effect): render đầu KHỚP server (rỗng), tránh hydration mismatch. Dev-only, vô hại.
   const hydrated = useHydrated();
-
-  useEffect(() => {
-    if (hydrated) console.log("forceTier=" + (forceTier ?? "auto") + " break=" + broken);
-  }, [hydrated, forceTier, broken]);
 
   if (!hydrated) return <main className="fixed inset-0 z-50" />;
 

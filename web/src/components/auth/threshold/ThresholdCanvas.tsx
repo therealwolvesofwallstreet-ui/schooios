@@ -1,7 +1,7 @@
 "use client";
-// THRESHOLD · MID tier [PATTERN] — Canvas 2D cho mobile/máy yếu: nền VOID ấm gradient + MỘT dấu signal
-// đỏ thở mềm + wordmark HAI GIỌNG (Fraunces "Schoo" + Plex "IOS") vẽ MỘT lần. rAF chỉ cho nhịp thở của
-// dấu đỏ (rẻ); cleanup khi unmount + tab ẩn (motion §5 LAW). Lớp TRANG TRÍ (Stage bọc aria-hidden).
+// THRESHOLD · MID tier [PATTERN] — Canvas 2D cho mobile/máy yếu: nền DEPTH Cowhide ấm gradient + MỘT dấu
+// signal thở mềm + wordmark HAI GIỌNG (Cormorant "Schoo" + Plex "IOS") vẽ MỘT lần. rAF chỉ cho nhịp thở
+// của dấu signal (rẻ); cleanup khi unmount + tab ẩn (motion §5 LAW). Lớp TRANG TRÍ (Stage bọc aria-hidden).
 import { useEffect, useRef } from "react";
 import { easeQuiet } from "@/lib/cubic-bezier";
 

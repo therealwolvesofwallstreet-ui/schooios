@@ -1,7 +1,7 @@
 "use client";
 
-// LOGIN — split biên tập (AuthSurface): trái = một dòng serif + 1 dấu signal thở; phải = form
-// gạch-chân. Tâm điểm = nút đỏ "Bước vào" DUY NHẤT. Lỗi = dòng mono ink-dim, KHÔNG đỏ
+// LOGIN — bọc trong ThresholdScene (F2c): full-motion = Landing→cuộn→login; reduced/SSR = login-only
+// (anchor tới form). Form gạch-chân. Tâm điểm = nút "Bước vào" DUY NHẤT. Lỗi = dòng mono ink-dim, KHÔNG đỏ
 // (đỏ chỉ dành cho hành động). Auth bằng cookie httpOnly (api credentials:include) — KHÔNG đọc JWT.
 // Hydration gate: nút disabled tới khi mounted → chặn submit GET-tự-nhiên trước hydrate (rò mật khẩu
 // lên URL). 429: tự mở lại sau Retry-After. Lỗi cũ tự xoá khi user gõ lại (trừ 429 — giữ cooldown).

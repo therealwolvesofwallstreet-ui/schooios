@@ -1,6 +1,6 @@
 "use client";
-// THRESHOLD · REDUCED tier [LAW] — prefers-reduced-motion / SSR. DOM THUẦN trên nền void: wordmark
-// HAI GIỌNG là TEXT thật (Fraunces "Schoo" + Plex "IOS"), một dấu signal đỏ TĨNH, phụ đề mono khẽ.
+// THRESHOLD · REDUCED tier [LAW] — prefers-reduced-motion / SSR. DOM THUẦN trên nền DEPTH Cowhide warm:
+// wordmark HAI GIỌNG là TEXT thật (Cormorant "Schoo" + Plex "IOS"), một dấu signal TĨNH, phụ đề mono khẽ.
 // KHÔNG canvas, KHÔNG animation. Đây là thứ runner e2e (reduced-motion) thấy — phải đọc được, tĩnh.
 import { SignalDot } from "@/components/ui/SignalDot";
 

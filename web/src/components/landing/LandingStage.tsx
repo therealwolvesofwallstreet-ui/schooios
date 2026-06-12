@@ -53,12 +53,12 @@ function LandingField({ wordTex }: { wordTex: Texture }) {
         uSunken: { value: tokenColor("--color-sunken", "#eae3d5") },
         uMute: { value: tokenColor("--color-mute", "#b2967d") },
         uInk2: { value: tokenColor("--color-ink-2", "#7d5a44") },
-        uReliefAmp: { value: 0.26 },
-        uInscribe: { value: 0.6 },
-        uSurface: { value: 3.4 },
-        uAmbient: { value: 0.37 },
+        uReliefAmp: { value: 0.32 },
+        uInscribe: { value: 0.92 },
+        uSurface: { value: 4.4 },
+        uAmbient: { value: 0.3 },
         uGrain: { value: 0.034 },
-        uHeightTint: { value: 0.34 },
+        uHeightTint: { value: 0.46 },
       },
     });
     // wordTex ổn định (useState ở parent); uRes cập nhật ở useEffect dưới khi resize.
