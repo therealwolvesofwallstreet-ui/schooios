@@ -192,7 +192,7 @@ test.describe("R3c partial response [ADMIN]", () => {
     await expect(page.getByText("Theo trạng thái")).toBeVisible();
     await expect(page.getByText("Chưa có dữ liệu.").first()).toBeVisible();
     // không crash: heading còn nguyên + 0 undefined (byCategory thiếu count → 0).
-    await expect(page.getByRole("heading", { name: "Đài quan sát" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "TỔNG QUAN" })).toBeVisible();
     const body = await page.locator("body").innerText();
     expect(body).not.toMatch(/undefined|NaN/);
   });

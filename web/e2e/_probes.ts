@@ -6,7 +6,7 @@ import AxeBuilder from "@axe-core/playwright";
 
 export const NAV_EXPECT: Record<string, { present: string[]; absent: string[] }> = {
   STUDENT: {
-    present: ["Trang chủ", "Báo cáo của tôi", "Cất tiếng nói", "Thông báo"],
+    present: ["Trang chủ", "Bảng tin", "Báo cáo của tôi", "Thông báo"],
     absent: ["Hàng chờ", "Khẩn cấp", "Nhật ký"],
   },
   STAFF: {
@@ -56,7 +56,7 @@ export async function responsiveProbe(page: Page) {
 export async function stateProbe(page: Page) {
   await page.goto("/styleguide");
   await expect(page.getByText("Chưa có tiếng nói nào ở đây", { exact: false })).toBeVisible();
-  await expect(page.getByText("Display · Newsreader 48")).toBeVisible();
+  await expect(page.getByText("Display · Cormorant Garamond", { exact: false })).toBeVisible();
 }
 
 export async function a11yProbe(page: Page, path = "/") {
