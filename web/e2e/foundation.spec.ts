@@ -27,7 +27,7 @@ test.describe("Styleguide foundation", () => {
   });
   test("styleguide render + screenshot", async ({ page }) => {
     await page.goto("/styleguide");
-    await expect(page.getByRole("heading", { name: "Đài Lặng" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Warm Immersive Archive" })).toBeVisible();
     await expect(page).toHaveScreenshot("styleguide.png", {
       fullPage: true,
       mask: [page.getByTestId("user-chip")],
