@@ -35,8 +35,10 @@ export default function ScrollController({ children }: { children: ReactNode }) 
     const ctx = gsap.context(() => {
       if (landing) {
         // Landing lùi: fade + dịch lên + co rất nhẹ khi rời khung (scrub theo cuộn).
+        // [F2-audit] autoAlpha (KHÔNG opacity): tại opacity 0 → visibility:hidden → gỡ 3 link nav (đã mờ)
+        // khỏi tab-order/AT (chống "Tab trúng link vô hình"). Cuộn lên lại → tự hiện.
         gsap.to(landing, {
-          opacity: 0,
+          autoAlpha: 0,
           y: -48,
           scale: 0.985,
           ease: "none",

@@ -46,6 +46,9 @@ export function ThresholdScene({ children }: { children: ReactNode }) {
   // Full-motion: Landing (trang trí, aria-hidden ở Stage) trên đỉnh → cuộn → login.
   return (
     <ScrollController>
+      {/* [F2-audit] nền DEPTH Cowhide cố định sau cảnh: khi Landing (sáng) mờ dần, lộ ra depth (thế giới
+          login) thay vì giấy Linen sáng → bắc cầu liên tục, KHÔNG còn "đường nối giấy" chói ở handoff. */}
+      <div aria-hidden="true" className="bg-depth pointer-events-none fixed inset-0 -z-10" />
       <section data-landing-layer className="relative h-[100svh] w-full overflow-hidden">
         <Stage
           high={LandingStage}

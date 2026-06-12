@@ -63,7 +63,8 @@ export const LANDING_FRAG = /* glsl */ `
     vec2 drift = vec2(uTime*0.010, uTime*0.005);
     float smoothB = snoise(p*0.85 + drift) + 0.42*snoise(p*1.8 - drift*0.7); // khối lớn êm
     float ridge = 1.0 - abs(snoise(p*1.3 + 4.0));      // gờ "đắp bay" (creases) — bớt vẻ LỎNG, thêm chất CARVED
-    float big = mix(smoothB, (ridge - 0.5) * 1.7, 0.25); // ~25% ridge: plaster troweled, vẫn airy (freq thấp)
+    // [F2-audit M1] 0.48 ridge (was .25): cấu trúc GỜ rõ → đọc "điêu khắc" thật, không "đốm mây" (freq 1.3 thấp = gờ LỚN, không worm)
+    float big = mix(smoothB, (ridge - 0.5) * 1.7, 0.48);
     vec4 w = texture2D(uWord, uv);
     float wm = max(w.r, w.g);                          // gờ chữ hai giọng gộp (HERO)
     return big*uReliefAmp + wm*uInscribe;
