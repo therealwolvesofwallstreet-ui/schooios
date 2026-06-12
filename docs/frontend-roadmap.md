@@ -21,16 +21,20 @@ Engine/logic/data-layer giữ nguyên; những màn này được **re-skin warm
 
 ## Tiến độ (Warm F1–F7 — theo PLAYBOOK-WARM §4)
 
-### Nền — **CURRENT**
-- [ ] **F1 — Nền Warm** — flip toàn bộ foundation: tokens.css (giá trị + rename theo bảng KHÓA FRONTEND.md),
-  font (Cormorant display + Newsreader serif), grain giấy, primitives, /styleguide.
-  **Gate:** `tsc`/`eslint`/`build` ✓ · grep 0 token cũ (void/cobalt/violet + giá-trị-signal-cũ) · styleguide screenshot warm + AA + Việt đọc OK. **Tag `warm-f1`.**
-  - [x] **F1a — Doctrine** (docs-only): rewrite FRONTEND.md + roadmap sang warm, KHÓA bảng token-naming (SSOT cho F1b). Memory dark DNA đã superseded. **Tag `warm-f1a`.**
-  - [ ] **F1b** — execute token flip trong `tokens.css` + font + grain theo bảng KHÓA (mechanical, grep-replace rename).
-  - [ ] **F1c** — primitives + /styleguide warm + verify gate → freeze `warm-f1`.
+### Nền — ✅ DONE (frozen `warm-f1` · audit PROCEED)
+- [x] **F1 — Nền Warm** — flip toàn bộ foundation: tokens.css (giá trị + rename theo bảng KHÓA FRONTEND.md),
+  font (Cormorant display + Newsreader serif), grain plaster ấm, primitives (token-driven → auto-warm), /styleguide.
+  **Gate ĐẠT:** `tsc`/`eslint`/`build` 0 · grep 0 token cũ (chỉ comment trong shader F2) · styleguide screenshot warm + AA + Việt OK.
+  **Audit 3-pass (PROCEED ~95/100):** 1 fix Minor (Button CTA `text-white`→`text-paper`, commit `7e99e26`). **Tag `warm-f1`** (re-pointed sau audit).
+  - [x] **F1a — Doctrine** (docs-only): rewrite FRONTEND.md + roadmap warm, KHÓA bảng token-naming. **`warm-f1a`** (`9cfe0cb`).
+  - [x] **F1b** — token flip `tokens.css` + Fraunces→Cormorant + grain + sync 6 motion file + login. **`warm-f1b`** (`3013e5a`).
+  - [x] **F1c** — /styleguide warm + verify; primitives 0-edit (token-driven). **`warm-f1`** (`1d428be`).
+  - **Residual → F2** (đều trong Threshold tree, NGOÀI scope F1): high-tier WebGL GLSL `VOID/GLOW` còn tối · canvas `"Fraunces"`→Georgia fallback · subtitle copy `"Đài Lặng"`.
 
-### Core
-- [ ] **F2 — Threshold** — Landing relief (chuẩn Immersive Garden) + scroll→login + reskin login/change-pw.
+### Core — **CURRENT**
+- [ ] **F2 — Threshold** — Landing relief (chuẩn Immersive Garden) + scroll→login + reskin login/change-pw
+  (gồm vá Residual F1: re-shade GLSL warm · canvas font→display · bỏ copy "Đài Lặng"). Mockup: `design-vision/{landing-warm,login-warm-a}.html`.
+  **Gate:** screenshot 3-tier · audit → score ≥9/10 vs IG · `auth.spec` ✓. **Tag `warm-f2`.**
   **Gate:** screenshot 3-tier · audit → score ≥9/10 vs IG · `auth.spec` ✓. **Tag `warm-f2`.**
 - [ ] **F3 — Core surfaces** — AppShell warm + reskin dashboards (admin PulseField · student · staff) +
   case-detail Spine + report ReleaseBurst.
