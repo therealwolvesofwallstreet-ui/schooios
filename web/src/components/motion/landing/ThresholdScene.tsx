@@ -47,11 +47,7 @@ export function ThresholdScene({ children }: { children: ReactNode }) {
     if (typeof window !== "undefined") window.scrollTo(0, 0);
   }, [fullMotion]);
 
-  const login = (
-    <div data-login-layer id="vao-he-thong">
-      <ThresholdAuthSurface>{children}</ThresholdAuthSurface>
-    </div>
-  );
+  const login = <ThresholdAuthSurface>{children}</ThresholdAuthSurface>;
 
   // SSR / first-paint / reduced-motion → Landing TĨNH (forceTier="reduced" = LandingStatic SVG, khớp server
   // → 0 hydration mismatch) + login, cuộn gốc. AI CŨNG thấy landing; reduced chỉ bỏ Lenis/GSAP + R3F.
@@ -69,28 +65,34 @@ export function ThresholdScene({ children }: { children: ReactNode }) {
             <LandingNav />
           </Stage>
         </section>
-        {login}
+        <div id="vao-he-thong">{login}</div>
       </div>
     );
   }
 
-  // Full-motion: Landing R3F (trang trí, aria-hidden ở Stage) trên đỉnh → cuộn mượt → login trồi.
+  // Full-motion: CHUYỂN CẢNH crossfade. Sân khấu STICKY phủ viewport; cuộn (driver cao 180vh) lái GSAP
+  // scrub: layer Landing TAN (fade+zoom) ↔ layer Login HIỆN DẦN tại chỗ — KHÔNG cuộn tới section dưới.
+  // Nền DEPTH Cowhide cố định sau cảnh → khi landing tan lộ ra thế giới login, liên tục warm.
   return (
     <ScrollController>
-      {/* [F2-audit] nền DEPTH Cowhide cố định sau cảnh: khi Landing (sáng) mờ dần, lộ ra depth (thế giới
-          login) thay vì giấy Linen sáng → bắc cầu liên tục, KHÔNG còn "đường nối giấy" chói ở handoff. */}
       <div aria-hidden="true" className="bg-depth pointer-events-none fixed inset-0 -z-10" />
-      <section data-landing-layer className="relative h-[100svh] w-full overflow-hidden">
-        <Stage
-          high={LandingStage}
-          mid={LandingCanvas}
-          reduced={<LandingStatic />}
-          className="h-full w-full"
-        >
-          <LandingNav />
-        </Stage>
-      </section>
-      {login}
+      <div data-scene-driver className="relative h-[180vh] w-full">
+        <div className="sticky top-0 h-[100svh] w-full overflow-hidden">
+          <div data-landing-layer className="absolute inset-0">
+            <Stage
+              high={LandingStage}
+              mid={LandingCanvas}
+              reduced={<LandingStatic />}
+              className="h-full w-full"
+            >
+              <LandingNav />
+            </Stage>
+          </div>
+          <div data-login-layer id="vao-he-thong" className="absolute inset-0">
+            {login}
+          </div>
+        </div>
+      </div>
     </ScrollController>
   );
 }

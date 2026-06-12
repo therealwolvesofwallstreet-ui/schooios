@@ -21,11 +21,14 @@ export default defineConfig({
   projects: [
     {
       name: "desktop",
-      use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
+      // reducedMotion lặp lại Ở project (spread devices có thể nuốt giá trị top-level) → e2e thấy đúng
+      // bậc REDUCED của /login (Landing tĩnh + form HIỆN), khớp người dùng reduce-motion. F2c: full-motion
+      // = crossfade ẩn form tới khi cuộn (UX có chủ đích); auth.spec kiểm bậc reduced (form luôn tới được).
+      use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 }, reducedMotion: "reduce" },
     },
     {
       name: "mobile",
-      use: { ...devices["Desktop Chrome"], viewport: { width: 390, height: 844 } },
+      use: { ...devices["Desktop Chrome"], viewport: { width: 390, height: 844 }, reducedMotion: "reduce" },
     },
   ],
   webServer: {

@@ -12,6 +12,13 @@ const ID_FIELD = /Số báo danh/i; // label "Số báo danh / Email"
 const PW_FIELD = /^Mật khẩu$/; // label "Mật khẩu" (login)
 const SUBMIT = /Bước vào/;
 
+// F2c: /login full-motion = crossfade ẩn form tới khi cuộn (UX có chủ đích). auth.spec kiểm BẬC REDUCED
+// (Landing tĩnh + form HIỆN trực tiếp, không bị landing che) — đúng cái người dùng reduce-motion thấy.
+// page.emulateMedia TIN CẬY (config use.reducedMotion không tới matchMedia ở runner Next 16 này — đã probe).
+test.beforeEach(async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+});
+
 // KHÔNG cần creds/DB — chỉ cần server chạy. Kiểm tra render + Zod mirror client + không crash.
 test.describe("Login page render + client validation [F2-1]", () => {
   test("render: form gạch-chân + đúng 1 nút đỏ 'Bước vào'", async ({ page }) => {
