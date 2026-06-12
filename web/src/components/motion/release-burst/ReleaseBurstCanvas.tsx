@@ -29,7 +29,7 @@ export default function ReleaseBurstCanvas({ caseCode }: { caseCode: string }) {
 
     const signal =
       getComputedStyle(document.documentElement).getPropertyValue("--color-signal").trim() ||
-      "#d72638";
+      "#743014";
 
     const sampled = sampleText(caseCode, { fontPx: 64, step: 7, maxPoints: MAX_DOTS });
     const n = Math.max(sampled.count, 1);

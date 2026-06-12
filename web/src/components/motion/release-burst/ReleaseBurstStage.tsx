@@ -129,7 +129,7 @@ const FRAG = /* glsl */ `
 // Đọc --color-signal từ tokens (SSOT) → bytes sRGB. ShaderMaterial KHÔNG color-managed nên truyền
 // thẳng .r/.g/.b (KHÔNG để Color convert sang linear) để khớp đúng màu CSS trên màn hình.
 function signalColor(): Color {
-  let hex = "#d72638"; // fallback = --color-signal
+  let hex = "#743014"; // fallback = --color-signal
   if (typeof window !== "undefined") {
     const v = getComputedStyle(document.documentElement).getPropertyValue("--color-signal").trim();
     if (v) hex = v;

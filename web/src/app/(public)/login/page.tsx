@@ -70,14 +70,14 @@ export default function LoginPage() {
        * (KHÔNG nhồi manifesto vào thẻ — để hero immersive thở.) */}
       <div className="mb-9 flex items-center gap-3">
         <SignalDot tone="signal" size="md" pulse />
-        <span className="text-on-void-2 font-mono text-[11px] tracking-[0.22em] uppercase">
+        <span className="text-on-depth-2 font-mono text-[11px] tracking-[0.22em] uppercase">
           Bước vào lưu khố
         </span>
       </div>
 
       {/*
        * Lớp recolor cho dark scrim card (KHÔNG đổi logic/props của Input/Button — chỉ ghi đè màu qua
-       * descendant utility): label + input mực sáng on-void, gạch-chân hairline-void → focus sáng lên.
+       * descendant utility): label + input mực sáng on-depth, gạch-chân hairline-depth → focus sáng lên.
        */}
       <form
         onSubmit={handleSubmit((v) => login(v))}
@@ -86,7 +86,7 @@ export default function LoginPage() {
           if (error && error.status !== 429) clearError();
         }}
         aria-busy={isPending}
-        className="flex flex-col gap-7 [&_input]:border-line-void [&_input]:text-on-void [&_input]:placeholder:text-on-void-3 [&_input:focus]:border-on-void [&_label]:text-on-void-2"
+        className="flex flex-col gap-7 [&_input]:border-line-depth [&_input]:text-on-depth [&_input]:placeholder:text-on-depth-3 [&_input:focus]:border-on-depth [&_label]:text-on-depth-2"
         noValidate
       >
         <Input
@@ -111,7 +111,7 @@ export default function LoginPage() {
             {isPending ? "Đang vào…" : "Bước vào"}
           </Button>
           {message && (
-            <p id={MSG_ID} role="alert" className="text-on-void-2 font-mono text-xs">
+            <p id={MSG_ID} role="alert" className="text-on-depth-2 font-mono text-xs">
               {message}
             </p>
           )}

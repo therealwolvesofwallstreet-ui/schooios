@@ -30,7 +30,7 @@ CustomEase.create("thresholdQuiet", gsapEasePath(EASE_QUIET_BEZIER));
 // Đọc --color-signal từ tokens (SSOT) → bytes sRGB truyền THẲNG (ShaderMaterial KHÔNG color-managed →
 // không để Color convert sang linear) để khớp đúng màu CSS trên màn hình.
 function signalColor(): Color {
-  let hex = "#d72638"; // fallback = --color-signal
+  let hex = "#743014"; // fallback = --color-signal
   if (typeof window !== "undefined") {
     const v = getComputedStyle(document.documentElement).getPropertyValue("--color-signal").trim();
     if (v) hex = v;

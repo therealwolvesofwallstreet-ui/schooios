@@ -14,7 +14,7 @@ const ThresholdCanvas = dynamic(() => import("./ThresholdCanvas"), { ssr: false 
 
 export function ThresholdAuthSurface({ children }: { children: ReactNode }) {
   return (
-    <main className="bg-void text-on-void relative min-h-screen">
+    <main className="bg-depth text-on-depth relative min-h-screen">
       <Stage
         high={ThresholdStage}
         mid={ThresholdCanvas}
@@ -24,7 +24,7 @@ export function ThresholdAuthSurface({ children }: { children: ReactNode }) {
         {/* Form ghép LỆCH PHẢI trên desktop (mở khoảng trái cho wordmark + ink-field thở — bố cục
          * biên tập Tyrsa/IG), giữa trên mobile. Card scrim-void đọc được trên phông tối. */}
         <div className="flex min-h-screen items-center justify-center px-6 py-16 md:justify-end md:px-[7vw]">
-          <div className="border-line-void bg-[--depth-scrim-void] w-full max-w-sm rounded-lg border p-8 backdrop-blur-md md:p-10">
+          <div className="border-line-depth bg-[--depth-scrim-depth] w-full max-w-sm rounded-lg border p-8 backdrop-blur-md md:p-10">
             {children}
           </div>
         </div>

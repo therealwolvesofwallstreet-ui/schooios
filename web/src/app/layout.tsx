@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Sans, IBM_Plex_Mono, Newsreader, Fraunces } from "next/font/google";
+import { IBM_Plex_Sans, IBM_Plex_Mono, Newsreader, Cormorant_Garamond } from "next/font/google";
 import "./globals.css";
 
-// Giọng chữ (xem FRONTEND.md): Fraunces = display HERO kinetic (Tyrsa-grade, latin/latin-ext) ·
+// Giọng chữ (xem FRONTEND.md): Cormorant Garamond = display HERO (warm, latin/latin-ext) ·
 // Plex Sans = UI · Plex Mono = dữ liệu/định danh · Newsreader = serif VN (khoảnh khắc người + fallback
-// glyph tiếng Việt cho display). Biến gắn lên <html>, tokens.css ánh xạ ra font-display/sans/mono/serif.
-const fraunces = Fraunces({
+// glyph tiếng Việt cho display — Cormorant thiếu dấu Việt → tự rớt sang Newsreader theo --font-display).
+// Biến gắn lên <html>, tokens.css ánh xạ ra font-display/sans/mono/serif.
+const cormorant = Cormorant_Garamond({
   subsets: ["latin", "latin-ext"],
   weight: ["400", "500", "600"],
   style: ["normal", "italic"],
-  variable: "--font-fraunces",
+  variable: "--font-cormorant",
   display: "swap",
 });
 const plexSans = IBM_Plex_Sans({
@@ -47,7 +48,7 @@ export default function RootLayout({
   return (
     <html
       lang="vi"
-      className={`${fraunces.variable} ${plexSans.variable} ${plexMono.variable} ${newsreader.variable} h-full antialiased`}
+      className={`${cormorant.variable} ${plexSans.variable} ${plexMono.variable} ${newsreader.variable} h-full antialiased`}
     >
       <body className="min-h-full">{children}</body>
     </html>

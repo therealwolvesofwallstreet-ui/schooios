@@ -15,9 +15,9 @@ export default function ThresholdCanvas() {
     if (!ctx) return;
 
     const root = getComputedStyle(document.documentElement);
-    const sig = root.getPropertyValue("--color-signal").trim() || "#d72638";
-    const glow = root.getPropertyValue("--color-on-void").trim() || "#f3eee3";
-    const cobalt = root.getPropertyValue("--color-cobalt-lift").trim() || "#5e78ff";
+    const sig = root.getPropertyValue("--color-signal").trim() || "#743014";
+    const glow = root.getPropertyValue("--color-on-depth").trim() || "#f5f1ea";
+    const link = root.getPropertyValue("--color-link-lift").trim() || "#a87a3e";
 
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const parent = canvas.parentElement;
@@ -50,10 +50,10 @@ export default function ThresholdCanvas() {
       const x0 = (W - (wA + gap + wB)) / 2;
 
       ctx.font = `italic 500 ${fs}px "Fraunces", Georgia, serif`;
-      ctx.fillStyle = glow; // "Schoo" sáng on-void
+      ctx.fillStyle = glow; // "Schoo" sáng on-depth
       ctx.fillText("Schoo", x0, y);
       ctx.font = `600 ${fs * 0.82}px "IBM Plex Sans", system-ui, sans-serif`;
-      ctx.fillStyle = cobalt; // "IOS" mang accent hệ thống
+      ctx.fillStyle = link; // "IOS" mang accent hệ thống
       ctx.fillText("IOS", x0 + wA + gap, y - fs * 0.02);
     };
     paintStatic();
