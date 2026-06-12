@@ -27,12 +27,12 @@ gsap.registerPlugin(useGSAP, CustomEase);
 CustomEase.create("thresholdEmerge", gsapEasePath(EASE_EMERGE_BEZIER));
 CustomEase.create("thresholdQuiet", gsapEasePath(EASE_QUIET_BEZIER));
 
-// Đọc --color-signal từ tokens (SSOT) → bytes sRGB truyền THẲNG (ShaderMaterial KHÔNG color-managed →
-// không để Color convert sang linear) để khớp đúng màu CSS trên màn hình.
-function signalColor(): Color {
-  let hex = "#743014"; // fallback = --color-signal
+// Đọc --color-* từ tokens (SSOT) → bytes sRGB truyền THẲNG (ShaderMaterial KHÔNG color-managed → không
+// để Color convert sang linear) để khớp đúng màu CSS trên màn hình. Dùng cho signal + nền depth warm.
+function tokenColor(name: string, fallback: string): Color {
+  let hex = fallback;
   if (typeof window !== "undefined") {
-    const v = getComputedStyle(document.documentElement).getPropertyValue("--color-signal").trim();
+    const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
     if (v) hex = v;
   }
   const m = hex.replace("#", "");
@@ -68,7 +68,11 @@ function ThresholdField({ wordTex }: { wordTex: Texture }) {
         uRes: { value: new Vector2(size.width, size.height) },
         uMouse: { value: new Vector2(0.5, 0.5) },
         uWord: { value: wordTex },
-        uSignal: { value: signalColor() },
+        uSignal: { value: tokenColor("--color-signal", "#743014") },
+        // Nền ngưỡng cửa = DEPTH Cowhide warm (token-only) — thay near-black cũ.
+        uVoid: { value: tokenColor("--color-depth", "#442d1c") },
+        uDeep: { value: tokenColor("--color-depth-sunken", "#36210f") },
+        uGlow: { value: tokenColor("--color-on-depth", "#f5f1ea") },
       },
     });
     // wordTex ổn định (useState ở parent); size ban đầu — uRes cập nhật ở useFrame/useEffect dưới.

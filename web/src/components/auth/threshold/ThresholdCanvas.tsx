@@ -18,6 +18,11 @@ export default function ThresholdCanvas() {
     const sig = root.getPropertyValue("--color-signal").trim() || "#743014";
     const glow = root.getPropertyValue("--color-on-depth").trim() || "#f5f1ea";
     const link = root.getPropertyValue("--color-link-lift").trim() || "#a87a3e";
+    // WARM: nền DEPTH Cowhide (thay near-black cũ) + wordmark Cormorant (thay Fraunces) — từ tokens.
+    const depth = root.getPropertyValue("--color-depth").trim() || "#442d1c";
+    const depthSunken = root.getPropertyValue("--color-depth-sunken").trim() || "#36210f";
+    const onDepth3 = root.getPropertyValue("--color-on-depth-3").trim() || "#b2967d";
+    const serifFam = root.getPropertyValue("--font-cormorant").trim() || '"Cormorant Garamond", Georgia, serif';
 
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const parent = canvas.parentElement;
@@ -32,8 +37,8 @@ export default function ThresholdCanvas() {
 
       // nền VOID ấm: gradient tối-trên-sáng-khẽ (gợi vault/skylight nhẹ)
       const g = ctx.createRadialGradient(W * 0.5, H * 0.32, 0, W * 0.5, H * 0.5, Math.max(W, H) * 0.75);
-      g.addColorStop(0, "#16130f");
-      g.addColorStop(1, "#0b0908");
+      g.addColorStop(0, depth);
+      g.addColorStop(1, depthSunken);
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, W, H);
 
@@ -42,21 +47,34 @@ export default function ThresholdCanvas() {
       const y = H * 0.56;
       ctx.textBaseline = "middle";
       ctx.textAlign = "left";
-      ctx.font = `italic 500 ${fs}px "Fraunces", Georgia, serif`;
+      const serif = `italic 500 ${fs}px ${serifFam}`;
+      const serifDot = `italic 500 ${fs * 0.62}px ${serifFam}`;
+      const sans = `600 ${fs * 0.82}px "IBM Plex Sans", system-ui, sans-serif`;
+      ctx.font = serif;
       const wA = ctx.measureText("Schoo").width;
-      ctx.font = `600 ${fs * 0.82}px "IBM Plex Sans", system-ui, sans-serif`;
+      ctx.font = serifDot;
+      const wDot = ctx.measureText("·").width;
+      ctx.font = sans;
       const wB = ctx.measureText("IOS").width;
-      const gap = fs * 0.06;
-      const x0 = (W - (wA + gap + wB)) / 2;
+      const gap = fs * 0.05;
+      const x0 = (W - (wA + gap + wDot + gap + wB)) / 2;
+      const xDot = x0 + wA + gap;
+      const xB = xDot + wDot + gap;
 
-      ctx.font = `italic 500 ${fs}px "Fraunces", Georgia, serif`;
-      ctx.fillStyle = glow; // "Schoo" sáng on-depth
+      ctx.font = serif;
+      ctx.fillStyle = glow; // "Schoo" sáng on-depth (Cormorant ital)
       ctx.fillText("Schoo", x0, y);
-      ctx.font = `600 ${fs * 0.82}px "IBM Plex Sans", system-ui, sans-serif`;
+      ctx.font = serifDot;
+      ctx.fillStyle = onDepth3; // dấu · — camel nối hai giọng
+      ctx.fillText("·", xDot, y - fs * 0.04);
+      ctx.font = sans;
       ctx.fillStyle = link; // "IOS" mang accent hệ thống
-      ctx.fillText("IOS", x0 + wA + gap, y - fs * 0.02);
+      ctx.fillText("IOS", xB, y - fs * 0.02);
     };
+    let alive = true;
     paintStatic();
+    // Cormorant (next/font) có thể chưa về lúc mount → repaint khi fonts.ready để đo/vẽ đúng (tránh fallback).
+    if (document.fonts?.ready) void document.fonts.ready.then(() => { if (alive) paintStatic(); });
 
     const dotX = W * 0.5;
     const dotY = H * 0.4;
@@ -77,8 +95,8 @@ export default function ThresholdCanvas() {
       ctx.clearRect(dotX - R, dotY - R, R * 2, R * 2);
       // nền lại cho vùng vừa xoá (giữ gradient liền mạch)
       const g = ctx.createRadialGradient(W * 0.5, H * 0.32, 0, W * 0.5, H * 0.5, Math.max(W, H) * 0.75);
-      g.addColorStop(0, "#16130f");
-      g.addColorStop(1, "#0b0908");
+      g.addColorStop(0, depth);
+      g.addColorStop(1, depthSunken);
       ctx.save();
       ctx.beginPath();
       ctx.rect(dotX - R, dotY - R, R * 2, R * 2);
@@ -128,6 +146,7 @@ export default function ThresholdCanvas() {
     window.addEventListener("resize", onResize);
 
     return () => {
+      alive = false;
       cancelAnimationFrame(raf);
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("resize", onResize);

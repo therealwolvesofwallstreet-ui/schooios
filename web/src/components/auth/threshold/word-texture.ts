@@ -1,11 +1,21 @@
-// WORD TEXTURE — port drawWord() từ threshold.html. Đóng gói wordmark HAI GIỌNG vào 1 texture:
-//   • R channel = "Schoo" (italic Fraunces — giọng con người, serif)
+// WORD TEXTURE — đóng gói wordmark HAI GIỌNG vào 1 texture (decoration; KHÔNG auth logic):
+//   • R channel = "Schoo" (italic Cormorant Garamond — giọng con người, serif HERO warm; trước: Fraunces)
 //   • G channel = "IOS"   (IBM Plex Sans semibold — giọng hệ thống, sans)
+// Họ serif đọc từ --font-cormorant (next/font) ở runtime — KHÔNG hardcode tên family băm.
 // Shader đọc .r/.g để hé hai giọng bằng hai sweep riêng (xem threshold-shaders.ts). Vẽ trên canvas
 // DPR-aware, căn giữa. PHẢI await document.fonts.load() CẢ HAI face trước khi vẽ (nếu không, canvas
 // dùng fallback → đo sai bề rộng → wordmark lệch/đổi khi font về). flipY mặc định của CanvasTexture
 // → vẽ "thẳng" (y tăng xuống) là hiện đúng chiều trên màn.
 import { CanvasTexture, LinearFilter, type Texture } from "three";
+
+// Họ serif warm từ biến next/font (--font-cormorant). Fallback an toàn nếu biến trống/SSR.
+function serifFamily(): string {
+  if (typeof window === "undefined") return '"Cormorant Garamond", Georgia, serif';
+  return (
+    getComputedStyle(document.documentElement).getPropertyValue("--font-cormorant").trim() ||
+    '"Cormorant Garamond", Georgia, serif'
+  );
+}
 
 // Vẽ wordmark vào canvas (đã có context). w/h = kích thước CSS px (không nhân DPR — đã setTransform).
 export function drawWord(canvas: HTMLCanvasElement, w: number, h: number): void {
@@ -23,7 +33,7 @@ export function drawWord(canvas: HTMLCanvasElement, w: number, h: number): void 
 
   const fs = Math.min(w * 0.135, 200);
   const y = h * 0.45; // hơi trên giữa → nằm dưới Pulse (oc.y≈0.66 trong shader, flipY)
-  const serif = `italic 500 ${fs}px "Fraunces", Georgia, serif`;
+  const serif = `italic 500 ${fs}px ${serifFamily()}`;
   const sans = `600 ${fs * 0.82}px "IBM Plex Sans", system-ui, sans-serif`;
   ctx.textBaseline = "middle";
   ctx.textAlign = "left";
@@ -61,7 +71,7 @@ export async function ensureWordFonts(): Promise<void> {
   if (typeof document === "undefined" || !document.fonts) return;
   try {
     await Promise.all([
-      document.fonts.load('italic 500 200px "Fraunces"', "Schoo"),
+      document.fonts.load(`italic 500 200px ${serifFamily()}`, "Schoo"),
       document.fonts.load('600 164px "IBM Plex Sans"', "IOS"),
     ]);
     await document.fonts.ready;

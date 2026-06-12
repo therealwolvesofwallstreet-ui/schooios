@@ -3,9 +3,10 @@
 // bằng sweep smoothstep uRevealA/uRevealB) + grain + vignette + signal embers thở. GẤP THÊM (từ
 // design-vision/gallery-gate.html) Pulse ĐỎ: lõi thở + halo + tia + vòng fract() lan ra — màu THƯƠNG HIỆU.
 //
-// KHÁC prototype: nền KHÔNG phải cream mà là VOID ấm tối điện ảnh (≈--color-void #100e0c → ~vec3(0.063,
-// 0.055,0.047)). Wordmark "cháy" SÁNG lên trên nền tối (mix về on-void) thay vì in mực đen. Màu signal
-// KHÔNG hardcode teal/đỏ — bơm qua uniform uSignal (đọc --color-signal từ tokens ở component, SSOT).
+// WARM RE-SHADE (F2b): nền là DEPTH Cowhide ấm (uVoid←--color-depth, uDeep←--color-depth-sunken) thay
+// near-black cũ — ngưỡng cửa = bề mặt sân khấu depth (dual-surface). Wordmark "cháy" SÁNG (uGlow←
+// --color-on-depth Linen) trên nền depth. MỌI màu bơm qua uniform từ tokens (uSignal/uVoid/uDeep/uGlow),
+// KHÔNG hardcode hex (token-only, SSOT) — đổi palette ở tokens.css là shader tự đổi theo.
 //
 // ShaderMaterial KHÔNG tự inject gì cho fullscreen quad: position/uv là attribute mặc định three cấp.
 
@@ -21,11 +22,10 @@ export const THRESHOLD_FRAG = /* glsl */ `
   uniform vec2  uRes, uMouse;
   uniform sampler2D uWord;
   uniform vec3  uSignal;   // --color-signal (THE VOICE) — bơm từ tokens, KHÔNG hardcode
-
-  // Nền VOID ấm tối (≈--color-void) + mực sâu hơn cho vân + text "cháy" sáng on-void.
-  const vec3 VOID  = vec3(0.063, 0.055, 0.047);
-  const vec3 DEEP  = vec3(0.031, 0.027, 0.023);
-  const vec3 GLOW  = vec3(0.953, 0.933, 0.890); // ≈--color-on-void: wordmark sáng lên trên tối
+  // Nền + vân + wordmark "cháy" — TẤT CẢ bơm từ tokens (warm DEPTH/Cowhide), KHÔNG hardcode (token-only):
+  uniform vec3  uVoid;     // --color-depth (Cowhide ấm — nền ngưỡng cửa, thay near-black cũ)
+  uniform vec3  uDeep;     // --color-depth-sunken (vân/mực sâu hơn)
+  uniform vec3  uGlow;     // --color-on-depth (Linen — wordmark cháy sáng trên depth)
 
   float hash(vec2 p){ p=fract(p*vec2(123.34,456.21)); p+=dot(p,p+45.32); return fract(p.x*p.y); }
   float noise(vec2 p){
@@ -58,8 +58,8 @@ export const THRESHOLD_FRAG = /* glsl */ `
     vec2 q = vec2( fbm(p*2.0 + t + ripple), fbm(p*2.0 + vec2(5.2,1.3) - t) );
     float field = fbm(p*2.4 + 2.2*q*turb + vec2(0.0, t*0.4) + ripple*2.2);
 
-    // nền tối: vùng đậm/nhạt rất khẽ giữa VOID↔DEEP (chiều sâu, không bệt)
-    vec3 col = mix(VOID, DEEP, smoothstep(0.30, 0.85, field));
+    // nền depth: vùng đậm/nhạt rất khẽ giữa uVoid↔uDeep (chiều sâu Cowhide, không bệt)
+    vec3 col = mix(uVoid, uDeep, smoothstep(0.30, 0.85, field));
 
     // ánh sáng góc trên-trái nhẹ "thở" — gợi vault/skylight
     float light = clamp(1.0 - distance(uv, vec2(0.18,0.86))*0.62, 0.0, 1.0);
@@ -68,7 +68,7 @@ export const THRESHOLD_FRAG = /* glsl */ `
 
     // vân mực: gân sáng mảnh chạy theo field (nhấc nhẹ trên tối)
     float vein = smoothstep(0.46,0.50,field) - smoothstep(0.50,0.54,field);
-    col += GLOW * vein * 0.035 * (1.0 - uCalm*0.45);
+    col += uGlow * vein * 0.035 * (1.0 - uCalm*0.45);
 
     // ----- THE PULSE (signal đỏ) — port từ gallery-gate, đặt phía trên wordmark -----
     vec2 oc = vec2(0.5, 0.66);          // tâm pulse (uv.y cao = phía trên màn)
@@ -104,9 +104,9 @@ export const THRESHOLD_FRAG = /* glsl */ `
     float sweepB = smoothstep(uRevealB-0.05, uRevealB+0.015, uv.x);
     float onB = maskB * (1.0 - sweepB);
 
-    // text CHÁY SÁNG lên trên nền tối (mix về GLOW); nửa hệ thống mang chút signal
-    col = mix(col, GLOW, onA);
-    col = mix(col, GLOW, onB);
+    // text CHÁY SÁNG lên trên nền depth (mix về uGlow); nửa hệ thống mang chút signal
+    col = mix(col, uGlow, onA);
+    col = mix(col, uGlow, onB);
     col += uSignal * onB * 0.10 * (0.6 + light);
 
     // ----- ember signal hiếm: giọng nói bên dưới, đang thở -----
