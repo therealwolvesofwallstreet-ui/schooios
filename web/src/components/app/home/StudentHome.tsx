@@ -9,7 +9,10 @@
 //    RESIDUAL CHẶN tính đúng: backend GET /api/cases?mine (xem ROADMAP) → khi có mới làm "của tôi" đủ.
 //  KHÔNG chart, KHÔNG /dashboard.
 import Link from "next/link";
+import { Fragment } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { useCaseList } from "@/hooks/useCaseList";
+import { EASE_EMERGE_BEZIER } from "@/lib/cubic-bezier";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -20,6 +23,40 @@ import type { SessionUser } from "@/hooks/useSession";
 
 const PREVIEW_LIMIT = 6;
 
+// Hero "cất tiếng nói" — chữ HIỆN theo từng từ (reveal), gate prefers-reduced-motion (null→reduced)
+// như MiniSpine/Spine. Chữ Việt GIỮ Newsreader (font-serif) — Cormorant thiếu dấu thanh.
+const HERO_TEXT = "Tiếng nói của bạn rất quan trọng.";
+const HERO_WORDS = HERO_TEXT.split(" ");
+
+function KineticHero() {
+  const reduced = useReducedMotion() ?? true;
+  const className = "text-ink max-w-xl font-serif text-3xl leading-snug md:text-4xl";
+  if (reduced) {
+    return <h1 className={className}>{HERO_TEXT}</h1>;
+  }
+  return (
+    <motion.h1
+      className={className}
+      initial="hidden"
+      animate="visible"
+      transition={{ staggerChildren: 0.05 }}
+    >
+      {HERO_WORDS.map((word, i) => (
+        <Fragment key={i}>
+          <motion.span
+            className="inline-block"
+            variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0 } }}
+            transition={{ duration: 0.4, ease: EASE_EMERGE_BEZIER }}
+          >
+            {word}
+          </motion.span>
+          {i < HERO_WORDS.length - 1 ? " " : null}
+        </Fragment>
+      ))}
+    </motion.h1>
+  );
+}
+
 export function StudentHome({ user }: { user: SessionUser }) {
   const { cases, isLoading, isError, refetch } = useCaseList(user.id, { limit: 100 });
   // Lọc CLIENT-SIDE: chỉ case do CHÍNH mình tạo (trên union đã-lọc server) → cắt lấy preview gần nhất.
@@ -28,9 +65,7 @@ export function StudentHome({ user }: { user: SessionUser }) {
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-10 py-6">
       <header className="flex flex-col items-start gap-5">
-        <h1 className="text-ink max-w-xl font-serif text-3xl leading-snug md:text-4xl">
-          Tiếng nói của bạn rất quan trọng.
-        </h1>
+        <KineticHero />
         <Link href="/report/new">
           <Button variant="primary" size="md">
             Cất một tiếng nói
