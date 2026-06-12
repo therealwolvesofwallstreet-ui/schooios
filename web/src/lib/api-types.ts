@@ -143,6 +143,12 @@ export interface CasesListResponse {
   page: number;
   totalPages: number;
 }
+// Emergency lane (P7) — GET /api/cases/emergency?activeOnly — KHÔNG phân trang (khẩn hiếm + indexed).
+// Server đã gate sensitivity (OR:[{isSensitive:false},{assignedToId:me}]) — FE KHÔNG tự lọc.
+export interface EmergencyCasesResponse {
+  cases: CaseListItem[];
+  total: number;
+}
 export interface CaseResponse {
   case: CaseListItem | CaseDetail;
 }
@@ -171,6 +177,34 @@ export interface NotificationsResponse {
 }
 
 // ---- Dashboard (M4) — keys ĐÓNG BĂNG (chú ý _count vs count theo từng mảng) ----
+// ---- Attachments (F6 Đợt 2) ----
+/** POST /api/cases/[id]/attachments/sign → client PUT file lên Supabase trực tiếp. */
+export interface AttachmentSignResponse {
+  uploadUrl: string; // Supabase signed upload URL (PUT bytes thẳng)
+  path: string;      // storage path để gửi lên commit
+}
+/** POST /api/cases/[id]/attachments/commit → 201 sau khi PUT thành công. */
+export interface AttachmentCommitResponse {
+  attachment: AttachmentDTO;
+}
+/** GET /api/attachments/[id]/view → signed download URL (TTL từ server env). */
+export interface AttachmentViewResponse {
+  url: string;
+  expiresAt: string; // ISO
+}
+/** DELETE /api/cases/[id]/attachments/[attId] */
+export interface AttachmentDeleteResponse {
+  deleted: boolean;
+}
+
+// ---- Users (F6 Đợt 1.5) — ADMIN-only picker; 0 PII ----
+export interface UsersResponse {
+  users: UserRef[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
 export interface DashboardResponse {
   totalCases: number;
   newToday: number;

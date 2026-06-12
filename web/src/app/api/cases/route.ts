@@ -111,9 +111,14 @@ export async function GET(request: NextRequest) {
     const user = await requireUser(request);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const parsed = listCasesQuery.safeParse(
-      Object.fromEntries(request.nextUrl.searchParams),
-    );
+    // `mine` (trang "Báo cáo của tôi") parse INLINE — KHÔNG qua listCasesQuery (giữ lib/validation.ts
+    // BẤT BIẾN): bóc khỏi object trước khi parse để schema (có thể strict) KHÔNG thấy key lạ → tránh 400.
+    const sp = request.nextUrl.searchParams;
+    const mine = sp.get("mine") === "true";
+    const queryObj: Record<string, string> = {};
+    for (const [k, v] of sp) if (k !== "mine") queryObj[k] = v;
+
+    const parsed = listCasesQuery.safeParse(queryObj);
     if (!parsed.success)
       return NextResponse.json(
         { error: "Invalid query", details: parsed.error.issues },
@@ -121,12 +126,15 @@ export async function GET(request: NextRequest) {
       );
     const { status, isEmergency, page, limit } = parsed.data;
 
-    // AND giữ nguyên OR của role (spread MẢNG điều kiện, không spread object).
+    // AND giữ nguyên OR của role (spread MẢNG điều kiện, không spread object). `mine` = case do CHÍNH
+    // user tạo (createdById) AND với role-where → INTERSECT, KHÔNG nới quyền (STUDENT vẫn chỉ thấy case
+    // của mình kể cả sensitive mình tạo; STAFF/ADMIN/AUDITOR thấy case HỌ tạo). Đồng nhất /queue: scope ở server.
     const where: Prisma.CaseWhereInput = {
       AND: [
         caseWhereForRole({ sub: user.id, role: user.role }),
-        ...(status !== undefined ? [{ status }] : []),
+        ...(status !== undefined ? [{ status: { in: status } }] : []),
         ...(isEmergency !== undefined ? [{ isEmergency }] : []),
+        ...(mine ? [{ createdById: user.id }] : []),
       ],
     };
 

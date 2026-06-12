@@ -30,8 +30,22 @@ export const createCaseSchema = z.object({
 });
 
 // Query string → coerce sang số; isEmergency là chuỗi "true"/"false" → bool.
+// status: nhận 1 giá trị HOẶC danh sách phẩy (`NEW,TRIAGED`) → CaseStatus[] (additive, tương thích
+// ngược: 1 giá trị vẫn cho `{in:[x]}` y hệt cũ). Chuỗi rỗng/giá trị rác → 400 (giữ hành vi cũ).
 export const listCasesQuery = z.object({
-  status: z.nativeEnum(CaseStatus).optional(),
+  status: z
+    .string()
+    .optional()
+    .transform((v, ctx) => {
+      if (v === undefined) return undefined;
+      const parts = v.split(",").map((s) => s.trim()).filter(Boolean);
+      const allowed = Object.values(CaseStatus) as string[];
+      if (parts.length === 0 || parts.some((p) => !allowed.includes(p))) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Invalid status filter" });
+        return z.NEVER;
+      }
+      return parts as CaseStatus[];
+    }),
   isEmergency: z
     .enum(["true", "false"])
     .transform((v) => v === "true")

@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SchooIOS — Landing (Warm Plaster · Immersive Garden mood)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --linen:#F5F1EA; --khaki:#D7C9B8; --camel:#B2967D; --cocoa:#7D5A44; --espresso:#4A342A;
+    --disp:'Cormorant Garamond',Georgia,serif; --sans:'IBM Plex Sans',system-ui,sans-serif; --mono:'IBM Plex Mono',monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{font-family:var(--sans);color:var(--espresso);background:var(--linen);overflow:hidden;position:relative}
+
+  /* WARM PLASTER SURFACE — feTurbulence + diffuse lighting = relief khắc nhẹ trên nền đất ấm.
+     Hai lớp: hạt mịn (texture giấy/thạch cao) + khối lớn (phù điêu "trồi" lên như Immersive Garden). */
+  .surface{position:fixed;inset:0;z-index:0}
+  .surface svg{width:100%;height:100%;display:block}
+
+  /* warm tint + vignette phủ lên relief để giữ tông đất, ánh sáng định hướng góc trên-trái */
+  .warmth{position:fixed;inset:0;z-index:1;pointer-events:none;
+    background:
+      radial-gradient(70% 60% at 22% 18%, rgba(251,248,241,.55), transparent 60%),
+      radial-gradient(80% 70% at 84% 88%, rgba(125,90,68,.16), transparent 62%),
+      radial-gradient(120% 100% at 50% 50%, transparent 55%, rgba(74,52,42,.10) 100%);
+    mix-blend-mode:multiply;opacity:.9}
+
+  /* CONTENT — bố cục tối giản Immersive Garden */
+  .ui{position:fixed;inset:0;z-index:3;display:grid;grid-template-rows:auto 1fr auto;
+    padding:34px 44px;font-size:14px}
+  .row{display:flex;align-items:center;justify-content:space-between}
+  .logo{display:flex;align-items:center;gap:12px}
+  .logo .glyph{width:26px;height:30px;border:1.5px solid var(--espresso);border-radius:3px 3px 14px 14px;position:relative}
+  .logo .glyph::after{content:"";position:absolute;left:50%;top:5px;width:1.5px;height:13px;background:var(--espresso);transform:translateX(-50%)}
+  .logo .name{font-family:var(--mono);font-size:12px;letter-spacing:.26em;text-transform:uppercase;color:var(--espresso)}
+  .nav{font-size:14px;color:var(--espresso)}
+  .center{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;text-align:center}
+  .tag{font-family:var(--disp);font-weight:500;font-size:clamp(30px,4.4vw,60px);line-height:1.05;letter-spacing:.01em;color:var(--espresso)}
+  .tag .it{font-style:italic;color:var(--cocoa)}
+  .scroll{position:absolute;right:9%;top:50%;transform:translateY(-50%);font-size:14px;color:var(--cocoa)}
+  .botL{font-size:14px;color:var(--espresso);display:flex;align-items:center;gap:14px}
+  .botL .dots{color:var(--camel)}
+  .loader{width:34px;height:34px;border:1.5px solid var(--camel);border-top-color:transparent;border-radius:50%;
+    animation:spin 1.6s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion: reduce){.loader{animation:none;border-top-color:var(--camel);opacity:.4}}
+</style></head><body>
+  <div class="surface">
+    <svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice" viewBox="0 0 1440 820">
+      <defs>
+        <!-- relief khối lớn (phù điêu trồi) -->
+        <filter id="reliefBig" x="-20%" y="-20%" width="140%" height="140%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.004 0.006" numOctaves="3" seed="11" result="n"/>
+          <feDiffuseLighting in="n" surfaceScale="9" diffuseConstant="1.05" lighting-color="#FBF8F1" result="l">
+            <feDistantLight azimuth="228" elevation="58"/>
+          </feDiffuseLighting>
+          <feComposite in="l" in2="SourceGraphic" operator="in"/>
+        </filter>
+        <!-- texture thạch cao mịn toàn nền -->
+        <filter id="plasterFine" x="0" y="0" width="100%" height="100%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="4" result="n"/>
+          <feDiffuseLighting in="n" surfaceScale="1.1" diffuseConstant="1" lighting-color="#F5F1EA" result="l">
+            <feDistantLight azimuth="228" elevation="60"/>
+          </feDiffuseLighting>
+        </filter>
+        <radialGradient id="soft" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#fff" stop-opacity="1"/>
+          <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+
+      <!-- nền đất ấm -->
+      <rect width="1440" height="820" fill="#EFE7D8"/>
+      <!-- texture mịn (mức rất nhẹ) -->
+      <rect width="1440" height="820" filter="url(#plasterFine)" opacity="0.16"/>
+
+      <!-- các khối phù điêu trồi lên — mềm, hữu cơ, như Immersive Garden -->
+      <g opacity="0.9">
+        <ellipse cx="640" cy="430" rx="190" ry="150" fill="#fff" filter="url(#reliefBig)"/>
+        <ellipse cx="1330" cy="120" rx="120" ry="90" fill="#fff" filter="url(#reliefBig)"/>
+        <ellipse cx="1300" cy="470" rx="150" ry="120" fill="#fff" filter="url(#reliefBig)"/>
+        <ellipse cx="120" cy="660" rx="130" ry="100" fill="#fff" filter="url(#reliefBig)"/>
+      </g>
+    </svg>
+  </div>
+  <div class="warmth"></div>
+
+  <div class="ui">
+    <div class="row">
+      <div class="logo"><span class="glyph"></span><span class="name">SchooIOS</span></div>
+      <div class="nav">Giới thiệu</div>
+    </div>
+
+    <div class="center">
+      <div class="tag"><span class="it">Lưu khố sống</span> của những tiếng nói</div>
+      <div class="scroll">Cuộn xuống</div>
+    </div>
+
+    <div class="row">
+      <div class="botL">Vào hệ thống <span class="dots">→</span></div>
+      <div class="loader" aria-hidden="true"></div>
+    </div>
+  </div>
+</body></html>

@@ -89,7 +89,7 @@ này TRƯỚC): **tên field** trong shape, **giá trị enum** (chuỗi), **ng�
 | Method · Path | Auth/Role | Request | OK | Lỗi |
 |---|---|---|---|---|
 | POST `/api/cases` | mọi role trừ AUDITOR | `{ title(5–200), description(10–5000), categoryId, locationId?, priority?, emergency?, sensitive? }` | 201 `{ case }` | 400 (json/zod/category·location sai) · 401 · 403 (AUDITOR) |
-| GET `/api/cases` | mọi role | query `?status&isEmergency(true/false)&page(≥1)&limit(1–100,def20)` | 200 `{ cases[], total, page, totalPages }` | 400 (query) · 401 |
+| GET `/api/cases` | mọi role | query `?status&isEmergency(true/false)&mine(true)&page(≥1)&limit(1–100,def20)` — `status` nhận **1 giá trị** (`NEW`) **hoặc danh sách phẩy** (`NEW,TRIAGED`); `mine=true` → CHỈ case do chính user tạo (`createdById`, **AND** tầm-nhìn role → KHÔNG nới quyền); tương thích ngược (thiếu param = như cũ) | 200 `{ cases[], total, page, totalPages }` | 400 (query/status rác) · 401 |
 | GET `/api/cases/[id]` | mọi role (lọc theo tầm nhìn) | – | 200 `{ case }` (detail đầy đủ) | 401 · 404 |
 | PATCH `/api/cases/[id]/assign` | ADMIN / STAFF(self, NEW·TRIAGED) | `{ assignedToId }` | 200 `{ case }` | 400 · 401 · 403 · 404 · 409 · 503 |
 | PATCH `/api/cases/[id]/status` | ADMIN / STAFF(scope) | `{ status, reason? }` | 200 `{ case }` | 400 (transition sai) · 401 · 403 · 404 · 409 · 503 |
@@ -105,6 +105,39 @@ này TRƯỚC): **tên field** trong shape, **giá trị enum** (chuỗi), **ng�
 |---|---|---|---|---|
 | POST | mọi role thấy case, trừ AUDITOR; `isInternal=true` chỉ STAFF/ADMIN | `{ body(1–5000), isInternal? }` | 201 `{ comment }` (kèm `author`) | 400 · 401 · 403 (AUDITOR / STUDENT đặt internal) · 404 · 503 |
 | GET | mọi role thấy case | – | 200 `{ comments[] }` (STUDENT **không** thấy `isInternal`) | 401 · 404 |
+
+## Attachments — 3-step signed-upload (F6 Đợt 2 — additive, KHÔNG đổi contract cũ)
+
+> **Kiến trúc:** client KHÔNG upload qua Next.js (giới hạn 4.5 MB). Thay vào đó: **sign** (BE cấp signed-upload URL) → **PUT** (client PUT bytes thẳng lên Supabase Storage) → **commit** (BE verify + ghi DB). filePath KHÔNG BAO GIỜ ra FE.
+
+| Method · Path | Auth/Role | Request | OK | Lỗi |
+|---|---|---|---|---|
+| POST `/api/cases/[id]/attachments/sign` | mọi role **trừ AUDITOR**; phải là creator/assignee/ADMIN | `{ fileName(1–200), mimeType∈[image/jpeg,image/png,image/webp], fileSize(1–8MB) }` | 200 `{ uploadUrl, path }` — `uploadUrl` = Supabase signed PUT URL (PUT bytes thẳng, TTL 10 phút); `path` = storage path gửi lên commit | 400 (zod/mime/size) · 401 · 403 (AUDITOR · không phải creator/assignee/ADMIN) · 404 (case không thấy) · 503 (storage) |
+| POST `/api/cases/[id]/attachments/commit` | mọi role **trừ AUDITOR**; phải là creator/assignee/ADMIN | `{ path }` — path nhận từ sign | 201 `{ attachment }` (shape đầy đủ, xem dưới) | 400 (path lệch prefix · object không tồn tại · MIME thực tế sai · kích thước thực tế > MAX) · 401 · 403 · 404 · 503 · 500 |
+| GET `/api/attachments/[id]/view` | mọi role **kể cả AUDITOR** (visibility theo tầm nhìn case) | – | 200 `{ url, expiresAt }` — signed download URL (TTL từ env, mặc định 1 giờ); **KHÔNG** phơi `filePath` | 401 · 404 (attachment không thấy / case không có quyền — đồng nhất) · 503 |
+| DELETE `/api/cases/[id]/attachments/[attId]` | mọi role **trừ AUDITOR**; chỉ **creator (của case) hoặc ADMIN** | – | 200 `{ deleted: true }` | 401 · 403 · 404 · 503 |
+
+**Attachment shape (commit 201 / case detail `attachments[]`):**
+```jsonc
+{ "id": "cuid", "fileName": "photo.jpg", "fileSize": 12345, "mimeType": "image/jpeg",
+  "createdAt": "ISO", "uploadedBy": { "id": "cuid", "name": "Nguyễn Văn A" } }
+// KHÔNG có filePath — private, không bao giờ ra FE
+```
+
+**Luồng upload phía FE:**
+1. `POST sign` → nhận `{ uploadUrl, path }`
+2. `fetch(uploadUrl, { method:"PUT", body: blob, headers:{"Content-Type": mimeType} })` — PUT THẲNG lên Supabase, bypass Next.js
+3. `POST commit` với `{ path }` → nhận `{ attachment }` — add vào cache, refresh gallery
+
+**Luồng xem ảnh phía FE:**
+- Gọi `GET /api/attachments/[id]/view` → nhận `{ url, expiresAt }` — dùng `url` làm `src` trực tiếp
+- Cache `url` trong session Map; re-fetch khi còn < 5 phút là hết hạn
+
+**Bảo mật:**
+- MIME check 2 lớp: client pre-check (Zod enum) + server magic-byte sniff (Range GET 12 bytes)
+- Path prefix enforced server-side: `attachments/${caseId}/` — commit reject path lệch prefix
+- `image/svg+xml` bị chặn (XSS)
+- Bucket PRIVATE — 0 public URL; mọi truy cập qua signed URL server-cấp
 
 ## Dashboard — `GET /api/dashboard` (ADMIN/AUDITOR; STAFF·STUDENT → 403)
 
@@ -132,10 +165,12 @@ này TRƯỚC): **tên field** trong shape, **giá trị enum** (chuỗi), **ng�
 | GET `/api/categories` | mọi role đã đăng nhập | – | 200 `{ categories[] }` | 401 · 503 |
 | GET `/api/locations` | mọi role đã đăng nhập | – | 200 `{ locations[] }` | 401 · 503 |
 | GET `/api/audit` | **CHỈ ADMIN/AUDITOR** (role khác → 403) | `?page&limit(1–100)&entityType?&entityId?` | 200 `{ logs[], total, page, totalPages }` | 400 · 401 · 403 · 503 |
+| GET `/api/users` | **CHỈ ADMIN** (role khác → 403) | `?role∈{STAFF,ADMIN}(def STAFF)&page(≥1)&limit(1–100,def50)` | 200 `{ users[], total, page, totalPages }` | 400 (role rác/STUDENT/AUDITOR · limit ngoài biên) · 401 · 403 · 503 |
 
 **Category (lookup item)** — `{ id, name, description|null, defaultPriority|null, defaultSensitive }` (chỉ `isActive=true`, sắp theo `name`). Dùng nạp dropdown form tạo case.
 **Location (lookup item)** — `{ id, code, name, floor|null, type, buildingId|null, building{id,code,name}|null }` (chỉ `isActive=true`, sắp theo `code`). Dùng nạp dropdown form tạo case.
 **AuditLog (list item)** — `{ id, action, entityType, entityId, metadata, createdAt, actorId|null, actor{id,name,role}|null }` (append-only/immutable; mới nhất trước, tiebreaker `id` cho paging tất định; KHÔNG phơi PII ngoài `{id,name,role}` của actor).
+**User (assignable)** — `{ id, name, role }` · 0 PII (KHÔNG email/sbd/dob/passwordHash) · chỉ `isActive=true` · sắp `(name asc, id asc)` tất định · dùng nạp picker giao việc + cân tải ADMIN.
 
 ---
 
@@ -147,7 +182,7 @@ này TRƯỚC): **tên field** trong shape, **giá trị enum** (chuỗi), **ng�
 
 **Case (list item)** — `{ ...scalars, category{id,name}, locationRef{id,code,name}|null, createdBy{id,name,role}, assignedTo{id,name}|null }`. Scalars: `id, caseCode, title, description, location|null, locationId|null, categoryId, priority, status, isSensitive, isEmergency, studentFlaggedEmergency, createdById, assignedToId|null, resolvedAt|null, closedAt|null, createdAt, updatedAt` (KHÔNG `deletedAt` — case xóa mềm không bao giờ ra ngoài).
 
-**Case (detail, GET [id])** — như trên + `category`(đầy đủ), `attachments[]{id,fileName,fileSize,mimeType,createdAt,uploadedBy{id,name}}` (**KHÔNG `filePath`** — dùng Signed URL sau), `statusHistory[]{...,changedBy{id,name,role}}`, `comments[]{...,author{id,name,role}}` (STUDENT lọc internal).
+**Case (detail, GET [id])** — như trên + `category`(đầy đủ), `attachments[]{id,fileName,fileSize,mimeType,createdAt,uploadedBy{id,name}}` (**KHÔNG `filePath`** — Signed URL qua `GET /api/attachments/[id]/view`), `statusHistory[]{...,changedBy{id,name,role}}`, `comments[]{...,author{id,name,role}}` (STUDENT lọc internal).
 
 **Case (mutation response, assign/status/emergency)** — scalars đầy đủ + `category`, `createdBy{id,name,role}`, `assignedTo{id,name,role}|null` (gọn hơn detail).
 

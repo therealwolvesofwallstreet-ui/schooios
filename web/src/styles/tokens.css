@@ -1,0 +1,65 @@
+/* SchooIOS design tokens — "Warm Immersive Archive".
+ * NGUỒN DUY NHẤT cho màu/typeface/radius/easing. Tailwind v4 @theme → sinh utility
+ * (bg-paper, text-ink, bg-depth, text-on-depth, font-display, rounded-lg, ease-quiet…).
+ * CẤM hardcode hex ngoài file này. SSOT palette: design-vision/DIRECTION-WARM.md.
+ *
+ * DUAL SURFACE (xem web/FRONTEND.md):
+ *   • Paper — bề mặt vôi-giấy ấm cho ĐỌC/VẬN HÀNH (queue, detail, audit, form).
+ *   • Depth — bề mặt nâu sẫm Cowhide cho HERO/SÂN KHẤU/NGƯỠNG CỬA (login, dashboard hero, emergency).
+ * Vai trò màu: signal Spiced Wine = THE VOICE / primary action · link Toasted Caramel = hệ thống/tương tác ·
+ *   gold Golden Batter = đã ghi nhận/resolved · emergency oxblood = takeover · rare Olive = milestone hiếm ·
+ *   authority Cowhide = nền chrome quyền lực · mute Camel = trang trí (KHÔNG body). */
+
+@theme {
+  /* ---- LIGHT · Paper (đọc / vận hành — Linen/Espresso) ---- */
+  --color-paper: #f5f1ea;
+  --color-paper-raised: #fbf8f1;
+  --color-sunken: #eae3d5;
+  --color-ink: #4a342a;
+  --color-ink-2: #7d5a44;
+  --color-ink-3: #6e5038; /* metadata/caption — WCAG AA trên paper; hierarchy nhờ size/uppercase */
+  --color-line: #e2d9c8;
+  --color-line-2: #cdbfa6;
+  --color-mute: #b2967d; /* Camel — trang trí/ornament; KHÔNG dùng cho body (AA-unsafe) */
+
+  /* ---- DARK · Depth (hero / sân khấu / ngưỡng cửa — Cowhide, KHÔNG đen) ---- */
+  --color-depth: #442d1c; /* nền nâu sẫm điện ảnh */
+  --color-depth-raised: #553a26; /* card/panel trên depth */
+  --color-depth-sunken: #36210f;
+  --color-on-depth: #f5f1ea; /* text chính trên depth (Linen) */
+  --color-on-depth-2: #e8d1a7; /* text phụ trên depth (Golden Batter) */
+  --color-on-depth-3: #b2967d; /* metadata trên depth (Camel) */
+  --color-line-depth: rgba(245, 241, 234, 0.13); /* hairline trên depth */
+  --color-line-depth-2: rgba(245, 241, 234, 0.24);
+
+  /* ---- ACCENTS (theo VAI TRÒ) ---- */
+  --color-signal: #743014; /* THE VOICE / primary action — Spiced Wine (accent DUY NHẤT) */
+  --color-signal-hot: #9e3a1a; /* signal trên depth (nhấc nhẹ) */
+  --color-link: #84592b; /* hệ thống / tương tác / link / focus — Toasted Caramel */
+  --color-link-lift: #a87a3e; /* link trên depth */
+  --color-gold: #c99a4a; /* đã ghi nhận / resolved */
+  --color-gold-fill: #e8d1a7; /* nền nhạt resolved/acknowledge (Golden Batter) */
+  --color-emergency: #8a2b14; /* oxblood — CHỈ emergency takeover */
+  --color-rare: #9d9167; /* milestone / delight hiếm — Olive Harvest */
+  --color-authority: #442d1c; /* nền chrome quyền lực (sidebar) — Cowhide */
+
+  /* ---- Typeface (biến gốc do next/font gắn lên <html> ở layout.tsx) ---- */
+  --font-display: var(--font-cormorant), var(--font-newsreader), Georgia, serif; /* hero (Cormorant Garamond) */
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, "SFMono-Regular", monospace;
+  --font-serif: var(--font-newsreader), Georgia, "Times New Roman", serif; /* serif VN (khoảnh khắc người) */
+
+  /* ---- Radius ---- */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 14px; /* card/panel immersive */
+
+  /* ---- Easing (chỉ ease-out — KHÔNG spring/bounce; mirror lib/cubic-bezier.ts) ---- */
+  --ease-quiet: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-emerge: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* ---- Depth / material (immersive — chiều sâu bằng layer/ánh sáng, không bóng nặng) ---- */
+  --depth-scrim: color-mix(in srgb, var(--color-paper) 80%, transparent); /* scrim form trên WebGL */
+  --depth-scrim-depth: color-mix(in srgb, var(--color-depth) 62%, transparent);
+  --material-grain-opacity: 0.02; /* mirror grain shader (DOM echo) */
+}
