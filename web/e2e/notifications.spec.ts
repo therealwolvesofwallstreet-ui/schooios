@@ -70,14 +70,14 @@ test.describe("F4a notifications correctness [STUDENT]", () => {
     await page.goto("/notifications");
     await expect(page.getByRole("heading", { name: "Thông báo" })).toBeVisible();
 
+    // list render đúng 3 dòng (chờ list fetch xong TRƯỚC khi soi `seen` — tránh đua lúc chạy song song).
+    await expect(page.getByTestId("notification-list").getByRole("listitem")).toHaveCount(3);
+
     // T0: đúng endpoint + params SERVER-DRIVEN (page=1 & limit=20 cho list).
     expect(
       seen.some((r) => /GET .*\/api\/notifications\?.*\bpage=1\b.*\blimit=20\b/.test(r)),
       "list phải gọi /api/notifications với page+limit (server-driven)",
     ).toBeTruthy();
-
-    // list render đúng 3 dòng.
-    await expect(page.getByTestId("notification-list").getByRole("listitem")).toHaveCount(3);
 
     // badge = server-truth (3) ở TopBar + summary.
     await expect(page.getByTestId("unread-badge")).toHaveText("3");

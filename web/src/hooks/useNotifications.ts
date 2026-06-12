@@ -8,6 +8,7 @@
 // từ server → badge luôn = server-truth (không lệch nếu có thông báo mới chen giữa).
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { useToastQueue } from "@/store/toast";
 import type { NotificationsResponse } from "@/lib/api-types";
 
 export const NOTIFICATIONS_QUERY_KEY = ["notifications"] as const;
@@ -54,9 +55,12 @@ export function useUnreadCount(enabled = true) {
 
 export function useReadAll() {
   const queryClient = useQueryClient();
+  const push = useToastQueue((s) => s.push);
   return useMutation({
     mutationFn: () =>
       api.patch<{ success: boolean; updated: number }>("/api/notifications/read-all"),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_QUERY_KEY }),
+    // read-all thất bại (vd 503 sau retry) → toast lặng; badge GIỮ nguyên = server-truth (không sai số).
+    onError: () => push("Chưa đánh dấu đã đọc được. Thử lại sau.", "error"),
   });
 }

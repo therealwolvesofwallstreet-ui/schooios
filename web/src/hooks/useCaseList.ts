@@ -12,7 +12,7 @@ import { api } from "@/lib/api";
 import type { CasesListResponse, CaseStatus } from "@/lib/api-types";
 
 export interface CaseListParams {
-  status?: CaseStatus;
+  status?: CaseStatus | CaseStatus[];
   isEmergency?: boolean;
   page?: number;
   limit?: number;
@@ -20,7 +20,11 @@ export interface CaseListParams {
 
 function buildQuery(params: CaseListParams): string {
   const sp = new URLSearchParams();
-  if (params.status) sp.set("status", params.status);
+  if (params.status) {
+    // 1 status hoặc danh sách → phẩy (server nhận `NEW,TRIAGED`). Mảng rỗng → bỏ (không gửi ?status=).
+    const s = Array.isArray(params.status) ? params.status.join(",") : params.status;
+    if (s) sp.set("status", s);
+  }
   if (params.isEmergency != null) sp.set("isEmergency", String(params.isEmergency));
   if (params.page != null) sp.set("page", String(params.page));
   if (params.limit != null) sp.set("limit", String(params.limit));

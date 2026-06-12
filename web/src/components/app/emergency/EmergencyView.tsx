@@ -17,7 +17,7 @@ import { cn } from "@/lib/cn";
 export function EmergencyView() {
   // Mặc định = ĐANG MỞ: tuyến khẩn ưu tiên vụ chưa giải quyết. server-driven qua ?activeOnly.
   const [activeOnly, setActiveOnly] = useState(true);
-  const { cases, total, isLoading, isError, forbidden, refetch } = useEmergencyQueue(activeOnly);
+  const { cases, isLoading, isError, forbidden, refetch } = useEmergencyQueue(activeOnly);
 
   // Quyền: server là chân lý. STUDENT → 403 → màn ngoài-quyền (KHÔNG render lane).
   if (forbidden) return <PermissionDenied />;
@@ -42,7 +42,7 @@ export function EmergencyView() {
             data-testid="emergency-count"
             className="text-on-depth-2 shrink-0 font-mono text-[11px] tracking-[0.16em] tabular-nums uppercase"
           >
-            {total} vụ
+            {cases.length} vụ
           </p>
         </div>
       </header>
