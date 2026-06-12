@@ -91,9 +91,10 @@ export default function ReportNewPage() {
     if (showForm) headingRef.current?.focus();
   }, [step, showForm]);
 
-  // ── 201 thành công → RELEASE BURST (thay cả màn form) ──
+  // ── 201 thành công → RELEASE BURST (thay cả màn form). "Mở hồ sơ" → vào chính hồ sơ vừa tạo
+  // (đúng moodboard Animation 01 VOICE "→ trang chi tiết"), KHÔNG về home. ──
   if (created) {
-    return <ReleaseBurst caseCode={created.caseCode} onDone={() => router.push("/")} />;
+    return <ReleaseBurst caseCode={created.caseCode} onDone={() => router.push(`/cases/${created.id}`)} />;
   }
 
   // ── Quyền / loading ──
