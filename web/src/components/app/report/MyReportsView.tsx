@@ -17,6 +17,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Button } from "@/components/ui/Button";
 import { Pager } from "@/components/ui/Pager";
+import { AgingBadge } from "@/components/ui/AgingBadge";
 import { ErrorState } from "@/components/app/states";
 import type { CaseListItem, CaseStatus } from "@/lib/api-types";
 
@@ -98,6 +99,7 @@ function ReportRow({ c }: { c: CaseListItem }) {
       <span className="text-ink-3 shrink-0 font-mono text-[11px] tracking-[0.12em]">{c.caseCode}</span>
       <StatusPill status={c.status} className="shrink-0" />
       <span className="text-ink line-clamp-1 min-w-0 flex-1 text-sm">{c.title}</span>
+      <AgingBadge createdAt={c.createdAt} status={c.status} />
     </Link>
   );
 }

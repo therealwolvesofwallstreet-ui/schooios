@@ -10,6 +10,9 @@ import {
   Siren,
   ClipboardText,
   ChartBar,
+  Stack,
+  Briefcase,
+  Newspaper,
 } from "@phosphor-icons/react";
 import type { ComponentType } from "react";
 import type { Role } from "@/lib/api-types";
@@ -30,18 +33,21 @@ export interface NavItem {
 export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   STUDENT: [
     { label: "Trang chủ", href: "/", icon: House },
+    { label: "Bảng tin", href: "/feed", icon: Newspaper },
     { label: "Báo cáo của tôi", href: "/report", icon: Files },
     { label: "Cất tiếng nói", href: "/report/new", icon: Megaphone },
     { label: "Thông báo", href: "/notifications", icon: Bell },
   ],
   STAFF: [
     { label: "Tổng quan", href: "/", icon: ChartBar },
+    { label: "Bàn làm việc", href: "/desk", icon: Briefcase },
     { label: "Hàng chờ", href: "/queue", icon: ListChecks },
     { label: "Khẩn cấp", href: "/emergency", icon: Siren },
     { label: "Thông báo", href: "/notifications", icon: Bell },
   ],
   ADMIN: [
     { label: "Tổng quan", href: "/", icon: ChartBar },
+    { label: "Tất cả vụ việc", href: "/cases", icon: Stack },
     { label: "Hàng chờ", href: "/queue", icon: ListChecks },
     { label: "Khẩn cấp", href: "/emergency", icon: Siren },
     { label: "Nhật ký", href: "/audit", icon: ClipboardText },
@@ -49,6 +55,7 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   ],
   AUDITOR: [
     { label: "Tổng quan", href: "/", icon: ChartBar },
+    { label: "Tất cả vụ việc", href: "/cases", icon: Stack },
     { label: "Nhật ký", href: "/audit", icon: ClipboardText },
   ],
 };

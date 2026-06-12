@@ -9,7 +9,11 @@
 //   KHÔNG sập trang, KHÔNG để undefined lọt DOM. Lỗi tải toàn cục = ErrorState (điềm tĩnh, KHÔNG đỏ).
 // readOnly=true (AUDITOR): KHÔNG affordance hành động (chỉ-xem); ADMIN giữ nguyên ngữ nghĩa điều phối.
 import dynamic from "next/dynamic";
+import Link from "next/link";
+import { motion } from "framer-motion";
 import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
+import { useHydrated } from "@/hooks/useHydrated";
+import { EASE_EMERGE_BEZIER } from "@/lib/cubic-bezier";
 import { Card } from "@/components/ui/Card";
 import { Hairline } from "@/components/ui/Hairline";
 import { SignalDot, type SignalTone } from "@/components/ui/SignalDot";
@@ -18,6 +22,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState } from "@/components/app/states";
 import { STATUS_TONE } from "@/components/ui/status-theme";
 import { STATUS_LABEL, PRIORITY_LABEL, STATUS_ORDER, PRIORITY_ORDER } from "@/lib/case-display";
+import { cn } from "@/lib/cn";
 import type { CaseStatus, CasePriority } from "@/lib/api-types";
 
 // PulseField nạp qua dynamic(ssr:false) — giữ mọi ruột động (canvas/three ở F4) NGOÀI server bundle,
@@ -66,6 +71,13 @@ export function AdminHome({ readOnly = false }: { readOnly?: boolean }) {
         <PulseField metrics={metrics} className="border-line h-40 rounded-md border md:h-48" />
       </section>
 
+      {/* Xu hướng — Chart1 = thanh phân-đoạn trạng thái (KHÔNG donut/canvas/lib; thuần SVG/CSS). Mỗi
+          đoạn → /cases?status=… (drill-down). Ledger "Theo trạng thái" bên dưới là chú-giải-số. */}
+      <section className="flex flex-col gap-3">
+        <h2 className="text-ink-3 font-mono text-[11px] tracking-[0.18em] uppercase">Xu hướng</h2>
+        <StatusBar byStatus={byStatus} />
+      </section>
+
       {/* Sổ hàng đợi — ledger hairline, KHÔNG donut. byStatus/byPriority đọc _count. */}
       <section className="grid grid-cols-1 gap-8 md:grid-cols-2">
         <Ledger
@@ -90,14 +102,14 @@ export function AdminHome({ readOnly = false }: { readOnly?: boolean }) {
         />
       </section>
 
-      {/* Rail loại/nơi — byCategory/byLocation đọc `count` (KHÔNG _count). Top theo count giảm dần. */}
+      {/* Loại/nơi — byCategory/byLocation đọc `count` (KHÔNG _count). Top theo count giảm dần.
+          Chart2 = thanh tỉ-lệ "Theo loại" (THAY Rail cũ), mỗi hàng → /cases?category=…&cat=…. */}
       <section className="grid grid-cols-1 gap-8 md:grid-cols-2">
-        <Rail
-          title="Theo loại"
+        <CategoryBars
           items={[...byCategory]
             .sort((a, b) => (b.count ?? 0) - (a.count ?? 0))
             .slice(0, 6)
-            .map((c) => ({ key: c.categoryId, label: c.name, count: c.count ?? 0 }))}
+            .map((c) => ({ id: c.categoryId, name: c.name, count: c.count ?? 0 }))}
         />
         <Rail
           title="Theo nơi"
@@ -223,5 +235,109 @@ function DashboardSkeleton() {
         <Skeleton className="h-56 w-full" />
       </div>
     </div>
+  );
+}
+
+// tone → màu nền (mirror SignalDot.TONE, token-only — 0 hex). Dùng tô đoạn thanh trạng thái.
+const TONE_FILL: Record<SignalTone, string> = {
+  signal: "bg-signal",
+  gold: "bg-gold",
+  running: "bg-ink",
+  emergency: "bg-emergency",
+  dormant: "bg-line-2",
+};
+
+// Chart1 — thanh phân-đoạn theo trạng thái (width đoạn ∝ _count/Σ_count). KHÔNG donut/canvas. Mỗi đoạn
+// là 1 Link → /cases?status=… . Width grow gate theo HYDRATE (SSR/static = không animate → 0 mismatch).
+function StatusBar({ byStatus }: { byStatus: { status: CaseStatus; _count: number }[] }) {
+  const staticFirst = !useHydrated();
+  const total = byStatus.reduce((s, b) => s + (b._count ?? 0), 0);
+  const countOf = (s: CaseStatus) => byStatus.find((b) => b.status === s)?._count ?? 0;
+  const segments = STATUS_ORDER.map((s) => ({ s, count: countOf(s) })).filter((x) => x.count > 0);
+
+  return (
+    <Card>
+      <h2 className="text-ink-3 mb-4 font-mono text-[11px] tracking-[0.18em] uppercase">
+        Phân bố trạng thái
+      </h2>
+      {total === 0 ? (
+        <EmptyState message="Chưa có dữ liệu." className="py-8" />
+      ) : (
+        <div
+          data-testid="chart-status"
+          role="group"
+          aria-label="Phân bố trạng thái — chọn một đoạn để mở danh sách"
+          className="bg-sunken flex h-8 w-full overflow-hidden rounded-md"
+        >
+          {segments.map(({ s, count }, i) => (
+            <motion.div
+              key={s}
+              className="h-full min-w-[3px]"
+              initial={staticFirst ? false : { width: 0 }}
+              animate={{ width: `${(count / total) * 100}%` }}
+              transition={{ duration: 0.6, ease: EASE_EMERGE_BEZIER, delay: Math.min(i * 0.05, 0.3) }}
+            >
+              <Link
+                href={`/cases?status=${s}`}
+                title={`${STATUS_LABEL[s]}: ${count}`}
+                aria-label={`${STATUS_LABEL[s]}: ${count} vụ`}
+                className={cn(
+                  "focus-visible:outline-ink block h-full w-full transition-opacity duration-150 ease-quiet hover:opacity-85 focus-visible:outline-2 focus-visible:-outline-offset-2",
+                  TONE_FILL[STATUS_TONE[s]],
+                )}
+              />
+            </motion.div>
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+// Chart2 — thanh tỉ-lệ top loại (width ∝ count/max). Fill gold trên track sunken. Mỗi hàng → /cases
+// ?category=…&cat=… (facet client ở AllCasesView). Width grow gate theo HYDRATE.
+function CategoryBars({ items }: { items: { id: string; name: string; count: number }[] }) {
+  const staticFirst = !useHydrated();
+  const max = items.reduce((m, it) => Math.max(m, it.count), 0) || 1;
+
+  return (
+    <Card>
+      <h2 className="text-ink-3 mb-4 font-mono text-[11px] tracking-[0.18em] uppercase">Theo loại</h2>
+      {items.length === 0 ? (
+        <EmptyState message="Chưa có dữ liệu." className="py-8" />
+      ) : (
+        <ul data-testid="chart-category" className="flex flex-col gap-3">
+          {items.map((it, i) => (
+            <li key={it.id}>
+              <Link
+                href={`/cases?category=${it.id}&cat=${encodeURIComponent(it.name)}`}
+                className="focus-visible:outline-ink group block rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2"
+              >
+                <div className="mb-1 flex items-center justify-between gap-4">
+                  <span className="text-ink-2 group-hover:text-ink line-clamp-1 text-sm transition-colors duration-150 ease-quiet">
+                    {it.name}
+                  </span>
+                  <span className="text-ink-3 shrink-0 font-mono text-sm tabular-nums">
+                    {it.count}
+                  </span>
+                </div>
+                <div className="bg-sunken h-1.5 w-full overflow-hidden rounded-full">
+                  <motion.div
+                    className="bg-gold h-full rounded-full"
+                    initial={staticFirst ? false : { width: 0 }}
+                    animate={{ width: `${(it.count / max) * 100}%` }}
+                    transition={{
+                      duration: 0.6,
+                      ease: EASE_EMERGE_BEZIER,
+                      delay: Math.min(i * 0.05, 0.3),
+                    }}
+                  />
+                </div>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
   );
 }
