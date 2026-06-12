@@ -7,6 +7,7 @@ import { useRef } from "react";
 import { SignalDot } from "@/components/ui/SignalDot";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { ErrorState } from "@/components/app/states";
 import { cn } from "@/lib/cn";
 
 export interface Choice {
@@ -52,20 +53,8 @@ export function ChoiceList({
   }
 
   if (isError) {
-    return (
-      <div role="alert" className="flex flex-col items-start gap-2 py-4">
-        <p className="text-ink-3 font-mono text-xs">Không tải được danh sách.</p>
-        {onRetry && (
-          <button
-            type="button"
-            onClick={onRetry}
-            className="text-ink-2 hover:text-ink text-xs underline underline-offset-4 transition-colors duration-150 ease-quiet"
-          >
-            Thử lại
-          </button>
-        )}
-      </div>
-    );
+    // SSOT: cùng giọng lỗi với mọi màn (states.tsx) — `compact` cho ngữ cảnh nội tuyến giữa form.
+    return <ErrorState compact onRetry={onRetry} message="Không tải được danh sách." />;
   }
 
   if (items.length === 0) {

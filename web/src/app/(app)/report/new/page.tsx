@@ -14,6 +14,7 @@ import { useCategories } from "@/hooks/useCategories";
 import { useLocations } from "@/hooks/useLocations";
 import { useCreateCase, type CreateCaseInput } from "@/hooks/useCreateCase";
 import { ChoiceList, type Choice } from "@/components/report/ChoiceList";
+import { ErrorState, PermissionDenied } from "@/components/app/states";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
@@ -107,26 +108,15 @@ export default function ReportNewPage() {
   // /me lỗi KHÔNG-401 (503/mạng): api.ts CHỈ tự điều hướng khi 401 → ở đây phải hiện lỗi điềm tĩnh
   // + "Thử lại", KHÔNG để màn trắng câm. UX-only (không nới quyền — server vẫn là nguồn quyền).
   if (sessionError) {
-    return (
-      <div className="mx-auto flex max-w-xl flex-col items-start gap-3 py-24">
-        <p className="text-ink-3 font-mono text-xs">Không tải được phiên làm việc.</p>
-        <button
-          type="button"
-          onClick={() => void sessionRefetch()}
-          className="text-ink-2 hover:text-ink text-xs underline-offset-4 transition-colors duration-150 ease-quiet hover:underline"
-        >
-          Thử lại
-        </button>
-      </div>
-    );
+    return <ErrorState onRetry={() => void sessionRefetch()} message="Không tải được phiên làm việc." />;
   }
   if (!user) return null; // api.ts đã điều hướng /login khi 401
   if (role === "AUDITOR") {
     return (
-      <div className="mx-auto flex max-w-xl flex-col gap-3 py-24 text-center">
-        <h1 className="text-ink font-serif text-2xl leading-snug">Mục này dành cho người cất tiếng nói.</h1>
-        <p className="text-ink-3 text-sm">Vai trò kiểm toán chỉ lắng nghe và lưu khố — không tạo báo cáo.</p>
-      </div>
+      <PermissionDenied
+        message="Mục này dành cho người cất tiếng nói."
+        detail="Vai trò kiểm toán chỉ lắng nghe và lưu khố — không tạo báo cáo."
+      />
     );
   }
 
