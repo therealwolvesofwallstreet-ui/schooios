@@ -143,6 +143,12 @@ export interface CasesListResponse {
   page: number;
   totalPages: number;
 }
+// Emergency lane (P7) — GET /api/cases/emergency?activeOnly — KHÔNG phân trang (khẩn hiếm + indexed).
+// Server đã gate sensitivity (OR:[{isSensitive:false},{assignedToId:me}]) — FE KHÔNG tự lọc.
+export interface EmergencyCasesResponse {
+  cases: CaseListItem[];
+  total: number;
+}
 export interface CaseResponse {
   case: CaseListItem | CaseDetail;
 }
