@@ -182,6 +182,35 @@ test.describe("D /feed read-only [STUDENT]", () => {
   });
 });
 
+// ─────────── F. MATRIX — anon redirect + dashboard isolation ───────────
+test.describe("F matrix — anon → /login (server là rào chắn)", () => {
+  test("anon mở /cases,/desk,/feed → redirect /login", async ({ browser }) => {
+    const ctx = await browser.newContext(); // KHÔNG cookie auth
+    const page = await ctx.newPage();
+    for (const path of ["/cases", "/desk", "/feed"]) {
+      await page.goto(path);
+      await expect(page, `${path} anon phải về /login`).toHaveURL(/\/login/);
+    }
+    await ctx.close();
+  });
+});
+
+test.describe("F matrix — /desk KHÔNG gọi /api/dashboard [STAFF]", () => {
+  test.skip(!haveCreds("STAFF"), "Thiếu E2E creds STAFF");
+  test.beforeEach(({ context }) => authenticate(context, "STAFF"));
+
+  test("STAFF /desk → 0 call /api/dashboard (chỉ AdminHome gọi)", async ({ page }) => {
+    const calls: string[] = [];
+    page.on("request", (r) => {
+      if (r.url().includes("/api/dashboard")) calls.push(r.url());
+    });
+    await page.goto("/desk");
+    await page.getByRole("heading", { name: "Bàn làm việc" }).waitFor();
+    await page.waitForTimeout(500);
+    expect(calls, "chỉ ADMIN/AUDITOR home gọi /dashboard").toHaveLength(0);
+  });
+});
+
 // ─────────── E. /report ?mine=true [STUDENT] ───────────
 test.describe("E /report mine [STUDENT]", () => {
   test.skip(!haveCreds("STUDENT"), "Thiếu E2E creds STUDENT");

@@ -19,7 +19,9 @@ import type { CaseListItem } from "@/lib/api-types";
 const isOpen = (c: CaseListItem) => c.status !== "RESOLVED" && c.status !== "CLOSED";
 
 export function DeskView() {
-  const { user } = useSession();
+  // Gate CẢ session: DeskView tự gọi useSession (KHÁC StaffHome nhận user prop) → nếu /api/cases về
+  // TRƯỚC /me, bucket "của tôi" sẽ tính theo me="" → loé rỗng sai. Chờ session resolve mới chia bucket.
+  const { user, isLoading: sessionLoading } = useSession();
   const me = user?.id ?? "";
   const { cases, isLoading, isError, refetch } = useCaseList(me || "desk", { limit: 100 });
 
@@ -42,7 +44,7 @@ export function DeskView() {
         <p className="text-ink-3 text-sm">Việc bạn đang gánh, theo từng lăng kính.</p>
       </header>
 
-      {isLoading ? (
+      {sessionLoading || isLoading ? (
         <DeskSkeleton />
       ) : isError ? (
         <ErrorState onRetry={() => void refetch()} message="Không tải được bàn làm việc." />
