@@ -19,6 +19,7 @@ export const LANDING_FRAG = /* glsl */ `
   varying vec2 vUv;
   uniform float uTime;
   uniform vec2  uRes;
+  uniform vec2  uMouse;             // con trỏ chuẩn hóa [-1,1] (F5d parallax) — 0 khi tĩnh/touch/không-pointer
   uniform sampler2D uWord;          // R="Schoo" (serif) · G="IOS" (sans) — mặt nạ gờ chữ
   uniform vec3  uRaised, uSunken, uMute, uInk2; // tông thạch cao (từ tokens): highlight→mid→camel→cocoa
   uniform float uReliefAmp;         // biên độ khối lớn
@@ -59,7 +60,10 @@ export const LANDING_FRAG = /* glsl */ `
   // khi surfaceScale cao (octave cao bị surfaceScale phóng đại thành vảy → đã bỏ; tooth lấy từ MÀU bên
   // dưới, độc lập surfaceScale). Wordmark là phần TẦN-SỐ-CAO duy nhất → gờ chữ sắc nét HERO.
   float heightAt(vec2 uv, float asp){
-    vec2 p = vec2(uv.x*asp, uv.y);
+    // F5d parallax: dịch NỀN phù điêu theo con trỏ (uMouse) ~vài % domain → khối lớn trôi nhẹ = CHIỀU SÂU.
+    // GỜ CHỮ đọc theo uv GỐC (dưới) → neo cố định ⇒ "Schoo·IOS" nổi trên nền trôi (KHÔNG say). uMouse=0 →
+    // y hệt trước (tĩnh/touch/không pointer KHÔNG đổi gì).
+    vec2 p = vec2(uv.x*asp, uv.y) + uMouse * 0.035;
     vec2 drift = vec2(uTime*0.010, uTime*0.005);
     float smoothB = snoise(p*0.85 + drift) + 0.42*snoise(p*1.8 - drift*0.7); // khối lớn êm
     float ridge = 1.0 - abs(snoise(p*1.3 + 4.0));      // gờ "đắp bay" (creases) — bớt vẻ LỎNG, thêm chất CARVED
@@ -81,7 +85,9 @@ export const LANDING_FRAG = /* glsl */ `
 
     // KEY light: trên-trái (az~228°, el~58°), đảo nhẹ theo thời gian (sống). vUv.y hướng LÊN →
     // -sin(az) đặt nguồn phía trên. (cos228≈-0.67 → trái; -sin228≈+0.74 → trên.)
-    float az = radians(228.0) + 0.05*sin(uTime*0.07);
+    // + uMouse.x*0.12: con trỏ "nghiêng" nguồn sáng KEY nhẹ (~±7°) → modeling (highlight/shadow) thở theo
+    // chuột, hợp với parallax nền → cảm giác phù điêu sống dưới tay (F5d). uMouse=0 → đứng yên như cũ.
+    float az = radians(228.0) + 0.05*sin(uTime*0.07) + uMouse.x*0.12;
     float el = radians(58.0);
     float ce = cos(el);
     vec3  L  = normalize(vec3(cos(az)*ce, -sin(az)*ce, sin(el)));

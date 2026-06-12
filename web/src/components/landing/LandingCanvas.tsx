@@ -116,5 +116,46 @@ export default function LandingCanvas() {
     };
   }, []);
 
+  // F5d parallax con trỏ (mid) — dịch CANVAS vài px theo pointer bằng CSS transform (GPU-composite, KHÔNG
+  // repaint → 0 chi phí vẽ). scale overscan bù để dịch KHÔNG lộ mép nền (Stage overflow-hidden clip phần
+  // thừa). Ease-out lerp trong rAF, DỪNG khi tới đích (không loop nhàn rỗi). CHỈ pointer fine (touch bỏ
+  // qua, KHÔNG lỗi). Cleanup: gỡ listener + hủy rAF + reset transform. Tách rời effect paint (không đụng vẽ).
+  useEffect(() => {
+    const canvas = ref.current;
+    if (!canvas) return;
+    if (typeof window === "undefined") return;
+    if (!window.matchMedia("(pointer: fine)").matches) return;
+
+    const MAX = 9; // px lệch tối đa — TINH TẾ
+    let tx = 0;
+    let ty = 0;
+    let cx = 0;
+    let cy = 0;
+    let raf = 0;
+    const apply = () => {
+      canvas.style.transform = `translate3d(${cx.toFixed(2)}px,${cy.toFixed(2)}px,0) scale(1.04)`;
+    };
+    const tick = () => {
+      cx += (tx - cx) * 0.12; // ease-out
+      cy += (ty - cy) * 0.12;
+      apply();
+      raf = Math.abs(tx - cx) > 0.1 || Math.abs(ty - cy) > 0.1 ? requestAnimationFrame(tick) : 0;
+    };
+    const onMove = (e: PointerEvent) => {
+      tx = -((e.clientX / window.innerWidth) * 2 - 1) * MAX; // dịch NGƯỢC con trỏ = chiều sâu
+      ty = -((e.clientY / window.innerHeight) * 2 - 1) * MAX;
+      if (raf === 0) raf = requestAnimationFrame(tick);
+    };
+    canvas.style.willChange = "transform";
+    apply(); // đặt overscan ngay (tránh nháy mép khi dịch lần đầu)
+    window.addEventListener("pointermove", onMove, { passive: true });
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      if (raf !== 0) cancelAnimationFrame(raf);
+      canvas.style.transform = "";
+      canvas.style.willChange = "";
+    };
+  }, []);
+
   return <canvas ref={ref} aria-hidden="true" className="h-full w-full" />;
 }

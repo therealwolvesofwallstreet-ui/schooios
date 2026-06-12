@@ -20,6 +20,7 @@ import {
   ensureLandingWordFonts,
 } from "./landing-word-texture";
 import { useCanvasActive, bumpFrame } from "@/components/motion/landing/scene-phase";
+import { useLandingPointer } from "./use-landing-pointer";
 
 // Đọc --color-* từ tokens (SSOT) → bytes sRGB truyền THẲNG (ShaderMaterial KHÔNG color-managed → không
 // để Color convert sang linear) để khớp đúng màu CSS trên màn hình.
@@ -39,6 +40,9 @@ function tokenColor(name: string, fallback: string): Color {
 
 function LandingField({ wordTex }: { wordTex: Texture }) {
   const { size } = useThree();
+  // F5d — con trỏ chuẩn hóa [-1,1] (ref, KHÔNG state → 0 re-render/#418). target ổn định để lerp vào uMouse.
+  const pointer = useLandingPointer();
+  const target = useMemo(() => new Vector2(0, 0), []);
 
   // ShaderMaterial dựng MỘT lần (uniform mutate imperative — xem disable đầu file). Màu đọc từ tokens;
   // tham số phù điêu (biên độ/độ nổi gờ/surfaceScale) tinh chỉnh ở đây.
@@ -49,6 +53,7 @@ function LandingField({ wordTex }: { wordTex: Texture }) {
       uniforms: {
         uTime: { value: 0 },
         uRes: { value: new Vector2(size.width, size.height) },
+        uMouse: { value: new Vector2(0, 0) }, // F5d parallax — lerp về con trỏ trong useFrame
         uWord: { value: wordTex },
         uRaised: { value: tokenColor("--color-paper-raised", "#fbf8f1") },
         uSunken: { value: tokenColor("--color-sunken", "#eae3d5") },
@@ -79,6 +84,16 @@ function LandingField({ wordTex }: { wordTex: Texture }) {
   useFrame((_, delta) => {
     bumpFrame("landing");
     material.uniforms.uTime.value = (material.uniforms.uTime.value as number) + delta;
+    // F5d parallax: lerp uMouse → con trỏ NGAY TRONG useFrame ⇒ smoothing chỉ chạy khi frameloop chạy →
+    // khi F5c pause canvas off-screen (landing ẩn) thì DỪNG theo (single active canvas KHÔNG vỡ). Ease-out
+    // độc lập FPS: hệ số 1-e^(-k·dt). uMouse=0 nếu touch/không pointer → shader y hệt bản tĩnh.
+    const uMouse = material.uniforms.uMouse.value as Vector2;
+    uMouse.lerp(target.set(pointer.current.x, pointer.current.y), 1 - Math.exp(-6 * delta));
+    // Nhịp VERIFY (cùng họ bumpFrame/__mframe của F5c — vô hại ở prod, chỉ ghi khi frameloop chạy): rig
+    // F5d đọc window.__mpar để CHỨNG MINH relief dịch theo con trỏ (tất định, không lẫn drift uTime).
+    const w = window as unknown as { __mpar?: { x: number; y: number } };
+    (w.__mpar ??= { x: 0, y: 0 }).x = uMouse.x;
+    w.__mpar.y = uMouse.y;
   });
 
   return (
