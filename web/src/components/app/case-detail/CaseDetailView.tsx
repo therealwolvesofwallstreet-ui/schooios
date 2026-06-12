@@ -4,7 +4,10 @@
 // (rail sticky); mobile stack header→spine→actions (grid-cols-1). States: loading (skeleton "thở") ·
 // 404 ĐỒNG NHẤT (serif 1 dòng — không phân biệt không-tồn-tại vs không-quyền) · lỗi tải (điềm tĩnh +
 // Thử lại). Quyền hiển thị do từng component con tự quyết (panel/composer null khi không phép).
+import dynamic from "next/dynamic";
+import { motion, useReducedMotion } from "framer-motion";
 import { useCaseDetail } from "@/hooks/useCaseDetail";
+import { EASE_EMERGE_BEZIER } from "@/lib/cubic-bezier";
 import { CaseHeader } from "./CaseHeader";
 import { Spine } from "./Spine";
 import { CaseActionPanel } from "./CaseActionPanel";
@@ -14,17 +17,30 @@ import { DetailSkeleton, NotFoundState, ErrorState } from "@/components/app/stat
 import { formatDateTime } from "@/lib/case-display";
 import type { CaseDetail } from "@/lib/api-types";
 
+// Cuộn điện ảnh Lenis (client-only) — nạp lazy, CHỈ mount khi KHÔNG reduced-motion (reduced → cuộn
+// thường/anchor, motion §7). KHÔNG đụng dữ liệu/quyền — chỉ vòng đời smooth-scroll trên window.
+const CinematicScroll = dynamic(() => import("@/components/motion/CinematicScroll"), { ssr: false });
+
 export function CaseDetailView({ caseId }: { caseId: string }) {
   const { case: detail, isLoading, isError, notFound, refetch } = useCaseDetail(caseId);
+  const reduced = useReducedMotion() ?? true;
 
   if (isLoading) return <DetailSkeleton />;
   if (notFound) return <NotFoundState />;
   if (isError || !detail)
     return <ErrorState onRetry={() => void refetch()} message="Không tải được hồ sơ." />;
 
-  return (
+  const content = (
     <div className="mx-auto max-w-5xl py-10">
-      <CaseHeader detail={detail} />
+      {/* Đầu hồ sơ "hiện" lên (Rich tier) — gate reduced-motion; tiêu đề GIỮ Newsreader (font-serif):
+          tên case là tiếng Việt tuỳ ý có dấu thanh, Cormorant thiếu glyph → vỡ dấu (quyết định như F3a). */}
+      <motion.div
+        initial={reduced ? false : { opacity: 0, y: 10 }}
+        animate={reduced ? undefined : { opacity: 1, y: 0 }}
+        transition={{ duration: 0.32, ease: EASE_EMERGE_BEZIER }}
+      >
+        <CaseHeader detail={detail} />
+      </motion.div>
       <div className="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_300px]">
         <div className="flex flex-col gap-8">
           <Spine detail={detail} />
@@ -37,6 +53,8 @@ export function CaseDetailView({ caseId }: { caseId: string }) {
       </div>
     </div>
   );
+
+  return reduced ? content : <CinematicScroll>{content}</CinematicScroll>;
 }
 
 function CaseMeta({ detail }: { detail: CaseDetail }) {
