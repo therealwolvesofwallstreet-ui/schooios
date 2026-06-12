@@ -13,6 +13,9 @@ import { useSession } from "@/hooks/useSession";
 import { useCategories } from "@/hooks/useCategories";
 import { useLocations } from "@/hooks/useLocations";
 import { useCreateCase, type CreateCaseInput } from "@/hooks/useCreateCase";
+import { useImageUpload } from "@/hooks/useImageUpload";
+import { useToastQueue } from "@/store/toast";
+import { AttachmentUpload } from "@/components/attachments/AttachmentUpload";
 import { ChoiceList, type Choice } from "@/components/report/ChoiceList";
 import { ErrorState, PermissionDenied } from "@/components/app/states";
 import { Input } from "@/components/ui/Input";
@@ -73,8 +76,14 @@ export default function ReportNewPage() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [created, setCreated] = useState<CaseListItem | null>(null);
+  const [uploadingAfterCreate, setUploadingAfterCreate] = useState(false);
 
-  const mutation = useCreateCase({ onCreated: setCreated });
+  // ref để capture case từ onSuccess mà không cần setState (tránh stale closure trong submit)
+  const pendingCaseRef = useRef<CaseListItem | null>(null);
+  const uploadHook = useImageUpload();
+  const pushToast = useToastQueue((s) => s.push);
+
+  const mutation = useCreateCase({ onCreated: (c) => { pendingCaseRef.current = c; } });
 
   const selectedCategory = useMemo(
     () => cats.categories.find((c) => c.id === categoryId) ?? null,
@@ -171,8 +180,27 @@ export default function ReportNewPage() {
     };
     try {
       await mutation.mutateAsync(payload);
-      // thành công → onCreated set `created` → burst (xem nhánh trên).
+      // onCreated đã chạy trong onSuccess → pendingCaseRef.current được set
+      const theCase = pendingCaseRef.current!;
+
+      // Upload ảnh đã staging (nếu có). Case đã tạo → partial-fail không chặn ReleaseBurst.
+      const hasPending = uploadHook.staged.some((f) => f.status === "pending" && f.reencoded);
+      if (hasPending) {
+        setUploadingAfterCreate(true);
+        const { failCount } = await uploadHook.upload(theCase.id);
+        setUploadingAfterCreate(false);
+        if (failCount > 0) {
+          pushToast(
+            `Đã tạo ${theCase.caseCode}; ${failCount} ảnh chưa tải lên — mở hồ sơ để thử lại.`,
+            "info",
+          );
+        }
+      }
+
+      // Trigger ReleaseBurst (thay vì onCreated→setCreated trực tiếp).
+      setCreated(theCase);
     } catch (e) {
+      setUploadingAfterCreate(false);
       const parsed = parse400(e);
       if (parsed) {
         const { fields, message } = parsed;
@@ -311,12 +339,8 @@ export default function ReportNewPage() {
               </p>
             )}
 
-            {/* Đính kèm — placeholder trang trí (KHÔNG control thật → KHÔNG aria-disabled vô nghĩa
-                trên div). Upload (Supabase signed-upload) hoãn sang F4+ operational. */}
-            <div className="border-line flex items-center justify-between rounded-md border border-dashed px-4 py-3 opacity-60">
-              <span className="text-ink-3 text-sm">Tệp đính kèm (ảnh, tài liệu)</span>
-              <span className="text-ink-3 font-mono text-[10px] tracking-wider uppercase">Sắp có</span>
-            </div>
+            {/* Đính kèm ảnh — staging client, upload sau khi case tạo thành công (§4 Đợt 2). */}
+            <AttachmentUpload caseId={null} hook={uploadHook} disabled={submitting || uploadingAfterCreate} />
           </div>
         )}
       </div>

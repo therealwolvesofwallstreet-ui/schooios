@@ -177,6 +177,26 @@ export interface NotificationsResponse {
 }
 
 // ---- Dashboard (M4) — keys ĐÓNG BĂNG (chú ý _count vs count theo từng mảng) ----
+// ---- Attachments (F6 Đợt 2) ----
+/** POST /api/cases/[id]/attachments/sign → client PUT file lên Supabase trực tiếp. */
+export interface AttachmentSignResponse {
+  uploadUrl: string; // Supabase signed upload URL (PUT bytes thẳng)
+  path: string;      // storage path để gửi lên commit
+}
+/** POST /api/cases/[id]/attachments/commit → 201 sau khi PUT thành công. */
+export interface AttachmentCommitResponse {
+  attachment: AttachmentDTO;
+}
+/** GET /api/attachments/[id]/view → signed download URL (TTL từ server env). */
+export interface AttachmentViewResponse {
+  url: string;
+  expiresAt: string; // ISO
+}
+/** DELETE /api/cases/[id]/attachments/[attId] */
+export interface AttachmentDeleteResponse {
+  deleted: boolean;
+}
+
 export interface DashboardResponse {
   totalCases: number;
   newToday: number;
