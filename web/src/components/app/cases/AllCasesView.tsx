@@ -9,11 +9,16 @@
 // NGOẠI LỆ client-filter DUY NHẤT (§2) = category FACET: API không có ?categoryId, nên khi `category`
 // set → fetch trang 100 rồi LỌC CLIENT `c.categoryId===category` TRÊN TRANG HIỆN TẠI. Đây là facet PHỤ,
 // KHÔNG tái dựng sort/paginate/sensitive (server vẫn gate tầm-nhìn + thứ tự). KHÔNG reduced-motion.
-import { useState } from "react";
+//
+// §3b (ADMIN-only): toggle "Chế độ chọn" (mặc định TẮT). TẮT → render Y HỆT Đợt 1 (không checkbox,
+// không BulkActionBar). BẬT → mỗi hàng có checkbox + BulkActionBar khi ≥1 chọn.
+import { useState, useCallback } from "react";
 import { X } from "@phosphor-icons/react";
 import { useSession } from "@/hooks/useSession";
 import { useCaseList } from "@/hooks/useCaseList";
 import { CaseRow } from "./CaseRow";
+import { BulkActionBar } from "./BulkActionBar";
+import { Checkbox } from "@/components/ui/Checkbox";
 import { Hairline } from "@/components/ui/Hairline";
 import { SignalDot } from "@/components/ui/SignalDot";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -22,7 +27,8 @@ import { Pager } from "@/components/ui/Pager";
 import { ErrorState } from "@/components/app/states";
 import { STATUS_LABEL, STATUS_ORDER } from "@/lib/case-display";
 import { cn } from "@/lib/cn";
-import type { CaseStatus } from "@/lib/api-types";
+import type { CaseListItem, CaseStatus } from "@/lib/api-types";
+import type { BulkCaseItem } from "@/hooks/useBulkCaseAction";
 
 const PAGE_SIZE = 20;
 const FACET_LIMIT = 100;
@@ -38,14 +44,23 @@ function validStatus(s: string | undefined): CaseStatus | null {
   return s && (STATUS_ORDER as readonly string[]).includes(s) ? (s as CaseStatus) : null;
 }
 
+function toBulkItem(c: CaseListItem): BulkCaseItem {
+  return { id: c.id, caseCode: c.caseCode, updatedAt: c.updatedAt };
+}
+
 export function AllCasesView({ initial = {} }: { initial?: AllCasesInitial }) {
   const { user } = useSession();
+  const isAdmin = user?.role === "ADMIN";
+
   const [status, setStatus] = useState<CaseStatus | null>(() => validStatus(initial.status));
   const [emergencyOnly, setEmergencyOnly] = useState(initial.emergency === "true");
-  // Category facet (client-filter ngoại lệ — xem header): id lọc + tên hiển thị, gỡ được.
   const [category, setCategory] = useState<string | null>(initial.category ?? null);
   const catName = initial.cat ?? null;
   const [page, setPage] = useState(1);
+
+  // §3b — bulk select mode (ADMIN-only; default TẮT)
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const facetActive = !!category;
   const { cases, total, totalPages, isLoading, isError, refetch } = useCaseList(
@@ -58,7 +73,6 @@ export function AllCasesView({ initial = {} }: { initial?: AllCasesInitial }) {
     },
   );
 
-  // Lọc theo loại CHỈ trên lát hiện tại — KHÔNG tự sort/paginate (server giữ thứ tự + tầm-nhìn).
   const visible = facetActive ? cases.filter((c) => c.categoryId === category) : cases;
 
   function pickStatus(s: CaseStatus | null) {
@@ -73,6 +87,28 @@ export function AllCasesView({ initial = {} }: { initial?: AllCasesInitial }) {
     setCategory(null);
     setPage(1);
   }
+  function exitSelectMode() {
+    setSelectMode(false);
+    setSelectedIds(new Set());
+  }
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) { next.delete(id); } else { next.add(id); }
+      return next;
+    });
+  }
+  function selectAll() {
+    setSelectedIds(new Set(visible.map((c) => c.id)));
+  }
+  function clearAll() {
+    setSelectedIds(new Set());
+  }
+  const onBulkDone = useCallback(() => exitSelectMode(), []);
+
+  const selectedItems: BulkCaseItem[] = visible
+    .filter((c) => selectedIds.has(c.id))
+    .map(toBulkItem);
 
   const emptyMessage = facetActive
     ? "Không có vụ nào thuộc loại này trên trang hiện tại."
@@ -94,7 +130,7 @@ export function AllCasesView({ initial = {} }: { initial?: AllCasesInitial }) {
         </p>
       </header>
 
-      {/* Lọc SERVER-DRIVEN: chip "Tất cả" + 7 trạng thái + chip khẩn (+ facet loại nếu drill-down). */}
+      {/* Lọc SERVER-DRIVEN */}
       <div
         role="group"
         aria-label="Lọc vụ việc"
@@ -143,8 +179,49 @@ export function AllCasesView({ initial = {} }: { initial?: AllCasesInitial }) {
               <X size={11} weight="bold" />
             </button>
           )}
+
+          {/* §3b toggle "Chế độ chọn" — ADMIN-only */}
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => (selectMode ? exitSelectMode() : setSelectMode(true))}
+              data-testid="select-mode-toggle"
+              aria-pressed={selectMode}
+              className={cn(
+                chip,
+                selectMode
+                  ? "border-signal text-signal font-medium"
+                  : "border-line text-ink-3 hover:text-ink-2",
+              )}
+            >
+              {selectMode ? "Thoát chọn" : "Chế độ chọn"}
+            </button>
+          )}
         </div>
       </div>
+
+      {/* §3b bulk: "chọn tất cả trên trang" + BulkActionBar */}
+      {selectMode && isAdmin && (
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={selectedIds.size === visible.length && visible.length > 0 ? clearAll : selectAll}
+              className="text-ink-3 hover:text-ink-2 font-mono text-[11px] underline underline-offset-2"
+            >
+              {selectedIds.size === visible.length && visible.length > 0 ? "Bỏ chọn tất cả" : "Chọn tất cả trang này"}
+            </button>
+            {selectedIds.size > 0 && (
+              <span className="text-ink-3 font-mono text-[11px] tabular-nums">
+                {selectedIds.size} đã chọn
+              </span>
+            )}
+          </div>
+          {selectedIds.size > 0 && (
+            <BulkActionBar selected={selectedItems} onDone={onBulkDone} />
+          )}
+        </div>
+      )}
 
       {facetActive && (
         <p className="text-ink-3 font-mono text-[11px] tracking-[0.12em]">
@@ -167,11 +244,24 @@ export function AllCasesView({ initial = {} }: { initial?: AllCasesInitial }) {
             {visible.map((c, i) => (
               <li key={c.id} className="flex flex-col">
                 {i > 0 && <Hairline />}
-                <CaseRow c={c} />
+                {/* §3b: checkbox hàng khi selectMode BẬT; default TẮT = render Y HỆT Đợt 1 */}
+                {selectMode && isAdmin ? (
+                  <div className="flex items-center gap-3 py-1">
+                    <Checkbox
+                      checked={selectedIds.has(c.id)}
+                      onChange={() => toggleSelect(c.id)}
+                      className="shrink-0"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <CaseRow c={c} />
+                    </div>
+                  </div>
+                ) : (
+                  <CaseRow c={c} />
+                )}
               </li>
             ))}
           </ul>
-          {/* Facet = lát hiện tại → KHÔNG phân trang server (note đã giải thích). */}
           {!facetActive && <Pager page={page} totalPages={totalPages} onPageChange={setPage} />}
         </section>
       )}
