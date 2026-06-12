@@ -27,9 +27,10 @@ export default function ReleaseBurstCanvas({ caseCode }: { caseCode: string }) {
     canvas.height = Math.floor(H * dpr);
     ctx.scale(dpr, dpr);
 
-    const signal =
-      getComputedStyle(document.documentElement).getPropertyValue("--color-signal").trim() ||
-      "#743014";
+    // Than ấm: signal (Spiced Wine) chủ đạo + gold/link điểm xuyết (đọc token SSOT, mirror high tier).
+    const cs = getComputedStyle(document.documentElement);
+    const pick = (name: string, fb: string) => cs.getPropertyValue(name).trim() || fb;
+    const WARM = [pick("--color-signal", "#743014"), pick("--color-gold", "#C99A4A"), pick("--color-link", "#84592B")];
 
     const sampled = sampleText(caseCode, { fontPx: 64, step: 7, maxPoints: MAX_DOTS });
     const n = Math.max(sampled.count, 1);
@@ -39,19 +40,21 @@ export default function ReleaseBurstCanvas({ caseCode }: { caseCode: string }) {
     const halfH = halfW / (sampled.aspect || 6);
     const spread = Math.max(W, H) * 0.55;
 
-    type Dot = { tx: number; ty: number; dx: number; dy: number; seed: number };
+    type Dot = { tx: number; ty: number; dx: number; dy: number; seed: number; color: string };
     const dots: Dot[] = [];
     for (let i = 0; i < n; i++) {
       const nx = sampled.positions[i * 2] ?? 0;
       const ny = sampled.positions[i * 2 + 1] ?? 0;
       const a = Math.random() * Math.PI * 2;
       const r = (0.4 + Math.random() * 0.6) * spread;
+      const tr = Math.random();
       dots.push({
         tx: cx + nx * halfW,
         ty: cy - ny * halfH, // ny toán-lên → canvas y-xuống
         dx: Math.cos(a) * r,
         dy: Math.sin(a) * r,
         seed: Math.random(),
+        color: tr < 0.6 ? WARM[0] : tr < 0.85 ? WARM[1] : WARM[2],
       });
     }
 
@@ -68,13 +71,13 @@ export default function ReleaseBurstCanvas({ caseCode }: { caseCode: string }) {
       const reveal = t < 0.8 ? 1 : 1 - easeEmerge(Math.min((t - 0.8) / 0.2, 1));
 
       ctx.clearRect(0, 0, W, H);
-      ctx.fillStyle = signal;
       for (const d of dots) {
         const sx = cx + d.dx * scatter;
         const sy = cy + d.dy * scatter;
         const x = sx + (d.tx - sx) * converge;
         const y = sy + (d.ty - sy) * converge;
         ctx.globalAlpha = Math.min(scatter, 1) * reveal * (0.5 + d.seed * 0.4);
+        ctx.fillStyle = d.color;
         ctx.beginPath();
         ctx.arc(x, y, 1.1 + d.seed * 1.4, 0, Math.PI * 2);
         ctx.fill();

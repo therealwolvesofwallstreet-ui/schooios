@@ -32,9 +32,14 @@ const VERT = /* glsl */ `
   uniform float uTime;
   uniform float uSize;
   uniform float uSwirl;
+  uniform vec3 uColSignal;  // Spiced Wine (chủ đạo) · Golden Batter · Toasted Caramel — than ấm
+  uniform vec3 uColGold;
+  uniform vec3 uColLink;
   attribute vec3 aDir;      // offset bung tối đa (world units)
   attribute float aSeed;
+  attribute float aTone;    // 0=signal · 1=gold · 2=link
   varying float vAlpha;
+  varying vec3 vColor;
 
   // — Ashima simplex noise 3D —
   vec3 mod289(vec3 x){return x - floor(x*(1.0/289.0))*289.0;}
@@ -110,36 +115,46 @@ const VERT = /* glsl */ `
     gl_Position = projectionMatrix * mv;
     gl_PointSize = uSize * (0.55 + aSeed * 0.7) * (6.0 / -mv.z);
     vAlpha = smoothstep(0.0, 0.22, uScatter);
+    vColor = aTone < 0.5 ? uColSignal : (aTone < 1.5 ? uColGold : uColLink);
   }
 `;
 
 const FRAG = /* glsl */ `
-  uniform vec3 uColor;
   uniform float uReveal; // 1 → 0 ở cuối: tan đi nhường DOM caseCode
   varying float vAlpha;
+  varying vec3 vColor;
   void main(){
     vec2 uv = gl_PointCoord - 0.5;
     float d = length(uv);
     if (d > 0.5) discard;
     float soft = smoothstep(0.5, 0.06, d); // lõi sáng, viền tan — "glow" tiết chế
-    gl_FragColor = vec4(uColor, vAlpha * soft * uReveal * 0.9);
+    gl_FragColor = vec4(vColor, vAlpha * soft * uReveal * 0.9);
   }
 `;
 
-// Đọc --color-signal từ tokens (SSOT) → bytes sRGB. ShaderMaterial KHÔNG color-managed nên truyền
-// thẳng .r/.g/.b (KHÔNG để Color convert sang linear) để khớp đúng màu CSS trên màn hình.
-function signalColor(): Color {
-  let hex = "#743014"; // fallback = --color-signal
+// Đọc token màu (SSOT tokens.css) → Color sRGB THÔ. ShaderMaterial KHÔNG color-managed nên truyền thẳng
+// .r/.g/.b (KHÔNG để Color convert linear) để khớp đúng màu CSS (như PulseField). Than ấm = signal
+// (Spiced Wine, chủ đạo "tiếng nói") + điểm xuyết gold (Golden Batter) / link (Toasted Caramel).
+function tokenColor(name: string, fallback: string): Color {
+  let hex = fallback;
   if (typeof window !== "undefined") {
-    const v = getComputedStyle(document.documentElement).getPropertyValue("--color-signal").trim();
+    const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
     if (v) hex = v;
   }
   const m = hex.replace("#", "");
   const full = m.length === 3 ? m.split("").map((c) => c + c).join("") : m;
-  const r = parseInt(full.slice(0, 2), 16) / 255;
-  const g = parseInt(full.slice(2, 4), 16) / 255;
-  const b = parseInt(full.slice(4, 6), 16) / 255;
-  return new Color(r, g, b);
+  return new Color(
+    parseInt(full.slice(0, 2), 16) / 255,
+    parseInt(full.slice(2, 4), 16) / 255,
+    parseInt(full.slice(4, 6), 16) / 255,
+  );
+}
+function readWarm() {
+  return {
+    signal: tokenColor("--color-signal", "#743014"),
+    gold: tokenColor("--color-gold", "#C99A4A"),
+    link: tokenColor("--color-link", "#84592B"),
+  };
 }
 
 function BurstField({ caseCode }: { caseCode: string }) {
@@ -162,6 +177,7 @@ function BurstField({ caseCode }: { caseCode: string }) {
     const positions = new Float32Array(n * 3); // = đích (caseCode) trong world units
     const dirs = new Float32Array(n * 3);
     const seeds = new Float32Array(n);
+    const tones = new Float32Array(n);
     for (let i = 0; i < n; i++) {
       const nx = sampled.positions[i * 2] ?? 0;
       const ny = sampled.positions[i * 2 + 1] ?? 0;
@@ -173,14 +189,19 @@ function BurstField({ caseCode }: { caseCode: string }) {
       dirs[i * 3 + 1] = Math.sin(a) * r;
       dirs[i * 3 + 2] = (Math.random() - 0.5) * spread * 0.25;
       seeds[i] = Math.random();
+      // Than ấm: signal CHỦ ĐẠO (~60%, "tiếng nói") + gold (~25%) + link (~15%) điểm xuyết.
+      const tr = Math.random();
+      tones[i] = tr < 0.6 ? 0 : tr < 0.85 ? 1 : 2;
     }
 
     const geom = new BufferGeometry();
     geom.setAttribute("position", new Float32BufferAttribute(positions, 3));
     geom.setAttribute("aDir", new Float32BufferAttribute(dirs, 3));
     geom.setAttribute("aSeed", new Float32BufferAttribute(seeds, 1));
+    geom.setAttribute("aTone", new Float32BufferAttribute(tones, 1));
 
     const ratio = Math.min(typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1, 2);
+    const warm = readWarm();
     const mat = new ShaderMaterial({
       uniforms: {
         uScatter: { value: 0 },
@@ -189,7 +210,9 @@ function BurstField({ caseCode }: { caseCode: string }) {
         uTime: { value: 0 },
         uSize: { value: 2.6 * ratio },
         uSwirl: { value: Math.min(dims.w, dims.h) * 0.12 },
-        uColor: { value: signalColor() },
+        uColSignal: { value: warm.signal },
+        uColGold: { value: warm.gold },
+        uColLink: { value: warm.link },
       },
       vertexShader: VERT,
       fragmentShader: FRAG,

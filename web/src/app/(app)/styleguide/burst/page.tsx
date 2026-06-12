@@ -6,6 +6,7 @@
 // Đọc tier từ window.location (KHÔNG useSearchParams) để tránh yêu cầu Suspense lúc prerender.
 import { useState } from "react";
 import dynamic from "next/dynamic";
+import { useHydrated } from "@/hooks/useHydrated";
 import { Button } from "@/components/ui/Button";
 import type { BurstTier } from "@/components/motion/release-burst/burst-tier";
 
@@ -22,13 +23,18 @@ function parseTier(): BurstTier | undefined {
 }
 
 export default function BurstPreviewPage() {
-  const [forceTier] = useState<BurstTier | undefined>(parseTier);
+  // ?tier chỉ có ở client → gate hydrate (useSyncExternalStore) → SSR+first-paint TRUNG TÍNH ("…",
+  // chưa mount burst) khớp nhau ⇒ KHÔNG hydration mismatch (#418). Mount ReleaseBurst sau hydrate.
+  const hydrated = useHydrated();
+  const forceTier = hydrated ? parseTier() : undefined;
   const [replay, setReplay] = useState(0);
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6 py-10">
       <div className="flex flex-wrap items-center gap-4">
-        <span className="text-ink-3 font-mono text-xs">tier: {forceTier ?? "auto"}</span>
+        <span className="text-ink-3 font-mono text-xs">
+          tier: {hydrated ? (forceTier ?? "auto") : "…"}
+        </span>
         <a className="text-ink-2 hover:text-ink text-xs underline-offset-4 hover:underline" href="?tier=high">
           high
         </a>
@@ -50,12 +56,16 @@ export default function BurstPreviewPage() {
       </div>
 
       <div className="border-line overflow-hidden rounded-md border">
-        <ReleaseBurst
-          key={`${forceTier ?? "auto"}-${replay}`}
-          caseCode={SAMPLE}
-          forceTier={forceTier}
-          onDone={() => setReplay((k) => k + 1)}
-        />
+        {hydrated ? (
+          <ReleaseBurst
+            key={`${forceTier ?? "auto"}-${replay}`}
+            caseCode={SAMPLE}
+            forceTier={forceTier}
+            onDone={() => setReplay((k) => k + 1)}
+          />
+        ) : (
+          <div className="min-h-[60vh]" />
+        )}
       </div>
     </div>
   );
