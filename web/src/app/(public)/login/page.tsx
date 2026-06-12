@@ -9,7 +9,7 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ThresholdAuthSurface } from "@/components/auth/threshold/ThresholdAuthSurface";
+import { ThresholdScene } from "@/components/motion/landing/ThresholdScene";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { SignalDot } from "@/components/ui/SignalDot";
@@ -65,7 +65,7 @@ export default function LoginPage() {
   const invalid = message ? true : undefined;
 
   return (
-    <ThresholdAuthSurface>
+    <ThresholdScene>
       {/* Đầu thẻ TỐI GIẢN — wordmark + ink-field NỀN gánh khoảnh khắc; card chỉ là cổng vào.
        * (KHÔNG nhồi manifesto vào thẻ — để hero immersive thở.) */}
       <div className="mb-9 flex items-center gap-3">
@@ -117,6 +117,6 @@ export default function LoginPage() {
           )}
         </div>
       </form>
-    </ThresholdAuthSurface>
+    </ThresholdScene>
   );
 }

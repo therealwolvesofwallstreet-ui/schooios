@@ -22,6 +22,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Rig verify cục bộ (gitignored, KHÔNG vào repo/CI) — CommonJS .cjs, không lint.
+    ".verify/**",
+    "**/*.cjs",
   ]),
 ]);
 

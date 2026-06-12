@@ -6,10 +6,10 @@
 // tokens (SSOT) → uniform; KHÔNG dùng signal/accent ở relief. three/R3F SỐNG DUY NHẤT trong chunk lazy
 // này (nạp khi tier=high) — KHÔNG vào server bundle (motion §6/§8). dispose geometry/material/texture.
 //
-// eslint-disable react-hooks/purity, react-hooks/immutability — CỐ Ý cho file DUY NHẤT này: R3F là tích
-// hợp hệ-thống-ngoài (GPU). Dựng ShaderMaterial/CanvasTexture + mutate uniform mỗi frame là BẢN CHẤT
-// imperative của WebGL — đúng thứ 2 rule react-compiler này KHÔNG nhắm tới. (Chỉ purity/immutability.)
-/* eslint-disable react-hooks/purity, react-hooks/immutability */
+// eslint-disable react-hooks/immutability — CỐ Ý cho file DUY NHẤT này: R3F là tích hợp hệ-thống-ngoài
+// (GPU). Mutate uniform mỗi frame (uTime) là BẢN CHẤT imperative của WebGL — đúng thứ rule react-compiler
+// này KHÔNG nhắm tới. (KHÔNG cần disable purity ở đây: useMemo không gọi Math.random như ThresholdStage.)
+/* eslint-disable react-hooks/immutability */
 import { useEffect, useMemo, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Color, ShaderMaterial, Vector2, type Texture } from "three";

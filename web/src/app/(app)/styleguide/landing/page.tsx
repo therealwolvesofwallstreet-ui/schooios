@@ -10,6 +10,7 @@ import { Stage } from "@/components/motion/stage/Stage";
 import { LandingNav } from "@/components/landing/LandingNav";
 import LandingStatic from "@/components/landing/LandingStatic";
 import type { StageTier } from "@/components/motion/stage/stage-tier";
+import { useHydrated } from "@/hooks/useHydrated";
 
 // Nạp y HỆT production: client-only ssr:false → three/canvas KHÔNG vào server bundle.
 const LandingStage = dynamic(() => import("@/components/landing/LandingStage"), { ssr: false });
@@ -33,16 +34,15 @@ function parseBreak(): boolean {
 export default function LandingPreviewPage() {
   const [forceTier] = useState<StageTier | undefined>(parseTier);
   const [broken] = useState<boolean>(parseBreak);
-  // Harness phụ thuộc query (?tier/?break) chỉ có ở client → gate "mounted": render đầu (hydrate) KHỚP
-  // server (rỗng), tránh hydration mismatch (forceTier/data-attr lệch server↔client). Dev-only, vô hại.
-  const [mounted, setMounted] = useState(false);
+  // Harness phụ thuộc query (?tier/?break) chỉ có ở client → gate hydrate (useSyncExternalStore, KHÔNG
+  // setState-in-effect): render đầu KHỚP server (rỗng), tránh hydration mismatch. Dev-only, vô hại.
+  const hydrated = useHydrated();
 
   useEffect(() => {
-    setMounted(true);
-    console.log("forceTier=" + (forceTier ?? "auto") + " break=" + broken);
-  }, [forceTier, broken]);
+    if (hydrated) console.log("forceTier=" + (forceTier ?? "auto") + " break=" + broken);
+  }, [hydrated, forceTier, broken]);
 
-  if (!mounted) return <main className="fixed inset-0 z-50" />;
+  if (!hydrated) return <main className="fixed inset-0 z-50" />;
 
   const High = broken ? BrokenHigh : LandingStage;
 
