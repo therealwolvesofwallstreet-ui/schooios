@@ -14,6 +14,8 @@ import type { CasesListResponse, CaseStatus } from "@/lib/api-types";
 export interface CaseListParams {
   status?: CaseStatus | CaseStatus[];
   isEmergency?: boolean;
+  /** `?mine=true` → CHỈ case do user tạo (server AND createdById). Trang "Báo cáo của tôi". */
+  mine?: boolean;
   page?: number;
   limit?: number;
 }
@@ -26,6 +28,7 @@ function buildQuery(params: CaseListParams): string {
     if (s) sp.set("status", s);
   }
   if (params.isEmergency != null) sp.set("isEmergency", String(params.isEmergency));
+  if (params.mine) sp.set("mine", "true");
   if (params.page != null) sp.set("page", String(params.page));
   if (params.limit != null) sp.set("limit", String(params.limit));
   const qs = sp.toString();
