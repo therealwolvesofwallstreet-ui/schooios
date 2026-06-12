@@ -89,7 +89,7 @@ này TRƯỚC): **tên field** trong shape, **giá trị enum** (chuỗi), **ng�
 | Method · Path | Auth/Role | Request | OK | Lỗi |
 |---|---|---|---|---|
 | POST `/api/cases` | mọi role trừ AUDITOR | `{ title(5–200), description(10–5000), categoryId, locationId?, priority?, emergency?, sensitive? }` | 201 `{ case }` | 400 (json/zod/category·location sai) · 401 · 403 (AUDITOR) |
-| GET `/api/cases` | mọi role | query `?status&isEmergency(true/false)&page(≥1)&limit(1–100,def20)` | 200 `{ cases[], total, page, totalPages }` | 400 (query) · 401 |
+| GET `/api/cases` | mọi role | query `?status&isEmergency(true/false)&page(≥1)&limit(1–100,def20)` — `status` nhận **1 giá trị** (`NEW`) **hoặc danh sách phẩy** (`NEW,TRIAGED`); tương thích ngược | 200 `{ cases[], total, page, totalPages }` | 400 (query/status rác) · 401 |
 | GET `/api/cases/[id]` | mọi role (lọc theo tầm nhìn) | – | 200 `{ case }` (detail đầy đủ) | 401 · 404 |
 | PATCH `/api/cases/[id]/assign` | ADMIN / STAFF(self, NEW·TRIAGED) | `{ assignedToId }` | 200 `{ case }` | 400 · 401 · 403 · 404 · 409 · 503 |
 | PATCH `/api/cases/[id]/status` | ADMIN / STAFF(scope) | `{ status, reason? }` | 200 `{ case }` | 400 (transition sai) · 401 · 403 · 404 · 409 · 503 |

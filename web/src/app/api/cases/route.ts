@@ -125,7 +125,7 @@ export async function GET(request: NextRequest) {
     const where: Prisma.CaseWhereInput = {
       AND: [
         caseWhereForRole({ sub: user.id, role: user.role }),
-        ...(status !== undefined ? [{ status }] : []),
+        ...(status !== undefined ? [{ status: { in: status } }] : []),
         ...(isEmergency !== undefined ? [{ isEmergency }] : []),
       ],
     };
