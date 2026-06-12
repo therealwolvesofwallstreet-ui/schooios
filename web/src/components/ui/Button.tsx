@@ -13,8 +13,9 @@ const BASE =
   "inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors duration-150 ease-quiet focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-not-allowed disabled:opacity-50";
 
 const VARIANT: Record<Variant, string> = {
-  // text-white (không phải paper) để đạt WCAG AA trên signal đỏ: paper→4.45:1 (trượt), white→~4.97:1.
-  primary: "bg-signal text-white hover:bg-emergency",
+  // text-paper (Linen, token) trên signal Spiced Wine #743014: ~8.6:1 (AAA); hover emergency ~7.7:1.
+  // (Trước đây dùng text-white vì signal cũ #d72638 quá sáng làm paper trượt AA — warm đã hết lý do đó.)
+  primary: "bg-signal text-paper hover:bg-emergency",
   secondary: "border border-line text-ink bg-transparent hover:bg-sunken",
   ghost: "text-ink-2 hover:text-ink hover:bg-sunken",
 };
