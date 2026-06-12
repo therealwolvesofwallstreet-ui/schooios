@@ -4,6 +4,9 @@ node_modules
 
 /src/generated/prisma
 
+# Demo staff credentials (plaintext passwords — NEVER commit)
+.local-credentials.txt
+
 # Playwright transient outputs (giữ baselines *-snapshots/, bỏ run artifacts)
 /test-results
 /playwright-report
