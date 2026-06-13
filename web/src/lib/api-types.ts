@@ -205,6 +205,62 @@ export interface UsersResponse {
   totalPages: number;
 }
 
+// ---- Feed Broadcast: Posts & Polls (Update B) — author chỉ {id,name,role} (0 PII) ----
+export interface PostDTO {
+  id: string;
+  body: string;
+  createdAt: string; // ISO
+  author: ActorRef;
+  upvoteCount: number;
+  myUpvoted: boolean;
+}
+export interface PostsResponse {
+  posts: PostDTO[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+export interface PostResponse {
+  post: PostDTO;
+}
+/** POST/DELETE /api/posts/[id]/upvote */
+export interface UpvoteResponse {
+  upvoteCount: number;
+  myUpvoted: boolean;
+}
+
+export interface PollOptionDTO {
+  id: string;
+  text: string;
+  order: number;
+  count: number;
+  percent: number;
+}
+export interface PollDTO {
+  id: string;
+  question: string;
+  closesAt: string | null; // ISO
+  isClosed: boolean;
+  createdAt: string;
+  author: ActorRef;
+  totalVotes: number;
+  options: PollOptionDTO[];
+  myOptionId: string | null;
+}
+export interface PollsResponse {
+  polls: PollDTO[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+export interface PollResponse {
+  poll: PollDTO;
+}
+/** DELETE /api/posts/[id] · DELETE /api/polls/[id] */
+export interface DeletedResponse {
+  deleted: boolean;
+}
+
 export interface DashboardResponse {
   totalCases: number;
   newToday: number;
