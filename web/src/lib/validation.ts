@@ -104,3 +104,33 @@ export const setEmergencySchema = z.object({
 });
 
 export type SetEmergencyInput = z.infer<typeof setEmergencySchema>;
+
+// ─────────────────────────── Feed Broadcast: Posts + Polls (Update B) ───────────────────────────
+// Post: body trim min(1) max(5000). Poll: question trim, options 2–8 (mỗi cái trim 1–200), closesAt ISO?.
+// listBroadcastQuery: phân trang page-based dùng chung posts + polls.
+export const createPostSchema = z.object({
+  body: z.string().trim().min(1).max(5000),
+});
+
+export const listBroadcastQuery = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+});
+
+export const createPollSchema = z.object({
+  question: z.string().trim().min(1).max(500),
+  // trim từng option, loại rỗng-sau-trim (min(1)); 2–8 phương án; max(200) chống input khổng lồ.
+  options: z.array(z.string().trim().min(1).max(200)).min(2).max(8),
+  // ISO 8601 (vd new Date().toISOString()); cho phép offset. Quá khứ vẫn hợp lệ (poll đóng ngay).
+  closesAt: z.string().datetime({ offset: true }).optional(),
+});
+
+export const votePollSchema = z.object({
+  // optionId là cuid (~25 ký tự); max(64) nhất quán với assignedToId.
+  optionId: z.string().min(1).max(64),
+});
+
+export type CreatePostInput = z.infer<typeof createPostSchema>;
+export type ListBroadcastQuery = z.infer<typeof listBroadcastQuery>;
+export type CreatePollInput = z.infer<typeof createPollSchema>;
+export type VotePollInput = z.infer<typeof votePollSchema>;
