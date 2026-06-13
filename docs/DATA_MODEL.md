@@ -3,7 +3,7 @@
 > Nguồn sự thật cho schema. Trước khi thêm field/model, đối chiếu file này.
 > Schema: [`web/prisma/schema.prisma`](../web/prisma/schema.prisma) · Migration: `web/prisma/migrations/`.
 
-## Models (13)
+## Models (18) — Update B: feed broadcast
 | Model | Vai trò | Field đáng chú ý |
 |---|---|---|
 | `User` | Tài khoản 4 role | `email?` unique (STAFF/ADMIN), `sbd?` unique (STUDENT đăng nhập bằng SBD), `passwordHash` (không bao giờ trả về), `role`, `dob?`, `gender?`, `admissionYear?`, `isActive` |
@@ -19,6 +19,11 @@
 | `Location` | Phòng/khu vực (địa điểm report) | `code` unique, `name`, `buildingId?` (null=khu chung), `floor?`, `type` (LocationType), `isActive` |
 | `Class` | Lớp theo niên khóa | `name`, `schoolYear`, `grade?`, `specialization?`, `@@unique([name, schoolYear])` |
 | `Enrollment` | Ghi danh HS ↔ lớp (lịch sử theo năm) | `studentId`→User, `classId`→Class, `isActive`, `@@unique([studentId, classId])` |
+| `Post` | Thông báo BGH trên feed (Update B) | `body`, `authorId`→User, `deletedAt?` (soft-delete ADMIN); **upvote-only** qua PostVote, **KHÔNG comment** |
+| `PostVote` | Upvote post (Update B) | `userId`→User, `postId`→Post, `@@unique([userId,postId])`; tồn tại = đã thích (**KHÔNG cột value**); bỏ thích = DELETE; FK Restrict |
+| `Poll` | Bình chọn BGH trên feed (Update B) | `question`, `closesAt?` (null = mở vô hạn), `authorId`→User, `deletedAt?` (soft-delete ADMIN); phương án qua PollOption, **KHÔNG comment** |
+| `PollOption` | Phương án 1 poll (Update B) | `pollId`→Poll, `text`, `order` Int |
+| `PollVote` | Phiếu bình chọn (Update B) | `userId`→User, `pollId`→Poll, `optionId`→PollOption; `@@unique([userId,pollId])` → 1 phiếu/user/poll, đổi lựa chọn = upsert; FK Restrict |
 
 ## Enums
 - `Role`: STUDENT, STAFF, ADMIN, AUDITOR
@@ -31,7 +36,7 @@
 - `LocationType`: CLASSROOM, FACILITY, OFFICE, OUTDOOR, OTHER
 
 ## Chính sách (đã chốt)
-- **ID** = `cuid()`. **Soft delete** là chính (`Case.deletedAt`); FK dùng `Restrict` để không mất dữ liệu khi lỡ hard-delete.
+- **ID** = `cuid()`. **Soft delete** là chính (`Case.deletedAt`, `Post.deletedAt`, `Poll.deletedAt`); FK dùng `Restrict` để không mất dữ liệu khi lỡ hard-delete.
 - **Immutable ở tầng DB**: `audit_logs`, `case_status_history` có trigger chặn UPDATE/DELETE (xem `web/prisma/migrations/README.md`).
 - **Emergency Hybrid**: `studentFlaggedEmergency` (ý định học sinh) tách `isEmergency` (xác nhận hệ thống/AI).
 - **Sensitivity**: `isSensitive` thủ công (STAFF/ADMIN bật); STUDENT không thấy case sensitive (enforce ở service layer).
@@ -39,6 +44,13 @@
 - **Index**: composite bám query path (status/assignedTo/createdBy + createdAt; notifications unread; timeline; audit theo actor/action).
 - **Audit payload**: `metadata` JSON theo convention `{ before, after, ...context }`, ghi qua **một** helper `recordAudit()` + Zod (P3+).
 - **Naming**: model PascalCase, field camelCase, cột/bảng snake_case (`@map`/`@@map`).
+- **Broadcast (Posts/Polls) — Update B (THUẦN ADDITIVE, 5 bảng mới):**
+  - **Tạo/xoá** Post/Poll = **CHỈ ADMIN** (BGH); **đọc** = mọi role đã đăng nhập (broadcast công khai, KHÔNG case-scoped, KHÔNG sensitivity); **tương tác** (upvote/bình chọn) = mọi role **TRỪ AUDITOR** (read-only).
+  - **Post = upvote-only**: PostVote tồn tại = đã thích (KHÔNG cột value, KHÔNG down); upsert idempotent (đã thích → no-op), bỏ thích = DELETE. `@@unique([userId,postId])` chống spam phình count. GET trả aggregate `upvoteCount` + `myUpvoted` (KHÔNG lộ danh tính người thích).
+  - **Poll = chọn 1 phương án**: `@@unique([userId,pollId])` → 1 phiếu/user/poll; đổi lựa chọn = upsert đổi `optionId` (KHÔNG cộng dồn, KHÔNG up/down). GET trả `count`/`percent` mỗi option (chia-0 an toàn: total=0 → 0%) + `myOptionId`. `optionId` phải thuộc poll (else 400); poll đã đóng (`now > closesAt`) → 400.
+  - **KHÔNG comment** trên Post/Poll (không endpoint comment cho chúng).
+  - **Soft-delete** (`deletedAt`) cho Post/Poll (ADMIN); GET lọc `deletedAt IS NULL`. FK mọi quan hệ = `Restrict`.
+  - **Audit** qua AuditAction CREATE/UPDATE/DELETE + entityType `"Post"`/`"Poll"`/`"PostVote"`/`"PollVote"` (KHÔNG thêm enum mới). **KHÔNG notify** khi tạo post/poll (broadcast pull-based — tránh spam 979 HS + tránh enum `NotificationType` mới). *(Defer: notify/đẩy broadcast → cần enum mới khi chốt.)*
 
 ## Dữ liệu bootstrap (THẬT — 1 trường)
 Nguồn: `docs/data/` (Trường THPT Chuyên Lý Tự Trọng). Nạp bằng `prisma/seed.ts` (`npx prisma db seed`), idempotent:
