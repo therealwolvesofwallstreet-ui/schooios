@@ -185,6 +185,31 @@ này TRƯỚC): **tên field** trong shape, **giá trị enum** (chuỗi), **ng�
 **AuditLog (list item)** — `{ id, action, entityType, entityId, metadata, createdAt, actorId|null, actor{id,name,role}|null }` (append-only/immutable; mới nhất trước, tiebreaker `id` cho paging tất định; KHÔNG phơi PII ngoài `{id,name,role}` của actor).
 **User (assignable)** — `{ id, name, role }` · 0 PII (KHÔNG email/sbd/dob/passwordHash) · chỉ `isActive=true` · sắp `(name asc, id asc)` tất định · dùng nạp picker giao việc + cân tải ADMIN.
 
+## Feed Broadcast — Posts & Polls (Update B — additive, KHÔNG đổi contract cũ)
+
+> BGH (ADMIN) phát **Thông báo** (Post — upvote-only, KHÔNG comment) và **Bình chọn** (Poll — chọn 1 phương án, xem %, KHÔNG comment/up-down) lên feed. Broadcast **công khai** (mọi role đã đăng nhập đọc được), **KHÔNG** case-scoped, **KHÔNG** sensitivity. **Tạo/xoá CHỈ ADMIN**; **tương tác** (upvote/bình chọn) mọi role **TRỪ AUDITOR** (read-only). **KHÔNG có endpoint comment** cho post/poll. **KHÔNG notify** khi tạo (broadcast pull-based — FE đọc qua GET). Audit qua `AuditAction` CREATE/UPDATE/DELETE + entityType `Post`/`Poll`/`PostVote`/`PollVote` (KHÔNG thêm enum). author chỉ phơi `{id,name,role}` (0 PII).
+
+### Posts — `/api/posts`
+| Method · Path | Auth/Role | Request | OK | Lỗi |
+|---|---|---|---|---|
+| POST `/api/posts` | **CHỈ ADMIN** | `{ body(1–5000) }` | 201 `{ post }` (kèm `author`, `upvoteCount:0`, `myUpvoted:false`) | 400 (json/zod) · 401 · 403 (non-ADMIN) · 503 |
+| GET `/api/posts` | mọi role đã đăng nhập | `?page(≥1)&limit(1–100,def20)` | 200 `{ posts[], total, page, totalPages }` | 400 · 401 · 503 |
+| POST `/api/posts/[id]/upvote` | mọi role **TRỪ AUDITOR** | – | 200 `{ upvoteCount, myUpvoted:true }` (idempotent — đã thích → no-op) | 401 · 403 (AUDITOR) · 404 (không tồn tại/đã xoá) · 503 |
+| DELETE `/api/posts/[id]/upvote` | mọi role **TRỪ AUDITOR** | – | 200 `{ upvoteCount, myUpvoted:false }` (bỏ thích; chưa thích → no-op) | 401 · 403 (AUDITOR) · 404 · 503 |
+| DELETE `/api/posts/[id]` | **CHỈ ADMIN** | – | 200 `{ deleted: true }` (soft-delete) | 401 · 403 (non-ADMIN) · 404 · 503 |
+
+**Post (list item / create 201)** — `{ id, body, createdAt, author{id,name,role}, upvoteCount, myUpvoted }`. `upvoteCount` = tổng lượt thích (aggregate, **KHÔNG** lộ danh tính người thích); `myUpvoted` = người gọi đã thích chưa. Sắp `(createdAt desc, id desc)`; chỉ post `deletedAt IS NULL`.
+
+### Polls — `/api/polls`
+| Method · Path | Auth/Role | Request | OK | Lỗi |
+|---|---|---|---|---|
+| POST `/api/polls` | **CHỈ ADMIN** | `{ question(1–500), options: string[](2–8, mỗi cái 1–200), closesAt?(ISO) }` | 201 `{ poll }` (đầy đủ — xem shape) | 400 (zod/options ngoài 2–8/closesAt sai) · 401 · 403 (non-ADMIN) · 503 |
+| GET `/api/polls` | mọi role đã đăng nhập | `?page(≥1)&limit(1–100,def20)` | 200 `{ polls[], total, page, totalPages }` | 400 · 401 · 503 |
+| POST `/api/polls/[id]/vote` | mọi role **TRỪ AUDITOR** | `{ optionId }` | 200 `{ poll }` (kết quả mới: count/percent/myOptionId) | 400 (optionId không thuộc poll · poll đã đóng) · 401 · 403 (AUDITOR) · 404 (không tồn tại/đã xoá) · 503 |
+| DELETE `/api/polls/[id]` | **CHỈ ADMIN** | – | 200 `{ deleted: true }` (soft-delete) | 401 · 403 (non-ADMIN) · 404 · 503 |
+
+**Poll (list item / create 201 / vote 200)** — `{ id, question, closesAt|null, isClosed, createdAt, author{id,name,role}, totalVotes, options:[{ id, text, order, count, percent }], myOptionId|null }`. `isClosed` = `closesAt != null && now > closesAt`. `percent` = `round(count/totalVotes*100)` an toàn chia-0 (totalVotes=0 → mọi `percent=0`; làm tròn từng option nên tổng có thể ≠100). `myOptionId` = option người gọi đã chọn (null nếu chưa). **1 phiếu/user/poll**; gọi vote lần nữa = **đổi** lựa chọn (KHÔNG cộng dồn, KHÔNG up/down). Poll đã đóng (`isClosed`) → vote 400. Sắp `(createdAt desc, id desc)`; chỉ poll `deletedAt IS NULL`.
+
 ---
 
 ## Object shapes (chỉ field FE nhận)

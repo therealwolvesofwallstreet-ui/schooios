@@ -21,6 +21,7 @@ import { STATUS_TONE } from "@/components/ui/status-theme";
 import { formatDateTime } from "@/lib/case-display";
 import { relativeTime } from "@/lib/relative-time";
 import type { CaseListItem } from "@/lib/api-types";
+import { BroadcastLane } from "./BroadcastLane";
 
 const PAGE_SIZE = 20;
 
@@ -37,29 +38,36 @@ export function FeedView() {
     <div className="mx-auto flex max-w-3xl flex-col gap-8 py-6">
       <header className="flex flex-col gap-2">
         <h1 className="text-ink font-serif text-3xl leading-snug">Bảng tin</h1>
-        <p className="text-ink-3 text-sm">Những báo cáo gần đây</p>
+        <p className="text-ink-3 text-sm">Thông báo từ BGH và những báo cáo gần đây</p>
       </header>
 
-      {isLoading ? (
-        <FeedSkeleton />
-      ) : isError ? (
-        <ErrorState onRetry={() => void refetch()} message="Không tải được bảng tin." />
-      ) : cases.length === 0 ? (
-        <EmptyState message="Chưa có tiếng nói nào được chia sẻ." />
-      ) : (
-        <section className="flex flex-col gap-4">
-          <p className="text-ink-3 font-mono text-[11px] tracking-[0.12em] tabular-nums">{total} tin</p>
-          <ul data-testid="feed-list" className="flex flex-col">
-            {cases.map((c, i) => (
-              <li key={c.id} className="flex flex-col">
-                {i > 0 && <Hairline />}
-                <FeedRow c={c} />
-              </li>
-            ))}
-          </ul>
-          <Pager page={page} totalPages={totalPages} onPageChange={setPage} />
-        </section>
-      )}
+      {/* KHU broadcast (Update B) — thêm trên cùng, KHÔNG phá stream case bên dưới. */}
+      <BroadcastLane />
+
+      {/* Stream case Đợt 1 — GIỮ NGUYÊN hành vi (useCaseList, FeedRow, Pager). */}
+      <section className="flex flex-col gap-4">
+        <h2 className="text-ink font-serif text-xl leading-snug">Sự việc gần đây</h2>
+        {isLoading ? (
+          <FeedSkeleton />
+        ) : isError ? (
+          <ErrorState onRetry={() => void refetch()} message="Không tải được bảng tin." />
+        ) : cases.length === 0 ? (
+          <EmptyState message="Chưa có tiếng nói nào được chia sẻ." />
+        ) : (
+          <>
+            <p className="text-ink-3 font-mono text-[11px] tracking-[0.12em] tabular-nums">{total} tin</p>
+            <ul data-testid="feed-list" className="flex flex-col">
+              {cases.map((c, i) => (
+                <li key={c.id} className="flex flex-col">
+                  {i > 0 && <Hairline />}
+                  <FeedRow c={c} />
+                </li>
+              ))}
+            </ul>
+            <Pager page={page} totalPages={totalPages} onPageChange={setPage} />
+          </>
+        )}
+      </section>
     </div>
   );
 }
