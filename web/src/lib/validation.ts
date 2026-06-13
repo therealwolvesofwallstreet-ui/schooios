@@ -76,9 +76,17 @@ export type ChangeStatusInput = z.infer<typeof changeStatusSchema>;
 // ─────────────────────────── Comments + Notifications (P6) ───────────────────────────
 // createComment: body trim trước khi đo (loại comment toàn khoảng trắng), max chặn input khổng lồ;
 //   isInternal mặc định false (STUDENT bị ép false ở route — chỉ STAFF/ADMIN được đặt true).
+//   parentId (Update A): reply thread — CHỈ ADMIN; route kiểm tra parent tồn tại+cùng case+không nested.
 export const createCommentSchema = z.object({
   body: z.string().trim().min(1).max(5000),
   isInternal: z.boolean().optional().default(false),
+  parentId: z.string().min(1).max(64).optional(),
+});
+
+// ─────────────────────────── Vote (Update A) ───────────────────────────
+// value: 1 (up) | -1 (down). Upsert: PUT /api/cases/[id]/vote.
+export const voteSchema = z.object({
+  value: z.union([z.literal(1), z.literal(-1)]),
 });
 
 // listNotifications: coerce query string → số (giống listCasesQuery); unreadOnly "true"/"false" → bool.

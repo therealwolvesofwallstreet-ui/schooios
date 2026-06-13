@@ -10,7 +10,7 @@ import { api } from "@/lib/api";
 import type { CommentResponse } from "@/lib/api-types";
 
 export function useCreateComment(caseId: string) {
-  return useOptimisticMutation<CommentResponse, { body: string; isInternal?: boolean }>({
+  return useOptimisticMutation<CommentResponse, { body: string; isInternal?: boolean; parentId?: string }>({
     mutationFn: (vars) => api.post<CommentResponse>(`/api/cases/${caseId}/comments`, vars),
     invalidateKeys: [caseDetailKey(caseId)],
     retry: false,

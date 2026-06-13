@@ -3,13 +3,14 @@
 > Nguồn sự thật cho schema. Trước khi thêm field/model, đối chiếu file này.
 > Schema: [`web/prisma/schema.prisma`](../web/prisma/schema.prisma) · Migration: `web/prisma/migrations/`.
 
-## Models (13)
+## Models (14) — Update A: interactions
 | Model | Vai trò | Field đáng chú ý |
 |---|---|---|
 | `User` | Tài khoản 4 role | `email?` unique (STAFF/ADMIN), `sbd?` unique (STUDENT đăng nhập bằng SBD), `passwordHash` (không bao giờ trả về), `role`, `dob?`, `gender?`, `admissionYear?`, `isActive` |
 | `Case` | Sự vụ (trung tâm) | `caseCode` (auto `CASE-YYYY-00001`), `title`, `description`, `location?` (ghi chú text), `locationId?`→Location, `categoryId`, `priority`, `status`, `isSensitive`, `isEmergency`, `studentFlaggedEmergency`, `createdById`, `assignedToId?`, `resolvedAt?`, `closedAt?`, `deletedAt?` (soft delete) |
 | `Category` | Lookup loại sự vụ | `name` unique, `defaultPriority?`, `defaultSensitive`, `isActive` |
-| `Comment` | Trao đổi trong case | `body`, `isInternal` (ẩn với STUDENT) |
+| `Comment` | Trao đổi trong case | `body`, `isInternal` (ẩn với STUDENT), `parentId?` (self-ref 2 tầng, reply CHỈ ADMIN), `deletedAt?` (soft-delete; cascade replies khi xoá gốc) |
+| `Vote` | Vote up/down trên case (Update A) | `value` Int (1=up, -1=down), `userId`→User, `caseId`→Case; `@@unique([userId,caseId])` → chỉ 1 vote/user/case; đổi value = upsert; bỏ = DELETE; FK Restrict |
 | `Attachment` | File (Supabase Storage) | `filePath` (private path, dùng Signed URL), `fileSize`, `mimeType` |
 | `Notification` | Thông báo người dùng | `userId`, `caseId?`, `type`, `isRead`, `readAt?` |
 | `CaseStatusHistory` | Timeline vòng đời (append-only) | `fromStatus?`, `toStatus`, `changedById`, `note?` |
@@ -31,7 +32,9 @@
 - `LocationType`: CLASSROOM, FACILITY, OFFICE, OUTDOOR, OTHER
 
 ## Chính sách (đã chốt)
-- **ID** = `cuid()`. **Soft delete** là chính (`Case.deletedAt`); FK dùng `Restrict` để không mất dữ liệu khi lỡ hard-delete.
+- **ID** = `cuid()`. **Soft delete** là chính (`Case.deletedAt`, `Comment.deletedAt`); FK dùng `Restrict` để không mất dữ liệu khi lỡ hard-delete.
+- **Vote**: `@@unique([userId,caseId])` → chỉ 1 vote/user/case; PUT upsert (đổi/đặt), DELETE bỏ vote; không audit tên người vote cho STUDENT (chỉ aggregate upCount/downCount/score + myVote riêng). AuditAction dùng CREATE/UPDATE/DELETE entityType "Vote".
+- **Comment thread 2 tầng**: `parentId` nullable (null = gốc, non-null = reply). Reply CHỈ ADMIN tạo; `parent.parentId` phải null (chống lồng >2). Xoá gốc cascade soft-delete replies trong cùng `$transaction`. GET lọc `deletedAt IS NULL`. AuditAction DELETE entityType "Comment" kèm `cascadedReplyIds`.
 - **Immutable ở tầng DB**: `audit_logs`, `case_status_history` có trigger chặn UPDATE/DELETE (xem `web/prisma/migrations/README.md`).
 - **Emergency Hybrid**: `studentFlaggedEmergency` (ý định học sinh) tách `isEmergency` (xác nhận hệ thống/AI).
 - **Sensitivity**: `isSensitive` thủ công (STAFF/ADMIN bật); STUDENT không thấy case sensitive (enforce ở service layer).

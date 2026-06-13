@@ -13,6 +13,33 @@ import { classifyMutationError } from "@/lib/http-errors";
 import { AuditAction, CasePriority, CaseStatus } from "@/generated/prisma/client";
 import type { Prisma } from "@/generated/prisma/client";
 
+// Enrich một tập cases với vote aggregate (upCount/downCount/score/myVote). 1 groupBy + 1 findMany
+// = 2 queries cho N cases (không N+1). userId cho myVote.
+async function enrichWithVotes<T extends { id: string }>(
+  cases: T[],
+  userId: string,
+): Promise<(T & { upCount: number; downCount: number; score: number; myVote: 1 | -1 | null })[]> {
+  if (cases.length === 0) return cases.map((c) => ({ ...c, upCount: 0, downCount: 0, score: 0, myVote: null }));
+  const caseIds = cases.map((c) => c.id);
+  const [groups, myVotes] = await Promise.all([
+    prisma.vote.groupBy({
+      by: ["caseId", "value"],
+      where: { caseId: { in: caseIds } },
+      _count: { value: true },
+    }),
+    prisma.vote.findMany({
+      where: { caseId: { in: caseIds }, userId },
+      select: { caseId: true, value: true },
+    }),
+  ]);
+  const myVoteMap = new Map(myVotes.map((v) => [v.caseId, v.value as 1 | -1]));
+  return cases.map((c) => {
+    const upCount = groups.find((g) => g.caseId === c.id && g.value === 1)?._count.value ?? 0;
+    const downCount = groups.find((g) => g.caseId === c.id && g.value === -1)?._count.value ?? 0;
+    return { ...c, upCount, downCount, score: upCount - downCount, myVote: myVoteMap.get(c.id) ?? null };
+  });
+}
+
 export async function POST(request: NextRequest) {
   try {
     const user = await requireUser(request);
@@ -92,7 +119,8 @@ export async function POST(request: NextRequest) {
       ...clientMeta(request),
     });
 
-    return NextResponse.json({ case: created }, { status: 201 });
+    const [enrichedCreated] = await enrichWithVotes([created], user.id);
+    return NextResponse.json({ case: enrichedCreated }, { status: 201 });
   } catch (err) {
     // DB bận/timeout → 503 + Retry-After (parity với status/assign/emergency; FE đã có nhánh 503).
     const mapped = classifyMutationError(err);
@@ -155,8 +183,9 @@ export async function GET(request: NextRequest) {
       }),
     ]);
 
+    const enrichedCases = await enrichWithVotes(cases, user.id);
     return NextResponse.json({
-      cases,
+      cases: enrichedCases,
       total,
       page,
       totalPages: Math.max(1, Math.ceil(total / limit)),

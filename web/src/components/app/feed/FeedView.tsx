@@ -66,6 +66,7 @@ export function FeedView() {
 
 function FeedRow({ c }: { c: CaseListItem }) {
   const tone: SignalTone = c.isEmergency ? "emergency" : STATUS_TONE[c.status];
+  const score = c.score ?? 0;
   return (
     <Link
       href={`/cases/${c.id}`}
@@ -84,6 +85,14 @@ function FeedRow({ c }: { c: CaseListItem }) {
         <span>{c.category.name}</span>
         <span aria-hidden="true">·</span>
         <span title={formatDateTime(c.createdAt)}>{relativeTime(c.createdAt)}</span>
+        {score !== 0 && (
+          <>
+            <span aria-hidden="true">·</span>
+            <span className="font-mono tabular-nums">
+              {score > 0 ? `▲${score}` : `▼${Math.abs(score)}`}
+            </span>
+          </>
+        )}
       </span>
     </Link>
   );
