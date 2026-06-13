@@ -113,6 +113,7 @@ model User {
   refreshTokens RefreshToken[]
   statusChanges CaseStatusHistory[]
   enrollments   Enrollment[]
+  votes         Vote[]
 
   @@index([role])
   @@index([admissionYear])
@@ -149,6 +150,7 @@ model Case {
   attachments   Attachment[]
   statusHistory CaseStatusHistory[]
   notifications Notification[]
+  votes         Vote[]
 
   // Index bám query path thật; composite cover prefix trái nên không cần index đơn cho status/assignedTo/createdBy.
   @@index([status, createdAt])
@@ -181,18 +183,25 @@ model Category {
 }
 
 model Comment {
-  id         String   @id @default(cuid())
-  caseId     String   @map("case_id")
-  authorId   String   @map("author_id")
-  body       String   @db.Text
-  isInternal Boolean  @default(false) @map("is_internal")
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
+  id         String    @id @default(cuid())
+  caseId     String    @map("case_id")
+  authorId   String    @map("author_id")
+  body       String    @db.Text
+  isInternal Boolean   @default(false) @map("is_internal")
+  // Update A: reply thread (2-tầng; CHỈ ADMIN tạo reply; parent.parentId phải null)
+  parentId   String?   @map("parent_id")
+  // Update A: soft-delete (cascade replies khi xoá gốc trong $transaction)
+  deletedAt  DateTime? @map("deleted_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
 
-  case   Case @relation(fields: [caseId], references: [id], onDelete: Restrict)
-  author User @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  case    Case      @relation(fields: [caseId], references: [id], onDelete: Restrict)
+  author  User      @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Restrict)
+  replies Comment[] @relation("CommentReplies")
 
   @@index([caseId, createdAt])
+  @@index([parentId])
   @@map("comments")
 }
 
@@ -315,6 +324,26 @@ model Location {
 
   @@index([buildingId])
   @@map("locations")
+}
+
+// ───────────────────── Vote (Update A — interactions) ─────────────────────
+
+// Vote up/down cho case. value: 1 = up, -1 = down. Unique (userId,caseId) → 1 vote/user/case.
+// Đổi vote: PUT (upsert). Bỏ: DELETE. FK Restrict (không cascade — vote gắn với user+case sống).
+model Vote {
+  id        String   @id @default(cuid())
+  value     Int      // 1 (up) hoặc -1 (down)
+  userId    String   @map("user_id")
+  caseId    String   @map("case_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  case Case @relation(fields: [caseId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, caseId])
+  @@index([caseId])
+  @@map("votes")
 }
 
 // ───────────────────── Lớp & ghi danh theo niên khóa ─────────────────────

@@ -103,8 +103,21 @@ này TRƯỚC): **tên field** trong shape, **giá trị enum** (chuỗi), **ng�
 
 | Method | Auth | Request | OK | Lỗi |
 |---|---|---|---|---|
-| POST | mọi role thấy case, trừ AUDITOR; `isInternal=true` chỉ STAFF/ADMIN | `{ body(1–5000), isInternal? }` | 201 `{ comment }` (kèm `author`) | 400 · 401 · 403 (AUDITOR / STUDENT đặt internal) · 404 · 503 |
-| GET | mọi role thấy case | – | 200 `{ comments[] }` (STUDENT **không** thấy `isInternal`) | 401 · 404 |
+| POST | mọi role thấy case, trừ AUDITOR; `isInternal=true` chỉ STAFF/ADMIN | `{ body(1–5000), isInternal?, parentId? }` — `parentId` CHỈ ADMIN; parent phải tồn tại, cùng caseId, chưa xoá, và `parent.parentId==null` (chống lồng >2 tầng) | 201 `{ comment }` (kèm `author`, `parentId`) | 400 (zod/parent sai/lồng >2) · 401 · 403 (AUDITOR / STUDENT+internal / non-ADMIN+parentId) · 404 · 503 |
+| GET | mọi role thấy case | – | 200 `{ comments[] }` (STUDENT **không** thấy `isInternal`; `deletedAt!=null` **ẩn**; kèm `parentId`) | 401 · 404 |
+| DELETE `/api/cases/[id]/comments/[commentId]` | tác giả tự xoá ∨ ADMIN xoá bất kỳ | – | 200 `{ deleted: true }` — soft-delete `deletedAt`; xoá gốc cascade replies trong $transaction | 401 · 403 (không phải tác giả/ADMIN) · 404 · 503 |
+
+## Votes — `/api/cases/[id]/vote`
+
+| Method | Auth | Request | OK | Lỗi |
+|---|---|---|---|---|
+| PUT | mọi role thấy case, **trừ AUDITOR** | `{ value: 1 \| -1 }` — upsert vote của user cho case (đổi value nếu đã có) | 200 `{ upCount, downCount, score, myVote }` | 400 (zod) · 401 · 403 (AUDITOR) · 404 (case không thấy) · 503 |
+| DELETE | mọi role thấy case, **trừ AUDITOR** | – | 200 `{ upCount, downCount, score, myVote: null }` — no-op nếu chưa vote | 401 · 403 (AUDITOR) · 404 · 503 |
+
+**Vote aggregate** — thêm ADDITIVE vào Case shapes (list + detail):
+- `upCount: number` · `downCount: number` · `score: number` (= upCount - downCount)
+- `myVote: 1 | -1 | null` — vote hiện tại của người gọi (null = chưa vote / AUDITOR/anon)
+> KHÔNG lộ danh tính người vote cho STUDENT; chỉ aggregate + myVote của chính mình.
 
 ## Attachments — 3-step signed-upload (F6 Đợt 2 — additive, KHÔNG đổi contract cũ)
 
@@ -188,7 +201,7 @@ này TRƯỚC): **tên field** trong shape, **giá trị enum** (chuỗi), **ng�
 
 **Case (POST create, 201)** — trả CÙNG shape **list item** (đã enrich `category{id,name}`, `locationRef{id,code,name}|null`, `createdBy{id,name,role}`, `assignedTo|null`) → FE không cần refetch để hiển thị ngay.
 
-**Comment** — `{ id, caseId, authorId, body, isInternal, createdAt, author{id,name,role} }`.
+**Comment** — `{ id, caseId, authorId, body, isInternal, parentId|null, createdAt, author{id,name,role} }` — `deletedAt` KHÔNG ra FE; comment đã xoá bị lọc khỏi GET.
 
 **Notification** — `{ id, userId, caseId|null, type, message, isRead, readAt|null, createdAt, case{id,caseCode}|null }`.
 
