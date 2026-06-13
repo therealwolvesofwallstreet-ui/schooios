@@ -103,6 +103,11 @@ export interface CaseListItem {
   locationRef: CaseLocationRef | null;
   createdBy: UserRef;
   assignedTo: { id: string; name: string } | null;
+  // Update A: vote aggregate (additive — luôn có sau khi server enrich)
+  upCount: number;
+  downCount: number;
+  score: number;
+  myVote: 1 | -1 | null;
 }
 
 export interface CommentDTO {
@@ -111,8 +116,17 @@ export interface CommentDTO {
   authorId: string;
   body: string;
   isInternal: boolean;
+  parentId: string | null; // Update A: reply thread (null = gốc)
   createdAt: string;
   author: UserRef;
+}
+
+// Update A: vote route response
+export interface VoteResponse {
+  upCount: number;
+  downCount: number;
+  score: number;
+  myVote: 1 | -1 | null;
 }
 export interface AttachmentDTO {
   id: string;
