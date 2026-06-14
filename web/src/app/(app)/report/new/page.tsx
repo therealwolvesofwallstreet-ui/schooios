@@ -17,6 +17,7 @@ import { useImageUpload } from "@/hooks/useImageUpload";
 import { useToastQueue } from "@/store/toast";
 import { AttachmentUpload } from "@/components/attachments/AttachmentUpload";
 import { ChoiceList, type Choice } from "@/components/report/ChoiceList";
+import { LocationPicker } from "@/components/report/LocationPicker";
 import { ErrorState, PermissionDenied } from "@/components/app/states";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
@@ -142,12 +143,6 @@ export default function ReportNewPage() {
     label: c.name,
     hint: c.description ?? undefined,
   }));
-  const locationChoices: Choice[] = locs.locations.map((l) => ({
-    id: l.id,
-    label: l.name,
-    hint: l.building ? `${l.code} · ${l.building.name}` : l.code,
-  }));
-
   function goNext() {
     setFormError(null);
     if (stepValid && !isLast) setStep((s) => s + 1);
@@ -288,35 +283,21 @@ export default function ReportNewPage() {
         {step === 2 && (
           <div className="flex flex-col gap-3">
             <p className="text-ink-3 text-xs">Không bắt buộc — chọn nơi gần nhất hoặc bỏ qua.</p>
-            <ChoiceList
-              aria-label="Địa điểm"
-              items={locationChoices}
+            <LocationPicker
               value={locationId}
               onChange={(id) => {
                 if (fieldErrors.locationId) setFieldErrors((p) => ({ ...p, locationId: undefined }));
                 setLocationId(id);
               }}
+              locations={locs.locations}
               isLoading={locs.isLoading}
               isError={locs.isError}
               onRetry={locs.refetch}
-              emptyMessage="Chưa có địa điểm nào."
             />
             {fieldErrors.locationId && (
               <span role="alert" className="text-signal font-mono text-xs">
                 {fieldErrors.locationId} — chọn lại hoặc bỏ chọn để tiếp tục.
               </span>
-            )}
-            {locationId && (
-              <button
-                type="button"
-                onClick={() => {
-                  if (fieldErrors.locationId) setFieldErrors((p) => ({ ...p, locationId: undefined }));
-                  setLocationId(null);
-                }}
-                className="text-ink-3 hover:text-ink self-start text-xs underline-offset-4 transition-colors duration-150 ease-quiet hover:underline"
-              >
-                Bỏ chọn địa điểm
-              </button>
             )}
           </div>
         )}
