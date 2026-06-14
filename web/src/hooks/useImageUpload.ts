@@ -18,10 +18,33 @@ export interface StagedFile {
   file: File;
   preview: string; // objectURL
   reencoded?: Blob;
-  status: "pending" | "signing" | "uploading" | "committing" | "done" | "error";
+  status: "pending" | "converting" | "signing" | "uploading" | "committing" | "done" | "error";
   progress: number; // 0-100
   errorMsg?: string;
   attachment?: AttachmentDTO;
+}
+
+// HEIC/HEIF = định dạng ảnh mặc định của iPhone — trình duyệt KHÔNG render/canvas được nên phải
+// convert→JPEG TRƯỚC khi vào pipeline reencode. Nhiều trình duyệt báo mime rỗng/octet-stream cho
+// HEIC ⇒ PHẢI check CẢ đuôi tên, không chỉ mime.
+function isHeic(file: File): boolean {
+  const type = file.type.toLowerCase();
+  if (type === "image/heic" || type === "image/heif") return true;
+  return /\.(heic|heif)$/i.test(file.name);
+}
+
+function toJpgName(name: string): string {
+  return /\.(heic|heif)$/i.test(name) ? name.replace(/\.(heic|heif)$/i, ".jpg") : `${name}.jpg`;
+}
+
+// Convert HEIC→JPEG ở client. LAZY import (`await import`) — chỉ tải heic2any (libheif WASM, nặng)
+// khi thực sự gặp file HEIC → KHÔNG phình main/server bundle. Trả về File jpeg để đi tiếp pipeline
+// reencode (resize ≤MAX_DIM + rụng EXIF) như ảnh thường ⇒ server vẫn chỉ thấy JPEG.
+async function heicToJpegFile(file: File): Promise<File> {
+  const heic2any = (await import("heic2any")).default;
+  const out = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.9 });
+  const blob = Array.isArray(out) ? out[0] : out;
+  return new File([blob], toJpgName(file.name), { type: "image/jpeg" });
 }
 
 async function reencodeImage(file: File): Promise<Blob> {
@@ -67,19 +90,12 @@ export function useImageUpload() {
   const addFiles = useCallback(
     async (fileList: FileList | File[]) => {
       const files = Array.from(fileList);
-      for (const file of files) {
-        const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-        if (!ALLOWED_MIME.includes(file.type as AllowedMime)) {
-          continue; // lọc im lặng — accept attr trên input đã hướng dẫn
-        }
-        const preview = URL.createObjectURL(file);
-        previewUrls.current.add(preview);
-        const staged: StagedFile = { id, file, preview, status: "pending", progress: 0 };
-        setStaged((prev) => [...prev, staged]);
 
-        // Re-encode ngay khi add (canvas là client-only — OK trong use-client hook)
+      // Reencode (resize ≤MAX_DIM + rụng EXIF + nén) rồi gắn `reencoded` / báo lỗi rõ.
+      // Dùng chung cho ảnh thường và ảnh HEIC đã convert → KHÔNG nhân đôi luồng.
+      const encodeAndStage = async (id: string, src: File) => {
         try {
-          const reencoded = await reencodeImage(file);
+          const reencoded = await reencodeImage(src);
           if (reencoded.size > MAX_BYTES) {
             setStaged((prev) =>
               prev.map((f) =>
@@ -89,19 +105,63 @@ export function useImageUpload() {
               ),
             );
           } else {
-            setStaged((prev) =>
-              prev.map((f) => (f.id === id ? { ...f, reencoded } : f)),
-            );
+            setStaged((prev) => prev.map((f) => (f.id === id ? { ...f, reencoded } : f)));
           }
         } catch {
           setStaged((prev) =>
             prev.map((f) =>
-              f.id === id
-                ? { ...f, status: "error", errorMsg: "Không đọc được ảnh." }
-                : f,
+              f.id === id ? { ...f, status: "error", errorMsg: "Không đọc được ảnh." } : f,
             ),
           );
         }
+      };
+
+      for (const file of files) {
+        const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        const heic = isHeic(file);
+        if (!heic && !ALLOWED_MIME.includes(file.type as AllowedMime)) {
+          continue; // lọc im lặng — accept attr trên input đã hướng dẫn
+        }
+
+        // ── HEIC (iPhone): convert→JPEG TRƯỚC vì bản gốc KHÔNG render/canvas được. ──
+        if (heic) {
+          // Entry sớm status "converting" (UI báo "Đang chuyển ảnh…"); preview tạo SAU khi có JPEG.
+          const stagedHeic: StagedFile = { id, file, preview: "", status: "converting", progress: 0 };
+          setStaged((prev) => [...prev, stagedHeic]);
+          let jpeg: File;
+          try {
+            jpeg = await heicToJpegFile(file);
+          } catch {
+            // File hỏng / không phải HEIC thật → báo lỗi rõ, KHÔNG im lặng.
+            setStaged((prev) =>
+              prev.map((f) =>
+                f.id === id
+                  ? {
+                      ...f,
+                      status: "error",
+                      errorMsg: "Không đọc được ảnh HEIC. Hãy thử chụp lại hoặc đổi sang JPEG.",
+                    }
+                  : f,
+              ),
+            );
+            continue;
+          }
+          const preview = URL.createObjectURL(jpeg);
+          previewUrls.current.add(preview);
+          setStaged((prev) =>
+            prev.map((f) => (f.id === id ? { ...f, file: jpeg, preview, status: "pending" } : f)),
+          );
+          await encodeAndStage(id, jpeg);
+          continue;
+        }
+
+        // ── Ảnh thường (jpeg/png/webp): luồng cũ y nguyên (KHÔNG qua heic2any). ──
+        const preview = URL.createObjectURL(file);
+        previewUrls.current.add(preview);
+        const staged: StagedFile = { id, file, preview, status: "pending", progress: 0 };
+        setStaged((prev) => [...prev, staged]);
+        // Re-encode ngay khi add (canvas là client-only — OK trong use-client hook)
+        await encodeAndStage(id, file);
       }
     },
     [],
