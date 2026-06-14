@@ -39,23 +39,29 @@ export function sanitizeFileName(name: string): string {
     .slice(0, 100);
 }
 
-/** Tạo signed upload URL (TTL 10 phút). Client PUT bytes thẳng lên Supabase — KHÔNG qua Next route. */
+/** Tạo signed upload URL. Client PUT bytes thẳng lên Supabase — KHÔNG qua Next route.
+ * ⚠ Storage API mới (Fastify) BẮT BUỘC có body khi Content-Type=application/json (body rỗng → 400)
+ * và trả `{ url, token }` với `url` TƯƠNG ĐỐI (/object/upload/sign/…?token=…) → phải dựng absolute.
+ * Vẫn chấp nhận `signedUploadUrl` (shape cũ) để tương thích ngược. */
 export async function createUploadUrl(path: string): Promise<{ signedUploadUrl: string }> {
   const { url, key, bucket } = getEnv();
   const res = await fetch(
-    `${url}/storage/v1/object/upload/sign/${bucket}/${encodePath(path)}?expiresIn=600`,
+    `${url}/storage/v1/object/upload/sign/${bucket}/${encodePath(path)}`,
     {
       method: "POST",
       headers: { ...authHeaders(key), "Content-Type": "application/json" },
+      body: "{}",
     },
   );
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     throw new StorageError(`createUploadUrl failed ${res.status}: ${text}`);
   }
-  const data = (await res.json()) as { signedUploadUrl?: string };
-  if (!data.signedUploadUrl) throw new StorageError("No signedUploadUrl in response");
-  return { signedUploadUrl: data.signedUploadUrl };
+  const data = (await res.json()) as { url?: string; signedUploadUrl?: string };
+  const signed = data.signedUploadUrl ?? data.url;
+  if (!signed) throw new StorageError("No signed upload url in response");
+  const signedUploadUrl = signed.startsWith("http") ? signed : `${url}/storage/v1${signed}`;
+  return { signedUploadUrl };
 }
 
 export interface ObjectVerifyResult {
