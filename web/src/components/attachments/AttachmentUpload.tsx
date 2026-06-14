@@ -18,6 +18,7 @@ interface Props {
 
 const STATUS_LABEL: Record<StagedFile["status"], string> = {
   pending: "",
+  converting: "Đang chuyển ảnh…",
   signing: "Đang chuẩn bị…",
   uploading: "Đang tải…",
   committing: "Đang xác nhận…",
@@ -53,14 +54,20 @@ export function AttachmentUpload({ hook, disabled, className }: Props) {
                   sf.status === "done" && "border-signal/30",
                 )}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={sf.preview}
-                  alt={sf.file.name}
-                  className="h-full w-full object-cover"
-                />
+                {sf.preview ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={sf.preview}
+                    alt={sf.file.name}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  // HEIC đang convert: chưa có preview JPEG → nền trung tính, spinner phủ lên trên.
+                  <div className="bg-sunken h-full w-full" />
+                )}
                 {/* Progress overlay */}
-                {(sf.status === "signing" ||
+                {(sf.status === "converting" ||
+                  sf.status === "signing" ||
                   sf.status === "uploading" ||
                   sf.status === "committing") && (
                   <div className="bg-paper/70 absolute inset-0 flex items-center justify-center">
@@ -75,8 +82,11 @@ export function AttachmentUpload({ hook, disabled, className }: Props) {
                   </div>
                 )}
               </div>
-              {/* Progress bar */}
-              {sf.status !== "pending" && sf.status !== "error" && sf.status !== "done" && (
+              {/* Progress bar (converting chưa có % thật → dùng spinner overlay, không vẽ thanh rỗng) */}
+              {sf.status !== "pending" &&
+                sf.status !== "converting" &&
+                sf.status !== "error" &&
+                sf.status !== "done" && (
                 <div className="bg-line mt-0.5 h-0.5 w-20 overflow-hidden rounded-full">
                   <div
                     className="bg-signal h-full rounded-full transition-all duration-300"
@@ -122,7 +132,8 @@ export function AttachmentUpload({ hook, disabled, className }: Props) {
         <input
           ref={inputRef}
           type="file"
-          accept="image/jpeg,image/png,image/webp"
+          // +HEIC/HEIF (ảnh iPhone): khai báo cả mime LẪN đuôi để iOS picker không lọc mất; convert→JPEG ở client.
+          accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
           capture="environment"
           multiple
           disabled={!canAdd}
@@ -132,7 +143,7 @@ export function AttachmentUpload({ hook, disabled, className }: Props) {
       </label>
 
       <p className="text-ink-3 font-mono text-[10px]">
-        Tối đa 8 MB / ảnh · JPEG · PNG · WebP
+        Tối đa 8 MB / ảnh · JPEG · PNG · WebP · HEIC
       </p>
     </div>
   );

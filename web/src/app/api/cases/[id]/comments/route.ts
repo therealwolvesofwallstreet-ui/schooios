@@ -7,21 +7,26 @@
 // COMMENT NỘI BỘ (isInternal=true): chỉ STAFF/ADMIN được tạo (STUDENT gửi true → 403). Khi notify,
 //   LOẠI mọi recipient role=STUDENT — notify HS về comment họ không được xem = rò rỉ + hoang mang.
 //
+// Update A: parentId (reply) CHỈ ADMIN; parent phải tồn tại+cùng case+chưa xoá+parentId==null.
+//   GET lọc deletedAt IS NULL + trả parentId. Shape ADDITIVE (không phá test cũ).
+//
 // Atomic: comment + audit(CREATE/"Comment") + notify gói trong MỘT $transaction (tx.* trực tiếp;
-//   createNotification(input, tx)). Lỗi: 401 chưa đăng nhập · 403 AUDITOR post / STUDENT đặt nội bộ ·
-//   400 body·zod hỏng · 404 không thấy case · 503 DB tạm thời (cạn pool/timeout, Retry-After) · 500 bất ngờ.
+//   createNotification(input, tx)). Lỗi: 401 · 403 AUDITOR/STUDENT+internal/non-ADMIN+parentId ·
+//   400 body·zod·parent hỏng · 404 không thấy case · 503 DB tạm thời · 500 bất ngờ.
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUser, clientMeta } from "@/lib/auth";
 import { createCommentSchema } from "@/lib/validation";
-import { caseWhereForRole } from "@/lib/cases";
+import { caseWhereForRole, maskCommentAuthors } from "@/lib/cases";
 import { createNotification } from "@/lib/notifications";
 import { classifyMutationError } from "@/lib/http-errors";
 import { AuditAction, NotificationType, Role } from "@/generated/prisma/client";
 
 // author chỉ {id,name,role} (không lộ PII) — dùng chung cho POST (response parity) lẫn GET.
-const commentAuthorSelect = { author: { select: { id: true, name: true, role: true } } } as const;
+const commentSelect = {
+  author: { select: { id: true, name: true, role: true } },
+} as const;
 
 export async function POST(
   request: NextRequest,
@@ -30,7 +35,6 @@ export async function POST(
   try {
     const user = await requireUser(request);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    // AUDITOR read-only — không bao giờ ghi.
     if (user.role === Role.AUDITOR)
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
@@ -48,49 +52,61 @@ export async function POST(
       );
     const body = parsed.data;
 
-    // STUDENT không được tạo comment nội bộ (sau guard này, STUDENT luôn isInternal=false).
     if (user.role === Role.STUDENT && body.isInternal)
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    const isInternal = body.isInternal;
 
+    // Reply (parentId) CHỈ ADMIN (403 cho role khác).
+    if (body.parentId && user.role !== Role.ADMIN)
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+    const isInternal = body.isInternal;
     const { id } = await params;
 
-    // Chỉ thấy case theo quyền role → null là 404 đồng nhất. Kèm role người liên quan để lọc notify.
     const found = await prisma.case.findFirst({
       where: { id, ...caseWhereForRole({ sub: user.id, role: user.role }) },
       select: {
-        id: true,
-        caseCode: true,
-        createdById: true,
-        assignedToId: true,
+        id: true, caseCode: true, createdById: true, assignedToId: true,
         createdBy: { select: { id: true, role: true } },
         assignedTo: { select: { id: true, role: true } },
       },
     });
     if (!found) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+    // Validate parent comment (nếu có).
+    if (body.parentId) {
+      const parent = await prisma.comment.findUnique({
+        where: { id: body.parentId },
+        select: { id: true, caseId: true, parentId: true, deletedAt: true },
+      });
+      if (!parent || parent.caseId !== id || parent.deletedAt !== null)
+        return NextResponse.json({ error: "Parent comment not found" }, { status: 404 });
+      if (parent.parentId !== null)
+        return NextResponse.json({ error: "Nested replies not allowed" }, { status: 400 });
+    }
+
     const meta = clientMeta(request);
 
-    // Nguyên tử: comment + audit + notify trong MỘT transaction (all-or-nothing).
     const comment = await prisma.$transaction(async (tx) => {
       const c = await tx.comment.create({
-        data: { caseId: id, authorId: user.id, body: body.body, isInternal },
-        include: commentAuthorSelect, // parity với GET → client render ngay không cần GET lại
+        data: {
+          caseId: id, authorId: user.id, body: body.body, isInternal,
+          parentId: body.parentId ?? null,
+        },
+        select: {
+          id: true, caseId: true, authorId: true, body: true, isInternal: true,
+          parentId: true, createdAt: true, updatedAt: true,
+          ...commentSelect,
+        },
       });
 
       await tx.auditLog.create({
         data: {
-          actorId: user.id,
-          action: AuditAction.CREATE,
-          entityType: "Comment",
-          entityId: c.id,
-          metadata: { after: { caseId: id, isInternal } },
-          ipAddress: meta.ipAddress,
-          userAgent: meta.userAgent,
+          actorId: user.id, action: AuditAction.CREATE, entityType: "Comment", entityId: c.id,
+          metadata: { after: { caseId: id, isInternal, parentId: body.parentId ?? null } },
+          ipAddress: meta.ipAddress, userAgent: meta.userAgent,
         },
       });
 
-      // Báo người tạo + người được giao (trừ chính người bình luận); nếu nội bộ → loại STUDENT.
       const recipients = [found.createdBy, found.assignedTo]
         .filter((u): u is { id: string; role: Role } => u !== null)
         .filter((u) => u.id !== user.id)
@@ -110,7 +126,6 @@ export async function POST(
 
     return NextResponse.json({ comment }, { status: 201 });
   } catch (err) {
-    // DB tạm thời (cạn pool/timeout) → 503 + Retry-After (nhất quán house-style P5); còn lại 500.
     const mapped = classifyMutationError(err);
     if (mapped) {
       const res = NextResponse.json({ error: mapped.error }, { status: mapped.status });
@@ -132,21 +147,36 @@ export async function GET(
 
     const { id } = await params;
 
-    // Phải thấy case mới đọc comment → null là 404 đồng nhất.
+    // Update C: kèm isAnonymous + createdById để mask author do CHÍNH creator viết (chống de-anon).
     const found = await prisma.case.findFirst({
       where: { id, ...caseWhereForRole({ sub: user.id, role: user.role }) },
-      select: { id: true },
+      select: { id: true, isAnonymous: true, createdById: true },
     });
     if (!found) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-    // STUDENT không thấy comment nội bộ; role khác thấy hết. author chỉ {id,name,role} (không lộ PII).
+    // Lọc deletedAt IS NULL (Update A). STUDENT không thấy isInternal. parentId ADDITIVE.
     const comments = await prisma.comment.findMany({
-      where: { caseId: id, ...(user.role === Role.STUDENT ? { isInternal: false } : {}) },
-      orderBy: [{ createdAt: "asc" }, { id: "asc" }], // id tiebreaker → thứ tự tất định khi trùng createdAt
-      include: commentAuthorSelect,
+      where: {
+        caseId: id,
+        deletedAt: null,
+        ...(user.role === Role.STUDENT ? { isInternal: false } : {}),
+      },
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+      select: {
+        id: true, caseId: true, authorId: true, body: true, isInternal: true,
+        parentId: true, createdAt: true, updatedAt: true,
+        ...commentSelect,
+      },
     });
 
-    return NextResponse.json({ comments });
+    // Update C: mask author của comment do người tạo case ẩn danh viết (viewer ∉ {admin,auditor,creator}).
+    const maskedComments = maskCommentAuthors(
+      comments,
+      { isAnonymous: found.isAnonymous, createdById: found.createdById },
+      { sub: user.id, role: user.role },
+    );
+
+    return NextResponse.json({ comments: maskedComments });
   } catch (err) {
     console.error("cases [id] comments GET error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

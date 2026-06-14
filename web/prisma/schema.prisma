@@ -113,6 +113,11 @@ model User {
   refreshTokens RefreshToken[]
   statusChanges CaseStatusHistory[]
   enrollments   Enrollment[]
+  votes         Vote[]
+  posts         Post[]
+  postVotes     PostVote[]
+  polls         Poll[]
+  pollVotes     PollVote[]
 
   @@index([role])
   @@index([admissionYear])
@@ -131,6 +136,8 @@ model Case {
   priority                CasePriority @default(MEDIUM)
   status                  CaseStatus   @default(NEW)
   isSensitive             Boolean      @default(false) @map("is_sensitive")
+  // Update C: đăng ẩn danh — che danh tính người tạo ở tầng serialize (createdById vẫn lưu thật).
+  isAnonymous             Boolean      @default(false) @map("is_anonymous")
   isEmergency             Boolean      @default(false) @map("is_emergency")
   studentFlaggedEmergency Boolean      @default(false) @map("student_flagged_emergency")
   createdById             String       @map("created_by")
@@ -149,6 +156,7 @@ model Case {
   attachments   Attachment[]
   statusHistory CaseStatusHistory[]
   notifications Notification[]
+  votes         Vote[]
 
   // Index bám query path thật; composite cover prefix trái nên không cần index đơn cho status/assignedTo/createdBy.
   @@index([status, createdAt])
@@ -181,18 +189,25 @@ model Category {
 }
 
 model Comment {
-  id         String   @id @default(cuid())
-  caseId     String   @map("case_id")
-  authorId   String   @map("author_id")
-  body       String   @db.Text
-  isInternal Boolean  @default(false) @map("is_internal")
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
+  id         String    @id @default(cuid())
+  caseId     String    @map("case_id")
+  authorId   String    @map("author_id")
+  body       String    @db.Text
+  isInternal Boolean   @default(false) @map("is_internal")
+  // Update A: reply thread (2-tầng; CHỈ ADMIN tạo reply; parent.parentId phải null)
+  parentId   String?   @map("parent_id")
+  // Update A: soft-delete (cascade replies khi xoá gốc trong $transaction)
+  deletedAt  DateTime? @map("deleted_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
 
-  case   Case @relation(fields: [caseId], references: [id], onDelete: Restrict)
-  author User @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  case    Case      @relation(fields: [caseId], references: [id], onDelete: Restrict)
+  author  User      @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Restrict)
+  replies Comment[] @relation("CommentReplies")
 
   @@index([caseId, createdAt])
+  @@index([parentId])
   @@map("comments")
 }
 
@@ -317,6 +332,26 @@ model Location {
   @@map("locations")
 }
 
+// ───────────────────── Vote (Update A — interactions) ─────────────────────
+
+// Vote up/down cho case. value: 1 = up, -1 = down. Unique (userId,caseId) → 1 vote/user/case.
+// Đổi vote: PUT (upsert). Bỏ: DELETE. FK Restrict (không cascade — vote gắn với user+case sống).
+model Vote {
+  id        String   @id @default(cuid())
+  value     Int      // 1 (up) hoặc -1 (down)
+  userId    String   @map("user_id")
+  caseId    String   @map("case_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  case Case @relation(fields: [caseId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, caseId])
+  @@index([caseId])
+  @@map("votes")
+}
+
 // ───────────────────── Lớp & ghi danh theo niên khóa ─────────────────────
 
 model Class {
@@ -350,4 +385,90 @@ model Enrollment {
   @@index([classId])
   @@index([studentId, isActive])
   @@map("enrollments")
+}
+
+// ───────────────────── Feed Broadcast: Post / Poll (Update B) ─────────────────────
+// Thông báo & bình chọn do BGH (ADMIN) phát trên feed. THUẦN ADDITIVE — KHÔNG đụng Case/Comment.
+// Tạo/xoá: chỉ ADMIN · đọc: mọi role đăng nhập · tương tác (upvote/bình chọn): mọi role TRỪ AUDITOR.
+// Soft-delete (deletedAt) + FK Restrict (không mất dữ liệu). KHÔNG comment trên Post/Poll.
+
+model Post {
+  id        String    @id @default(cuid())
+  authorId  String    @map("author_id")
+  body      String    @db.Text
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  author User       @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  votes  PostVote[]
+
+  @@index([createdAt])
+  @@index([deletedAt])
+  @@map("posts")
+}
+
+// Upvote-only: row tồn tại = đã thích (KHÔNG cột value, KHÔNG down). unique chống spam phình count.
+model PostVote {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  postId    String   @map("post_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  post Post @relation(fields: [postId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, postId])
+  @@index([postId])
+  @@map("post_votes")
+}
+
+model Poll {
+  id        String    @id @default(cuid())
+  authorId  String    @map("author_id")
+  question  String    @db.Text
+  closesAt  DateTime? @map("closes_at") // null = mở vô hạn
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  author  User         @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  options PollOption[]
+  votes   PollVote[]
+
+  @@index([createdAt])
+  @@index([deletedAt])
+  @@map("polls")
+}
+
+model PollOption {
+  id     String @id @default(cuid())
+  pollId String @map("poll_id")
+  text   String
+  order  Int
+
+  poll  Poll       @relation(fields: [pollId], references: [id], onDelete: Restrict)
+  votes PollVote[]
+
+  @@index([pollId])
+  @@map("poll_options")
+}
+
+// 1 phiếu/user/poll (unique). Đổi lựa chọn = upsert đổi optionId (KHÔNG cộng dồn, KHÔNG up/down).
+model PollVote {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  pollId    String   @map("poll_id")
+  optionId  String   @map("option_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user   User       @relation(fields: [userId], references: [id], onDelete: Restrict)
+  poll   Poll       @relation(fields: [pollId], references: [id], onDelete: Restrict)
+  option PollOption @relation(fields: [optionId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, pollId])
+  @@index([pollId])
+  @@index([optionId])
+  @@map("poll_votes")
 }

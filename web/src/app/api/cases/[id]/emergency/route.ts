@@ -19,7 +19,7 @@ import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUser, clientMeta } from "@/lib/auth";
 import { setEmergencySchema } from "@/lib/validation";
-import { caseWhereForRole, caseMutationInclude } from "@/lib/cases";
+import { caseWhereForRole, caseMutationInclude, maskCaseIdentity } from "@/lib/cases";
 import { ConflictError } from "@/lib/workflow";
 import { classifyMutationError } from "@/lib/http-errors";
 import { createNotification } from "@/lib/notifications";
@@ -68,7 +68,7 @@ export async function PATCH(
         include: caseMutationInclude,
       });
       if (!same) return NextResponse.json({ error: "Not found" }, { status: 404 });
-      return NextResponse.json({ case: same });
+      return NextResponse.json({ case: maskCaseIdentity(same, { sub: user.id, role: user.role }) });
     }
 
     const meta = clientMeta(request);
@@ -121,7 +121,8 @@ export async function PATCH(
     });
 
     const updated = await prisma.case.findUnique({ where: { id }, include: caseMutationInclude });
-    return NextResponse.json({ case: updated });
+    const masked = updated ? maskCaseIdentity(updated, { sub: user.id, role: user.role }) : updated;
+    return NextResponse.json({ case: masked });
   } catch (err) {
     const mapped = classifyMutationError(err);
     if (mapped) {

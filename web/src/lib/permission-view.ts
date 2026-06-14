@@ -43,6 +43,12 @@ export const PERMISSION_TABLE = {
   "queue:view": inRole("STAFF", "ADMIN"),
   // Lane khẩn cấp: STAFF/ADMIN (docs/API.md: AUDITOR → 403).
   "emergencyLane:view": inRole("STAFF", "ADMIN"),
+  // Vote up/down: STUDENT/STAFF/ADMIN (AUDITOR → server 403 → không render nút).
+  "case:vote": inRole("STUDENT", "STAFF", "ADMIN"),
+  // Reply comment (2-tầng): CHỈ ADMIN.
+  "comment:reply": inRole("ADMIN"),
+  // Xoá comment: tác giả own ∨ ADMIN (server kiểm tra; FE chỉ ẩn nút).
+  "comment:deleteOwn": (role, ctx) => role === "ADMIN" || !!ctx?.isOwner,
 } satisfies Record<string, Predicate>;
 
 export type PermissionAction = keyof typeof PERMISSION_TABLE;

@@ -27,6 +27,8 @@ export const createCaseSchema = z.object({
   priority: z.nativeEnum(CasePriority).optional(),
   emergency: z.boolean().optional(),
   sensitive: z.boolean().optional(),
+  // Update C: đăng ẩn danh (che danh tính người tạo ở serialize). default false ở route.
+  anonymous: z.boolean().optional(),
 });
 
 // Query string → coerce sang số; isEmergency là chuỗi "true"/"false" → bool.
@@ -76,9 +78,17 @@ export type ChangeStatusInput = z.infer<typeof changeStatusSchema>;
 // ─────────────────────────── Comments + Notifications (P6) ───────────────────────────
 // createComment: body trim trước khi đo (loại comment toàn khoảng trắng), max chặn input khổng lồ;
 //   isInternal mặc định false (STUDENT bị ép false ở route — chỉ STAFF/ADMIN được đặt true).
+//   parentId (Update A): reply thread — CHỈ ADMIN; route kiểm tra parent tồn tại+cùng case+không nested.
 export const createCommentSchema = z.object({
   body: z.string().trim().min(1).max(5000),
   isInternal: z.boolean().optional().default(false),
+  parentId: z.string().min(1).max(64).optional(),
+});
+
+// ─────────────────────────── Vote (Update A) ───────────────────────────
+// value: 1 (up) | -1 (down). Upsert: PUT /api/cases/[id]/vote.
+export const voteSchema = z.object({
+  value: z.union([z.literal(1), z.literal(-1)]),
 });
 
 // listNotifications: coerce query string → số (giống listCasesQuery); unreadOnly "true"/"false" → bool.
@@ -104,3 +114,33 @@ export const setEmergencySchema = z.object({
 });
 
 export type SetEmergencyInput = z.infer<typeof setEmergencySchema>;
+
+// ─────────────────────────── Feed Broadcast: Posts + Polls (Update B) ───────────────────────────
+// Post: body trim min(1) max(5000). Poll: question trim, options 2–8 (mỗi cái trim 1–200), closesAt ISO?.
+// listBroadcastQuery: phân trang page-based dùng chung posts + polls.
+export const createPostSchema = z.object({
+  body: z.string().trim().min(1).max(5000),
+});
+
+export const listBroadcastQuery = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+});
+
+export const createPollSchema = z.object({
+  question: z.string().trim().min(1).max(500),
+  // trim từng option, loại rỗng-sau-trim (min(1)); 2–8 phương án; max(200) chống input khổng lồ.
+  options: z.array(z.string().trim().min(1).max(200)).min(2).max(8),
+  // ISO 8601 (vd new Date().toISOString()); cho phép offset. Quá khứ vẫn hợp lệ (poll đóng ngay).
+  closesAt: z.string().datetime({ offset: true }).optional(),
+});
+
+export const votePollSchema = z.object({
+  // optionId là cuid (~25 ký tự); max(64) nhất quán với assignedToId.
+  optionId: z.string().min(1).max(64),
+});
+
+export type CreatePostInput = z.infer<typeof createPostSchema>;
+export type ListBroadcastQuery = z.infer<typeof listBroadcastQuery>;
+export type CreatePollInput = z.infer<typeof createPollSchema>;
+export type VotePollInput = z.infer<typeof votePollSchema>;

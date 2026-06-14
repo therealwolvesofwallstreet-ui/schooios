@@ -3,13 +3,14 @@
 > Nguồn sự thật cho schema. Trước khi thêm field/model, đối chiếu file này.
 > Schema: [`web/prisma/schema.prisma`](../web/prisma/schema.prisma) · Migration: `web/prisma/migrations/`.
 
-## Models (13)
+## Models (19) — Update A (interactions) + Update B (feed broadcast)
 | Model | Vai trò | Field đáng chú ý |
 |---|---|---|
 | `User` | Tài khoản 4 role | `email?` unique (STAFF/ADMIN), `sbd?` unique (STUDENT đăng nhập bằng SBD), `passwordHash` (không bao giờ trả về), `role`, `dob?`, `gender?`, `admissionYear?`, `isActive` |
-| `Case` | Sự vụ (trung tâm) | `caseCode` (auto `CASE-YYYY-00001`), `title`, `description`, `location?` (ghi chú text), `locationId?`→Location, `categoryId`, `priority`, `status`, `isSensitive`, `isEmergency`, `studentFlaggedEmergency`, `createdById`, `assignedToId?`, `resolvedAt?`, `closedAt?`, `deletedAt?` (soft delete) |
+| `Case` | Sự vụ (trung tâm) | `caseCode` (auto `CASE-YYYY-00001`), `title`, `description`, `location?` (ghi chú text), `locationId?`→Location, `categoryId`, `priority`, `status`, `isSensitive`, `isAnonymous` (Update C — đăng ẩn danh; default false; che danh tính người tạo ở tầng serialize), `isEmergency`, `studentFlaggedEmergency`, `createdById`, `assignedToId?`, `resolvedAt?`, `closedAt?`, `deletedAt?` (soft delete) |
 | `Category` | Lookup loại sự vụ | `name` unique, `defaultPriority?`, `defaultSensitive`, `isActive` |
-| `Comment` | Trao đổi trong case | `body`, `isInternal` (ẩn với STUDENT) |
+| `Comment` | Trao đổi trong case | `body`, `isInternal` (ẩn với STUDENT), `parentId?` (self-ref 2 tầng, reply CHỈ ADMIN), `deletedAt?` (soft-delete; cascade replies khi xoá gốc) |
+| `Vote` | Vote up/down trên case (Update A) | `value` Int (1=up, -1=down), `userId`→User, `caseId`→Case; `@@unique([userId,caseId])` → chỉ 1 vote/user/case; đổi value = upsert; bỏ = DELETE; FK Restrict |
 | `Attachment` | File (Supabase Storage) | `filePath` (private path, dùng Signed URL), `fileSize`, `mimeType` |
 | `Notification` | Thông báo người dùng | `userId`, `caseId?`, `type`, `isRead`, `readAt?` |
 | `CaseStatusHistory` | Timeline vòng đời (append-only) | `fromStatus?`, `toStatus`, `changedById`, `note?` |
@@ -19,6 +20,11 @@
 | `Location` | Phòng/khu vực (địa điểm report) | `code` unique, `name`, `buildingId?` (null=khu chung), `floor?`, `type` (LocationType), `isActive` |
 | `Class` | Lớp theo niên khóa | `name`, `schoolYear`, `grade?`, `specialization?`, `@@unique([name, schoolYear])` |
 | `Enrollment` | Ghi danh HS ↔ lớp (lịch sử theo năm) | `studentId`→User, `classId`→Class, `isActive`, `@@unique([studentId, classId])` |
+| `Post` | Thông báo BGH trên feed (Update B) | `body`, `authorId`→User, `deletedAt?` (soft-delete ADMIN); **upvote-only** qua PostVote, **KHÔNG comment** |
+| `PostVote` | Upvote post (Update B) | `userId`→User, `postId`→Post, `@@unique([userId,postId])`; tồn tại = đã thích (**KHÔNG cột value**); bỏ thích = DELETE; FK Restrict |
+| `Poll` | Bình chọn BGH trên feed (Update B) | `question`, `closesAt?` (null = mở vô hạn), `authorId`→User, `deletedAt?` (soft-delete ADMIN); phương án qua PollOption, **KHÔNG comment** |
+| `PollOption` | Phương án 1 poll (Update B) | `pollId`→Poll, `text`, `order` Int |
+| `PollVote` | Phiếu bình chọn (Update B) | `userId`→User, `pollId`→Poll, `optionId`→PollOption; `@@unique([userId,pollId])` → 1 phiếu/user/poll, đổi lựa chọn = upsert; FK Restrict |
 
 ## Enums
 - `Role`: STUDENT, STAFF, ADMIN, AUDITOR
@@ -31,14 +37,24 @@
 - `LocationType`: CLASSROOM, FACILITY, OFFICE, OUTDOOR, OTHER
 
 ## Chính sách (đã chốt)
-- **ID** = `cuid()`. **Soft delete** là chính (`Case.deletedAt`); FK dùng `Restrict` để không mất dữ liệu khi lỡ hard-delete.
+- **ID** = `cuid()`. **Soft delete** là chính (`Case.deletedAt`, `Comment.deletedAt`, `Post.deletedAt`, `Poll.deletedAt`); FK dùng `Restrict` để không mất dữ liệu khi lỡ hard-delete.
+- **Vote**: `@@unique([userId,caseId])` → chỉ 1 vote/user/case; PUT upsert (đổi/đặt), DELETE bỏ vote; không audit tên người vote cho STUDENT (chỉ aggregate upCount/downCount/score + myVote riêng). AuditAction dùng CREATE/UPDATE/DELETE entityType "Vote".
+- **Comment thread 2 tầng**: `parentId` nullable (null = gốc, non-null = reply). Reply CHỈ ADMIN tạo; `parent.parentId` phải null (chống lồng >2). Xoá gốc cascade soft-delete replies trong cùng `$transaction`. GET lọc `deletedAt IS NULL`. AuditAction DELETE entityType "Comment" kèm `cascadedReplyIds`.
 - **Immutable ở tầng DB**: `audit_logs`, `case_status_history` có trigger chặn UPDATE/DELETE (xem `web/prisma/migrations/README.md`).
 - **Emergency Hybrid**: `studentFlaggedEmergency` (ý định học sinh) tách `isEmergency` (xác nhận hệ thống/AI).
-- **Sensitivity**: `isSensitive` thủ công (STAFF/ADMIN bật); STUDENT không thấy case sensitive (enforce ở service layer).
+- **Sensitivity (Update C — chính sách MỚI)**: `isSensitive` bật được bởi **người tạo** (checkbox lúc tạo) HOẶC tự escalate từ `category.defaultSensitive` (escalate-only: user KHÔNG hạ được nếu category buộc). Case nhạy cảm **CHỈ hiện với ADMIN + AUDITOR + chính người tạo (`createdById==viewer`)** — ẩn HOÀN TOÀN khỏi học sinh khác VÀ staff (kể cả staff được giao). Áp dụng MỌI endpoint (list/detail/feed/emergency-lane/dashboard-count). Tập trung ở `caseWhereForRole` + align lane/dashboard (KHÔNG rải logic ra route).
+- **Anonymous (Update C — `isAnonymous`)**: che HIỂN THỊ danh tính người tạo (⟂ độc lập với sensitivity, KHÔNG đổi quyền-xem-case). `createdById` trong DB **GIỮ NGUYÊN** (quyền "của tôi" + audit dùng nó) — chỉ MASK ở tầng serialize: viewer ∉ {ADMIN, AUDITOR, creator} nhận `createdById="anonymous"` + `createdBy={id:"anonymous",name:"Ẩn danh",role:"STUDENT"}` + `isAnonymous=true`. Comment do CHÍNH người tạo viết trên case ẩn danh cũng mask author (chống de-anon). Mask tập trung ở 1 hàm trong `lib/cases.ts`; FE KHÔNG tự suy/unmask.
 - **Search**: GIN trigram (`pg_trgm`) trên `cases.title`/`description` cho ILIKE.
 - **Index**: composite bám query path (status/assignedTo/createdBy + createdAt; notifications unread; timeline; audit theo actor/action).
 - **Audit payload**: `metadata` JSON theo convention `{ before, after, ...context }`, ghi qua **một** helper `recordAudit()` + Zod (P3+).
 - **Naming**: model PascalCase, field camelCase, cột/bảng snake_case (`@map`/`@@map`).
+- **Broadcast (Posts/Polls) — Update B (THUẦN ADDITIVE, 5 bảng mới):**
+  - **Tạo/xoá** Post/Poll = **CHỈ ADMIN** (BGH); **đọc** = mọi role đã đăng nhập (broadcast công khai, KHÔNG case-scoped, KHÔNG sensitivity); **tương tác** (upvote/bình chọn) = mọi role **TRỪ AUDITOR** (read-only).
+  - **Post = upvote-only**: PostVote tồn tại = đã thích (KHÔNG cột value, KHÔNG down); upsert idempotent (đã thích → no-op), bỏ thích = DELETE. `@@unique([userId,postId])` chống spam phình count. GET trả aggregate `upvoteCount` + `myUpvoted` (KHÔNG lộ danh tính người thích).
+  - **Poll = chọn 1 phương án**: `@@unique([userId,pollId])` → 1 phiếu/user/poll; đổi lựa chọn = upsert đổi `optionId` (KHÔNG cộng dồn, KHÔNG up/down). GET trả `count`/`percent` mỗi option (chia-0 an toàn: total=0 → 0%) + `myOptionId`. `optionId` phải thuộc poll (else 400); poll đã đóng (`now > closesAt`) → 400.
+  - **KHÔNG comment** trên Post/Poll (không endpoint comment cho chúng).
+  - **Soft-delete** (`deletedAt`) cho Post/Poll (ADMIN); GET lọc `deletedAt IS NULL`. FK mọi quan hệ = `Restrict`.
+  - **Audit** qua AuditAction CREATE/UPDATE/DELETE + entityType `"Post"`/`"Poll"`/`"PostVote"`/`"PollVote"` (KHÔNG thêm enum mới). **KHÔNG notify** khi tạo post/poll (broadcast pull-based — tránh spam 979 HS + tránh enum `NotificationType` mới). *(Defer: notify/đẩy broadcast → cần enum mới khi chốt.)*
 
 ## Dữ liệu bootstrap (THẬT — 1 trường)
 Nguồn: `docs/data/` (Trường THPT Chuyên Lý Tự Trọng). Nạp bằng `prisma/seed.ts` (`npx prisma db seed`), idempotent:

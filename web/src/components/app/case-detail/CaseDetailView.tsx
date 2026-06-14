@@ -13,7 +13,8 @@ import { EASE_EMERGE_BEZIER } from "@/lib/cubic-bezier";
 import { CaseHeader } from "./CaseHeader";
 import { Spine } from "./Spine";
 import { CaseActionPanel } from "./CaseActionPanel";
-import { CommentComposer } from "./CommentComposer";
+import { CaseVote } from "./CaseVote";
+import { CommentThread } from "./CommentThread";
 import { AttachmentGallery } from "@/components/attachments/AttachmentGallery";
 import { Card } from "@/components/ui/Card";
 import { DetailSkeleton, NotFoundState, ErrorState } from "@/components/app/states";
@@ -68,7 +69,15 @@ export function CaseDetailView({ caseId }: { caseId: string }) {
               currentUserId={user.id}
             />
           )}
-          <CommentComposer caseId={detail.id} />
+          {/* Vote + CommentThread (Update A) */}
+          <CaseVote
+            caseId={detail.id}
+            upCount={detail.upCount}
+            downCount={detail.downCount}
+            score={detail.score}
+            myVote={detail.myVote}
+          />
+          <CommentThread caseId={detail.id} comments={detail.comments} />
         </div>
         <aside className="flex flex-col gap-6 lg:sticky lg:top-6 lg:self-start">
           <CaseActionPanel detail={detail} />

@@ -40,6 +40,11 @@
 - **STAFF**: xem case được giao + status NEW/TRIAGED. Self-assign NEW/TRIAGED. Comment nội bộ. Flip emergency (trong tầm).
 - **ADMIN**: toàn quyền. **AUDITOR**: read-only (mọi mutation → 403). Dashboard chỉ ADMIN/AUDITOR.
 
+### Update C — Nhạy cảm (siết) + Ẩn danh (mask danh tính)
+
+- **Nhạy cảm (`isSensitive`)** — chính sách MỚI: case nhạy cảm CHỈ hiện với **ADMIN + AUDITOR + chính người tạo** (`createdById==viewer`). **STAFF KHÔNG còn thấy case nhạy cảm dù được giao** (siết so với trước; áp dụng list/detail/comments/emergency-lane). Bật bằng request `anonymous`? không — bằng `sensitive` lúc tạo (escalate-only: `sensitive=true` HOẶC `category.defaultSensitive`; user KHÔNG hạ được nếu category buộc). Dashboard chỉ ADMIN/AUDITOR nên count vẫn gồm nhạy cảm (đúng tầm 2 vai này).
+- **Ẩn danh (`isAnonymous`)** — gửi `anonymous:true` lúc tạo. Che HIỂN THỊ danh tính người tạo (⟂ độc lập nhạy cảm, KHÔNG đổi quyền-xem-case). Viewer ∉ {ADMIN, AUDITOR, creator} nhận **`createdById="anonymous"`** + **`createdBy={id:"anonymous",name:"Ẩn danh",role:"STUDENT"}`** + `isAnonymous=true`. ADMIN/AUDITOR/creator nhận `createdBy` THẬT + `isAnonymous=true`. `createdById` thật GIỮ trong DB (quyền "của tôi" + audit). Comment do CHÍNH người tạo viết trên case ẩn danh cũng bị mask author tương tự (chống de-anon). **FE KHÔNG tự suy/unmask** — render đúng giá trị server trả.
+
 ---
 
 ## Contract Freeze Rules
@@ -88,7 +93,7 @@ này TRƯỚC): **tên field** trong shape, **giá trị enum** (chuỗi), **ng�
 
 | Method · Path | Auth/Role | Request | OK | Lỗi |
 |---|---|---|---|---|
-| POST `/api/cases` | mọi role trừ AUDITOR | `{ title(5–200), description(10–5000), categoryId, locationId?, priority?, emergency?, sensitive? }` | 201 `{ case }` | 400 (json/zod/category·location sai) · 401 · 403 (AUDITOR) |
+| POST `/api/cases` | mọi role trừ AUDITOR | `{ title(5–200), description(10–5000), categoryId, locationId?, priority?, emergency?, sensitive?, anonymous? }` | 201 `{ case }` | 400 (json/zod/category·location sai) · 401 · 403 (AUDITOR) |
 | GET `/api/cases` | mọi role | query `?status&isEmergency(true/false)&mine(true)&page(≥1)&limit(1–100,def20)` — `status` nhận **1 giá trị** (`NEW`) **hoặc danh sách phẩy** (`NEW,TRIAGED`); `mine=true` → CHỈ case do chính user tạo (`createdById`, **AND** tầm-nhìn role → KHÔNG nới quyền); tương thích ngược (thiếu param = như cũ) | 200 `{ cases[], total, page, totalPages }` | 400 (query/status rác) · 401 |
 | GET `/api/cases/[id]` | mọi role (lọc theo tầm nhìn) | – | 200 `{ case }` (detail đầy đủ) | 401 · 404 |
 | PATCH `/api/cases/[id]/assign` | ADMIN / STAFF(self, NEW·TRIAGED) | `{ assignedToId }` | 200 `{ case }` | 400 · 401 · 403 · 404 · 409 · 503 |
@@ -103,8 +108,21 @@ này TRƯỚC): **tên field** trong shape, **giá trị enum** (chuỗi), **ng�
 
 | Method | Auth | Request | OK | Lỗi |
 |---|---|---|---|---|
-| POST | mọi role thấy case, trừ AUDITOR; `isInternal=true` chỉ STAFF/ADMIN | `{ body(1–5000), isInternal? }` | 201 `{ comment }` (kèm `author`) | 400 · 401 · 403 (AUDITOR / STUDENT đặt internal) · 404 · 503 |
-| GET | mọi role thấy case | – | 200 `{ comments[] }` (STUDENT **không** thấy `isInternal`) | 401 · 404 |
+| POST | mọi role thấy case, trừ AUDITOR; `isInternal=true` chỉ STAFF/ADMIN | `{ body(1–5000), isInternal?, parentId? }` — `parentId` CHỈ ADMIN; parent phải tồn tại, cùng caseId, chưa xoá, và `parent.parentId==null` (chống lồng >2 tầng) | 201 `{ comment }` (kèm `author`, `parentId`) | 400 (zod/parent sai/lồng >2) · 401 · 403 (AUDITOR / STUDENT+internal / non-ADMIN+parentId) · 404 · 503 |
+| GET | mọi role thấy case | – | 200 `{ comments[] }` (STUDENT **không** thấy `isInternal`; `deletedAt!=null` **ẩn**; kèm `parentId`) | 401 · 404 |
+| DELETE `/api/cases/[id]/comments/[commentId]` | tác giả tự xoá ∨ ADMIN xoá bất kỳ | – | 200 `{ deleted: true }` — soft-delete `deletedAt`; xoá gốc cascade replies trong $transaction | 401 · 403 (không phải tác giả/ADMIN) · 404 · 503 |
+
+## Votes — `/api/cases/[id]/vote`
+
+| Method | Auth | Request | OK | Lỗi |
+|---|---|---|---|---|
+| PUT | mọi role thấy case, **trừ AUDITOR** | `{ value: 1 \| -1 }` — upsert vote của user cho case (đổi value nếu đã có) | 200 `{ upCount, downCount, score, myVote }` | 400 (zod) · 401 · 403 (AUDITOR) · 404 (case không thấy) · 503 |
+| DELETE | mọi role thấy case, **trừ AUDITOR** | – | 200 `{ upCount, downCount, score, myVote: null }` — no-op nếu chưa vote | 401 · 403 (AUDITOR) · 404 · 503 |
+
+**Vote aggregate** — thêm ADDITIVE vào Case shapes (list + detail):
+- `upCount: number` · `downCount: number` · `score: number` (= upCount - downCount)
+- `myVote: 1 | -1 | null` — vote hiện tại của người gọi (null = chưa vote / AUDITOR/anon)
+> KHÔNG lộ danh tính người vote cho STUDENT; chỉ aggregate + myVote của chính mình.
 
 ## Attachments — 3-step signed-upload (F6 Đợt 2 — additive, KHÔNG đổi contract cũ)
 
@@ -172,6 +190,31 @@ này TRƯỚC): **tên field** trong shape, **giá trị enum** (chuỗi), **ng�
 **AuditLog (list item)** — `{ id, action, entityType, entityId, metadata, createdAt, actorId|null, actor{id,name,role}|null }` (append-only/immutable; mới nhất trước, tiebreaker `id` cho paging tất định; KHÔNG phơi PII ngoài `{id,name,role}` của actor).
 **User (assignable)** — `{ id, name, role }` · 0 PII (KHÔNG email/sbd/dob/passwordHash) · chỉ `isActive=true` · sắp `(name asc, id asc)` tất định · dùng nạp picker giao việc + cân tải ADMIN.
 
+## Feed Broadcast — Posts & Polls (Update B — additive, KHÔNG đổi contract cũ)
+
+> BGH (ADMIN) phát **Thông báo** (Post — upvote-only, KHÔNG comment) và **Bình chọn** (Poll — chọn 1 phương án, xem %, KHÔNG comment/up-down) lên feed. Broadcast **công khai** (mọi role đã đăng nhập đọc được), **KHÔNG** case-scoped, **KHÔNG** sensitivity. **Tạo/xoá CHỈ ADMIN**; **tương tác** (upvote/bình chọn) mọi role **TRỪ AUDITOR** (read-only). **KHÔNG có endpoint comment** cho post/poll. **KHÔNG notify** khi tạo (broadcast pull-based — FE đọc qua GET). Audit qua `AuditAction` CREATE/UPDATE/DELETE + entityType `Post`/`Poll`/`PostVote`/`PollVote` (KHÔNG thêm enum). author chỉ phơi `{id,name,role}` (0 PII).
+
+### Posts — `/api/posts`
+| Method · Path | Auth/Role | Request | OK | Lỗi |
+|---|---|---|---|---|
+| POST `/api/posts` | **CHỈ ADMIN** | `{ body(1–5000) }` | 201 `{ post }` (kèm `author`, `upvoteCount:0`, `myUpvoted:false`) | 400 (json/zod) · 401 · 403 (non-ADMIN) · 503 |
+| GET `/api/posts` | mọi role đã đăng nhập | `?page(≥1)&limit(1–100,def20)` | 200 `{ posts[], total, page, totalPages }` | 400 · 401 · 503 |
+| POST `/api/posts/[id]/upvote` | mọi role **TRỪ AUDITOR** | – | 200 `{ upvoteCount, myUpvoted:true }` (idempotent — đã thích → no-op) | 401 · 403 (AUDITOR) · 404 (không tồn tại/đã xoá) · 503 |
+| DELETE `/api/posts/[id]/upvote` | mọi role **TRỪ AUDITOR** | – | 200 `{ upvoteCount, myUpvoted:false }` (bỏ thích; chưa thích → no-op) | 401 · 403 (AUDITOR) · 404 · 503 |
+| DELETE `/api/posts/[id]` | **CHỈ ADMIN** | – | 200 `{ deleted: true }` (soft-delete) | 401 · 403 (non-ADMIN) · 404 · 503 |
+
+**Post (list item / create 201)** — `{ id, body, createdAt, author{id,name,role}, upvoteCount, myUpvoted }`. `upvoteCount` = tổng lượt thích (aggregate, **KHÔNG** lộ danh tính người thích); `myUpvoted` = người gọi đã thích chưa. Sắp `(createdAt desc, id desc)`; chỉ post `deletedAt IS NULL`.
+
+### Polls — `/api/polls`
+| Method · Path | Auth/Role | Request | OK | Lỗi |
+|---|---|---|---|---|
+| POST `/api/polls` | **CHỈ ADMIN** | `{ question(1–500), options: string[](2–8, mỗi cái 1–200), closesAt?(ISO) }` | 201 `{ poll }` (đầy đủ — xem shape) | 400 (zod/options ngoài 2–8/closesAt sai) · 401 · 403 (non-ADMIN) · 503 |
+| GET `/api/polls` | mọi role đã đăng nhập | `?page(≥1)&limit(1–100,def20)` | 200 `{ polls[], total, page, totalPages }` | 400 · 401 · 503 |
+| POST `/api/polls/[id]/vote` | mọi role **TRỪ AUDITOR** | `{ optionId }` | 200 `{ poll }` (kết quả mới: count/percent/myOptionId) | 400 (optionId không thuộc poll · poll đã đóng) · 401 · 403 (AUDITOR) · 404 (không tồn tại/đã xoá) · 503 |
+| DELETE `/api/polls/[id]` | **CHỈ ADMIN** | – | 200 `{ deleted: true }` (soft-delete) | 401 · 403 (non-ADMIN) · 404 · 503 |
+
+**Poll (list item / create 201 / vote 200)** — `{ id, question, closesAt|null, isClosed, createdAt, author{id,name,role}, totalVotes, options:[{ id, text, order, count, percent }], myOptionId|null }`. `isClosed` = `closesAt != null && now > closesAt`. `percent` = `round(count/totalVotes*100)` an toàn chia-0 (totalVotes=0 → mọi `percent=0`; làm tròn từng option nên tổng có thể ≠100). `myOptionId` = option người gọi đã chọn (null nếu chưa). **1 phiếu/user/poll**; gọi vote lần nữa = **đổi** lựa chọn (KHÔNG cộng dồn, KHÔNG up/down). Poll đã đóng (`isClosed`) → vote 400. Sắp `(createdAt desc, id desc)`; chỉ poll `deletedAt IS NULL`.
+
 ---
 
 ## Object shapes (chỉ field FE nhận)
@@ -180,7 +223,7 @@ này TRƯỚC): **tên field** trong shape, **giá trị enum** (chuỗi), **ng�
 `{ id, email|null, sbd|null, name, role, dob|null, gender|null, admissionYear|null, isActive, mustChangePassword, createdAt, updatedAt }`
 > ⚠ Đây là dữ liệu **của chính người gọi** (PII riêng) — hợp lệ. KHÔNG có endpoint trả PII của user khác (mọi quan hệ chỉ phơi `{id,name,role}`).
 
-**Case (list item)** — `{ ...scalars, category{id,name}, locationRef{id,code,name}|null, createdBy{id,name,role}, assignedTo{id,name}|null }`. Scalars: `id, caseCode, title, description, location|null, locationId|null, categoryId, priority, status, isSensitive, isEmergency, studentFlaggedEmergency, createdById, assignedToId|null, resolvedAt|null, closedAt|null, createdAt, updatedAt` (KHÔNG `deletedAt` — case xóa mềm không bao giờ ra ngoài).
+**Case (list item)** — `{ ...scalars, category{id,name}, locationRef{id,code,name}|null, createdBy{id,name,role}, assignedTo{id,name}|null }`. Scalars: `id, caseCode, title, description, location|null, locationId|null, categoryId, priority, status, isSensitive, isAnonymous, isEmergency, studentFlaggedEmergency, createdById, assignedToId|null, resolvedAt|null, closedAt|null, createdAt, updatedAt` (KHÔNG `deletedAt` — case xóa mềm không bao giờ ra ngoài). **Update C:** `isAnonymous` (bool) ở MỌI shape; khi `isAnonymous=true` ∧ viewer ∉ {ADMIN,AUDITOR,creator} → `createdById="anonymous"` + `createdBy={id:"anonymous",name:"Ẩn danh",role:"STUDENT"}` (mask danh tính). `comments[].author` cũng mask nếu author là người tạo case ẩn danh.
 
 **Case (detail, GET [id])** — như trên + `category`(đầy đủ), `attachments[]{id,fileName,fileSize,mimeType,createdAt,uploadedBy{id,name}}` (**KHÔNG `filePath`** — Signed URL qua `GET /api/attachments/[id]/view`), `statusHistory[]{...,changedBy{id,name,role}}`, `comments[]{...,author{id,name,role}}` (STUDENT lọc internal).
 
@@ -188,7 +231,7 @@ này TRƯỚC): **tên field** trong shape, **giá trị enum** (chuỗi), **ng�
 
 **Case (POST create, 201)** — trả CÙNG shape **list item** (đã enrich `category{id,name}`, `locationRef{id,code,name}|null`, `createdBy{id,name,role}`, `assignedTo|null`) → FE không cần refetch để hiển thị ngay.
 
-**Comment** — `{ id, caseId, authorId, body, isInternal, createdAt, author{id,name,role} }`.
+**Comment** — `{ id, caseId, authorId, body, isInternal, parentId|null, createdAt, author{id,name,role} }` — `deletedAt` KHÔNG ra FE; comment đã xoá bị lọc khỏi GET.
 
 **Notification** — `{ id, userId, caseId|null, type, message, isRead, readAt|null, createdAt, case{id,caseCode}|null }`.
 

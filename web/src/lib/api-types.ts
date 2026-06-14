@@ -91,6 +91,9 @@ export interface CaseListItem {
   priority: CasePriority;
   status: CaseStatus;
   isSensitive: boolean;
+  // Update C: đăng ẩn danh. Khi true + viewer ∉ {admin,auditor,creator} → server MASK
+  // createdById="anonymous" + createdBy={id:"anonymous",name:"Ẩn danh",role:"STUDENT"}.
+  isAnonymous: boolean;
   isEmergency: boolean;
   studentFlaggedEmergency: boolean;
   createdById: string;
@@ -103,6 +106,11 @@ export interface CaseListItem {
   locationRef: CaseLocationRef | null;
   createdBy: UserRef;
   assignedTo: { id: string; name: string } | null;
+  // Update A: vote aggregate (additive — luôn có sau khi server enrich)
+  upCount: number;
+  downCount: number;
+  score: number;
+  myVote: 1 | -1 | null;
 }
 
 export interface CommentDTO {
@@ -111,8 +119,17 @@ export interface CommentDTO {
   authorId: string;
   body: string;
   isInternal: boolean;
+  parentId: string | null; // Update A: reply thread (null = gốc)
   createdAt: string;
   author: UserRef;
+}
+
+// Update A: vote route response
+export interface VoteResponse {
+  upCount: number;
+  downCount: number;
+  score: number;
+  myVote: 1 | -1 | null;
 }
 export interface AttachmentDTO {
   id: string;
@@ -203,6 +220,62 @@ export interface UsersResponse {
   total: number;
   page: number;
   totalPages: number;
+}
+
+// ---- Feed Broadcast: Posts & Polls (Update B) — author chỉ {id,name,role} (0 PII) ----
+export interface PostDTO {
+  id: string;
+  body: string;
+  createdAt: string; // ISO
+  author: ActorRef;
+  upvoteCount: number;
+  myUpvoted: boolean;
+}
+export interface PostsResponse {
+  posts: PostDTO[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+export interface PostResponse {
+  post: PostDTO;
+}
+/** POST/DELETE /api/posts/[id]/upvote */
+export interface UpvoteResponse {
+  upvoteCount: number;
+  myUpvoted: boolean;
+}
+
+export interface PollOptionDTO {
+  id: string;
+  text: string;
+  order: number;
+  count: number;
+  percent: number;
+}
+export interface PollDTO {
+  id: string;
+  question: string;
+  closesAt: string | null; // ISO
+  isClosed: boolean;
+  createdAt: string;
+  author: ActorRef;
+  totalVotes: number;
+  options: PollOptionDTO[];
+  myOptionId: string | null;
+}
+export interface PollsResponse {
+  polls: PollDTO[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+export interface PollResponse {
+  poll: PollDTO;
+}
+/** DELETE /api/posts/[id] · DELETE /api/polls/[id] */
+export interface DeletedResponse {
+  deleted: boolean;
 }
 
 export interface DashboardResponse {

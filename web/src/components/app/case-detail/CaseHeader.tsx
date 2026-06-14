@@ -2,6 +2,7 @@
 // Edge OXBLOOD bên trái khi isEmergency (cờ CHÍNH THỨC, KHÁC studentFlaggedEmergency) — border-l giữ
 // chỗ (transparent) để bật/tắt không xô layout. KHÔNG dùng STATUS_BADGE cầu vồng (StatusPill lo màu).
 import { StatusPill } from "@/components/ui/StatusPill";
+import { CaseFlags } from "@/components/ui/CaseFlags";
 import { PRIORITY_LABEL } from "@/lib/case-display";
 import { cn } from "@/lib/cn";
 import type { CaseDetail } from "@/lib/api-types";
@@ -25,6 +26,7 @@ export function CaseHeader({ detail }: { detail: CaseDetail }) {
             Khẩn cấp
           </span>
         )}
+        <CaseFlags isAnonymous={detail.isAnonymous} isSensitive={detail.isSensitive} />
       </div>
       <h1 className="text-ink font-serif text-3xl leading-snug break-words md:text-4xl">
         {detail.title}

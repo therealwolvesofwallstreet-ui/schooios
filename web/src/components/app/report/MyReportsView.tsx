@@ -46,7 +46,7 @@ export function MyReportsView() {
       <header className="flex flex-col items-start gap-4">
         <div className="flex flex-col gap-2">
           <h1 className="text-ink font-serif text-3xl leading-snug">Báo cáo của tôi</h1>
-          <p className="text-ink-3 text-sm">Những tiếng nói bạn đã cất lên, theo dòng thời gian.</p>
+          <p className="text-ink-3 text-sm">Lịch sử những bản báo cáo bạn đã gửi.</p>
         </div>
         <Link href="/report/new">
           <Button variant="primary" size="md">

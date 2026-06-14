@@ -6,6 +6,7 @@ import Link from "next/link";
 import { SignalDot, type SignalTone } from "@/components/ui/SignalDot";
 import { StatusPill } from "@/components/ui/StatusPill";
 import { AgingBadge } from "@/components/ui/AgingBadge";
+import { CaseFlags } from "@/components/ui/CaseFlags";
 import { STATUS_TONE } from "@/components/ui/status-theme";
 import type { CaseListItem } from "@/lib/api-types";
 
@@ -22,6 +23,7 @@ export function CaseRow({ c }: { c: CaseListItem }) {
       </span>
       <StatusPill status={c.status} className="shrink-0" />
       <span className="text-ink line-clamp-1 min-w-0 flex-1 text-sm">{c.title}</span>
+      <CaseFlags isAnonymous={c.isAnonymous} isSensitive={c.isSensitive} />
       <AgingBadge createdAt={c.createdAt} status={c.status} />
     </Link>
   );

@@ -17,7 +17,10 @@ import { useImageUpload } from "@/hooks/useImageUpload";
 import { useToastQueue } from "@/store/toast";
 import { AttachmentUpload } from "@/components/attachments/AttachmentUpload";
 import { ChoiceList, type Choice } from "@/components/report/ChoiceList";
+import { LocationPicker } from "@/components/report/LocationPicker";
 import { ErrorState, PermissionDenied } from "@/components/app/states";
+import { SignalDot } from "@/components/ui/SignalDot";
+import { cn } from "@/lib/cn";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
@@ -73,6 +76,9 @@ export default function ReportNewPage() {
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [locationId, setLocationId] = useState<string | null>(null);
   const [emergency, setEmergency] = useState(false);
+  // Update C: lựa chọn riêng tư của người báo.
+  const [anonymous, setAnonymous] = useState(false);
+  const [userSensitive, setUserSensitive] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [created, setCreated] = useState<CaseListItem | null>(null);
@@ -142,12 +148,6 @@ export default function ReportNewPage() {
     label: c.name,
     hint: c.description ?? undefined,
   }));
-  const locationChoices: Choice[] = locs.locations.map((l) => ({
-    id: l.id,
-    label: l.name,
-    hint: l.building ? `${l.code} · ${l.building.name}` : l.code,
-  }));
-
   function goNext() {
     setFormError(null);
     if (stepValid && !isLast) setStep((s) => s + 1);
@@ -172,11 +172,12 @@ export default function ReportNewPage() {
       // Chỉ gửi priority KHI category cấp — KHÔNG tự chế default thay server (priority? là optional,
       // defaultPriority nullable). derivedPriority (fallback MEDIUM) chỉ để hiển thị nhãn ở bước 4.
       ...(selectedCategory?.defaultPriority ? { priority: selectedCategory.defaultPriority } : {}),
-      // `sensitive` chỉ là GỢI Ý từ category đã chọn. Server là CHÂN LÝ: sensitivity escalate-only từ
-      // category (CLAUDE.md/API.md) → KHÔNG thể bị hạ phân loại bởi giá trị FE (privacy-safe kể cả khi
-      // category read cũ). Gửi vì là field hợp đồng hợp lệ; server vẫn tự escalate.
-      sensitive: selectedCategory?.defaultSensitive ?? false,
+      // Update C: nhạy cảm = người báo TỰ BẬT (checkbox) HOẶC category buộc. Escalate-only: server là
+      // CHÂN LÝ (sensitive=true ∨ category.defaultSensitive) → KHÔNG thể bị hạ phân loại bởi giá trị FE.
+      sensitive: userSensitive || (selectedCategory?.defaultSensitive ?? false),
       emergency,
+      // Update C: đăng ẩn danh — server mask danh tính ở serialize (createdById vẫn lưu thật).
+      anonymous,
     };
     try {
       await mutation.mutateAsync(payload);
@@ -288,35 +289,21 @@ export default function ReportNewPage() {
         {step === 2 && (
           <div className="flex flex-col gap-3">
             <p className="text-ink-3 text-xs">Không bắt buộc — chọn nơi gần nhất hoặc bỏ qua.</p>
-            <ChoiceList
-              aria-label="Địa điểm"
-              items={locationChoices}
+            <LocationPicker
               value={locationId}
               onChange={(id) => {
                 if (fieldErrors.locationId) setFieldErrors((p) => ({ ...p, locationId: undefined }));
                 setLocationId(id);
               }}
+              locations={locs.locations}
               isLoading={locs.isLoading}
               isError={locs.isError}
               onRetry={locs.refetch}
-              emptyMessage="Chưa có địa điểm nào."
             />
             {fieldErrors.locationId && (
               <span role="alert" className="text-signal font-mono text-xs">
                 {fieldErrors.locationId} — chọn lại hoặc bỏ chọn để tiếp tục.
               </span>
-            )}
-            {locationId && (
-              <button
-                type="button"
-                onClick={() => {
-                  if (fieldErrors.locationId) setFieldErrors((p) => ({ ...p, locationId: undefined }));
-                  setLocationId(null);
-                }}
-                className="text-ink-3 hover:text-ink self-start text-xs underline-offset-4 transition-colors duration-150 ease-quiet hover:underline"
-              >
-                Bỏ chọn địa điểm
-              </button>
             )}
           </div>
         )}
@@ -338,6 +325,30 @@ export default function ReportNewPage() {
                 Theo nhóm “{selectedCategory.name}” · ưu tiên {PRIORITY_LABEL[derivedPriority]}
               </p>
             )}
+
+            {/* Update C: quyền riêng tư của người báo (ẩn danh ⟂ nhạy cảm). */}
+            <div className="flex flex-col gap-2">
+              <p className="text-ink-3 font-mono text-[11px] tracking-[0.18em] uppercase">
+                Quyền riêng tư
+              </p>
+              <ToggleRow
+                checked={anonymous}
+                onChange={setAnonymous}
+                label="Đăng ẩn danh"
+                hint="Tên bạn sẽ ẩn với học sinh và cán bộ; ban giám hiệu vẫn biết để hỗ trợ."
+              />
+              <ToggleRow
+                checked={userSensitive || (selectedCategory?.defaultSensitive ?? false)}
+                onChange={setUserSensitive}
+                label="Đánh dấu nhạy cảm"
+                hint={
+                  selectedCategory?.defaultSensitive
+                    ? "Nhóm này luôn nhạy cảm — chỉ ban giám hiệu xem được."
+                    : "Chỉ ban giám hiệu xem được báo cáo này."
+                }
+                locked={selectedCategory?.defaultSensitive ?? false}
+              />
+            </div>
 
             {/* Đính kèm ảnh — staging client, upload sau khi case tạo thành công (§4 Đợt 2). */}
             <AttachmentUpload caseId={null} hook={uploadHook} disabled={submitting || uploadingAfterCreate} />
@@ -367,5 +378,48 @@ export default function ReportNewPage() {
         )}
       </div>
     </div>
+  );
+}
+
+// Update C: hàng-công-tắc (role=switch) cho lựa chọn riêng tư — đồng giọng ChoiceList (hairline +
+// SignalDot mực). `locked` = category buộc nhạy cảm → hiện đã-bật, KHÔNG tắt được. token-only.
+function ToggleRow({
+  checked,
+  onChange,
+  label,
+  hint,
+  locked,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  label: string;
+  hint?: string;
+  locked?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      disabled={locked}
+      onClick={() => onChange(!checked)}
+      className={cn(
+        "border-line flex w-full items-center gap-3 border-b py-3.5 text-left outline-none transition-colors duration-150 ease-quiet",
+        locked ? "cursor-default opacity-70" : "hover:bg-sunken/60 focus-visible:bg-sunken",
+      )}
+    >
+      <SignalDot tone={checked ? "running" : "dormant"} size="md" />
+      <span className="flex min-w-0 flex-col">
+        <span className={cn("text-sm", checked ? "text-ink font-medium" : "text-ink-2")}>
+          {label}
+          {locked && (
+            <span className="text-ink-3 ml-2 font-mono text-[10px] tracking-wider uppercase">
+              bắt buộc
+            </span>
+          )}
+        </span>
+        {hint && <span className="text-ink-3 mt-0.5 text-xs">{hint}</span>}
+      </span>
+    </button>
   );
 }

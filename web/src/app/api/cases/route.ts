@@ -8,10 +8,37 @@ import { prisma } from "@/lib/prisma";
 import { requireUser, clientMeta } from "@/lib/auth";
 import { recordAudit } from "@/lib/audit";
 import { createCaseSchema, listCasesQuery } from "@/lib/validation";
-import { caseWhereForRole } from "@/lib/cases";
+import { caseWhereForRole, maskCaseIdentity, maskCases } from "@/lib/cases";
 import { classifyMutationError } from "@/lib/http-errors";
 import { AuditAction, CasePriority, CaseStatus } from "@/generated/prisma/client";
 import type { Prisma } from "@/generated/prisma/client";
+
+// Enrich một tập cases với vote aggregate (upCount/downCount/score/myVote). 1 groupBy + 1 findMany
+// = 2 queries cho N cases (không N+1). userId cho myVote.
+async function enrichWithVotes<T extends { id: string }>(
+  cases: T[],
+  userId: string,
+): Promise<(T & { upCount: number; downCount: number; score: number; myVote: 1 | -1 | null })[]> {
+  if (cases.length === 0) return cases.map((c) => ({ ...c, upCount: 0, downCount: 0, score: 0, myVote: null }));
+  const caseIds = cases.map((c) => c.id);
+  const [groups, myVotes] = await Promise.all([
+    prisma.vote.groupBy({
+      by: ["caseId", "value"],
+      where: { caseId: { in: caseIds } },
+      _count: { value: true },
+    }),
+    prisma.vote.findMany({
+      where: { caseId: { in: caseIds }, userId },
+      select: { caseId: true, value: true },
+    }),
+  ]);
+  const myVoteMap = new Map(myVotes.map((v) => [v.caseId, v.value as 1 | -1]));
+  return cases.map((c) => {
+    const upCount = groups.find((g) => g.caseId === c.id && g.value === 1)?._count.value ?? 0;
+    const downCount = groups.find((g) => g.caseId === c.id && g.value === -1)?._count.value ?? 0;
+    return { ...c, upCount, downCount, score: upCount - downCount, myVote: myVoteMap.get(c.id) ?? null };
+  });
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -45,6 +72,7 @@ export async function POST(request: NextRequest) {
 
     const priority = body.priority ?? category.defaultPriority ?? CasePriority.MEDIUM;
     const isSensitive = body.sensitive === true || category.defaultSensitive; // escalate-only
+    const isAnonymous = body.anonymous === true; // Update C: đăng ẩn danh (mask ở serialize)
     const studentFlaggedEmergency = body.emergency === true;
 
     const created = await prisma.case.create({
@@ -56,6 +84,7 @@ export async function POST(request: NextRequest) {
         priority,
         status: CaseStatus.NEW,
         isSensitive,
+        isAnonymous,
         studentFlaggedEmergency,
         isEmergency: false, // cờ chính thức do STAFF/ADMIN/AI duyệt ở P7 — luôn false khi tạo
         createdById: user.id,
@@ -84,6 +113,7 @@ export async function POST(request: NextRequest) {
           status: created.status,
           priority: created.priority,
           isSensitive: created.isSensitive,
+          isAnonymous: created.isAnonymous,
           studentFlaggedEmergency: created.studentFlaggedEmergency,
           categoryId: created.categoryId,
           locationId: created.locationId ?? null,
@@ -92,7 +122,10 @@ export async function POST(request: NextRequest) {
       ...clientMeta(request),
     });
 
-    return NextResponse.json({ case: created }, { status: 201 });
+    const [enrichedCreated] = await enrichWithVotes([created], user.id);
+    // Update C: mask danh tính (no-op cho creator — luôn thấy của mình; pipe để nhất quán).
+    const maskedCreated = maskCaseIdentity(enrichedCreated, { sub: user.id, role: user.role });
+    return NextResponse.json({ case: maskedCreated }, { status: 201 });
   } catch (err) {
     // DB bận/timeout → 503 + Retry-After (parity với status/assign/emergency; FE đã có nhánh 503).
     const mapped = classifyMutationError(err);
@@ -155,8 +188,11 @@ export async function GET(request: NextRequest) {
       }),
     ]);
 
+    const enrichedCases = await enrichWithVotes(cases, user.id);
+    // Update C: mask danh tính người tạo cho case ẩn danh (viewer ∉ {admin,auditor,creator}).
+    const maskedCases = maskCases(enrichedCases, { sub: user.id, role: user.role });
     return NextResponse.json({
-      cases,
+      cases: maskedCases,
       total,
       page,
       totalPages: Math.max(1, Math.ceil(total / limit)),

@@ -1,9 +1,9 @@
 // GET /api/cases/emergency — LANE khẩn cấp: case isEmergency=true (chưa soft-delete).
 //   Case CÔNG KHAI (isSensitive=false): BỎ QUA scope assignment/status của STAFF — mọi STAFF/ADMIN/
 //   AUDITOR thấy hết, kể cả không được giao + status ∉ NEW/TRIAGED (cấp cứu cần phản ứng nhanh).
-//   Case NHẠY CẢM (isSensitive=true): CHỈ hiện cho ADMIN/AUDITOR (giám sát/điều phối toàn cục) + STAFF
-//   ĐƯỢC GIAO (assignedToId=mình) — KHÔNG broadcast nội dung nhạy cảm cho STAFF khác (chính sách đã chốt).
-//   STUDENT → 403 (không có quyền lane).
+//   Case NHẠY CẢM (isSensitive=true) — Update C: CHỈ hiện cho ADMIN/AUDITOR + chính người tạo
+//   (createdById=mình). STAFF ĐƯỢC GIAO KHÔNG còn thấy (siết: bỏ ngoại lệ assignee-staff cũ) —
+//   align sensitivity-gate caseWhereForRole. STUDENT → 403 (không có quyền lane).
 //
 //   ?activeOnly=true → loại case đã RESOLVED/CLOSED (chỉ còn emergency đang mở).
 //   PII-safe: createdBy/assignedTo chỉ id/name(/role); KHÔNG lộ email/sbd/dob. orderBy createdAt desc
@@ -13,6 +13,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
+import { maskCases } from "@/lib/cases";
 import { classifyMutationError } from "@/lib/http-errors";
 import { CaseStatus, Role } from "@/generated/prisma/client";
 import type { Prisma } from "@/generated/prisma/client";
@@ -26,8 +27,9 @@ export async function GET(request: NextRequest) {
 
     const activeOnly = request.nextUrl.searchParams.get("activeOnly") === "true";
 
-    // Case công khai: STAFF thấy hết (bỏ scope). Case nhạy cảm: STAFF chỉ thấy nếu được giao
-    // (assignedToId=mình); ADMIN/AUDITOR thấy tất. activeOnly thêm lọc status đang mở.
+    // Case công khai: STAFF thấy hết (bỏ scope). Case nhạy cảm (Update C): STAFF chỉ thấy nếu CHÍNH
+    // MÌNH tạo (createdById=mình) — bỏ ngoại lệ assignee cũ; ADMIN/AUDITOR thấy tất. activeOnly thêm
+    // lọc status đang mở. Điều kiện sensitivity = sensitivity-gate (đồng nhất caseWhereForRole).
     const where: Prisma.CaseWhereInput = {
       isEmergency: true,
       deletedAt: null,
@@ -35,7 +37,7 @@ export async function GET(request: NextRequest) {
         ? { status: { notIn: [CaseStatus.RESOLVED, CaseStatus.CLOSED] } }
         : {}),
       ...(user.role === Role.STAFF
-        ? { OR: [{ isSensitive: false }, { assignedToId: user.id }] }
+        ? { OR: [{ isSensitive: false }, { createdById: user.id }] }
         : {}),
     };
 
@@ -50,7 +52,9 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    return NextResponse.json({ cases, total: cases.length });
+    // Update C: mask danh tính người tạo cho case ẩn danh trong lane.
+    const maskedCases = maskCases(cases, { sub: user.id, role: user.role });
+    return NextResponse.json({ cases: maskedCases, total: maskedCases.length });
   } catch (err) {
     const mapped = classifyMutationError(err);
     if (mapped) {

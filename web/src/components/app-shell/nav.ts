@@ -40,6 +40,7 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   ],
   STAFF: [
     { label: "Tổng quan", href: "/", icon: ChartBar },
+    { label: "Bảng tin", href: "/feed", icon: Newspaper },
     { label: "Bàn làm việc", href: "/desk", icon: Briefcase },
     { label: "Hàng chờ", href: "/queue", icon: ListChecks },
     { label: "Khẩn cấp", href: "/emergency", icon: Siren },
@@ -47,6 +48,7 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   ],
   ADMIN: [
     { label: "Tổng quan", href: "/", icon: ChartBar },
+    { label: "Bảng tin", href: "/feed", icon: Newspaper },
     { label: "Tất cả vụ việc", href: "/cases", icon: Stack },
     { label: "Hàng chờ", href: "/queue", icon: ListChecks },
     { label: "Khẩn cấp", href: "/emergency", icon: Siren },
@@ -55,6 +57,7 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   ],
   AUDITOR: [
     { label: "Tổng quan", href: "/", icon: ChartBar },
+    { label: "Bảng tin", href: "/feed", icon: Newspaper },
     { label: "Tất cả vụ việc", href: "/cases", icon: Stack },
     { label: "Nhật ký", href: "/audit", icon: ClipboardText },
   ],
