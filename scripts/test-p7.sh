@@ -216,7 +216,7 @@ expect_status "9d. GET lane không cookie" 401 "$s"
 r=$(api "$JAR_EMPTY" GET "/api/dashboard"); s=$(_split_status "$r"); trk "$(_split_body "$r")"
 expect_status "9e. GET dashboard không cookie" 401 "$s"
 
-echo "  → LANE (công khai: 3 vai trò thấy hết; nhạy cảm: chỉ ADMIN/AUDITOR + assignee)"
+echo "  → LANE (công khai: 3 vai trò thấy hết; nhạy cảm: chỉ ADMIN/AUDITOR + creator — Update C siết, bỏ assignee)"
 
 # 10) STAFF GET lane → thấy MỌI emergency, gồm EM_OPEN_2 (IN_PROGRESS, giao admin) + EM_CLOSED
 #     (ngoài scope thường của STAFF) → chứng minh lane bỏ scope. Sort createdAt desc.
@@ -224,8 +224,9 @@ r=$(api "$JAR_STAFF1" GET "/api/cases/emergency"); s=$(_split_status "$r"); b_st
 expect_status "10. STAFF GET lane" 200 "$s"
 has "$b_staff" "$EM_OPEN_2" && ok "10. STAFF thấy EM_OPEN_2 (IN_PROGRESS, giao admin — ngoài scope, công khai)" || no "10. STAFF KHÔNG thấy EM_OPEN_2"
 has "$b_staff" "$EM_CLOSED" && ok "10. STAFF thấy EM_CLOSED (ngoài scope, công khai) → lane bỏ scope" || no "10. STAFF KHÔNG thấy EM_CLOSED"
-# Sensitivity gate: STAFF thấy sensitive emergency ĐƯỢC GIAO mình, KHÔNG thấy sensitive emergency của người khác
-has "$b_staff" "$EM_SENS_STAFF1" && ok "10. STAFF thấy sensitive emergency ĐƯỢC GIAO mình (assignee)" || no "10. STAFF KHÔNG thấy sensitive của mình"
+# Sensitivity gate (Update C): STAFF KHÔNG thấy bất kỳ sensitive emergency nào — kể cả ĐƯỢC GIAO mình
+# (bỏ ngoại lệ assignee cũ). EM_SENS_STAFF1 do creator KHÁC tạo + assign staff1 → staff1 PHẢI KHÔNG thấy.
+has "$b_staff" "$EM_SENS_STAFF1" && no "10. STAFF LỌT sensitive emergency dù được giao (RÒ — Update C đã siết bỏ assignee)" || ok "10. STAFF KHÔNG thấy sensitive emergency dù được giao (Update C: bỏ ngoại lệ assignee)"
 has "$b_staff" "$EM_SENS_UNASSIGNED" && no "10. STAFF LỌT sensitive emergency KHÔNG-được-giao (RÒ RỈ!)" || ok "10. STAFF KHÔNG thấy sensitive emergency không-được-giao (gate đúng)"
 printf '%s' "$b_staff" | node -e 'const d=JSON.parse(require("fs").readFileSync(0,"utf8"));const t=d.cases.map(c=>new Date(c.createdAt).getTime());for(let i=1;i<t.length;i++){if(t[i]>t[i-1]){console.error("không desc tại "+i);process.exit(1)}}' \
   && ok "10. sort createdAt desc" || no "10. KHÔNG sort createdAt desc"
@@ -234,8 +235,8 @@ printf '%s' "$b_staff" | node -e 'const d=JSON.parse(require("fs").readFileSync(
 r=$(api "$JAR_ADMIN" GET "/api/cases/emergency"); s=$(_split_status "$r"); b_admin=$(_split_body "$r"); trk "$b_admin"
 expect_status "11. ADMIN GET lane" 200 "$s"
 ts="$(jnum "$b_staff" total)"; ta="$(jnum "$b_admin" total)"
-# Sau chính sách sensitivity: ADMIN thấy NHIỀU hơn STAFF đúng bằng số sensitive emergency STAFF không được giao.
-{ [ -n "$ts" ] && [ -n "$ta" ] && [ "$ta" -gt "$ts" ]; } && ok "11. ADMIN thấy NHIỀU hơn STAFF (admin=$ta > staff=$ts: sensitive-unassigned ẩn khỏi STAFF)" || no "11. ADMIN($ta) không > STAFF($ts)"
+# Update C: ADMIN thấy NHIỀU hơn STAFF = TẤT CẢ sensitive emergency (cả unassigned LẪN assigned-staff) ẩn khỏi STAFF.
+{ [ -n "$ts" ] && [ -n "$ta" ] && [ "$ta" -gt "$ts" ]; } && ok "11. ADMIN thấy NHIỀU hơn STAFF (admin=$ta > staff=$ts: mọi sensitive emergency ẩn khỏi STAFF)" || no "11. ADMIN($ta) không > STAFF($ts)"
 has "$b_admin" "$EM_SENS_UNASSIGNED" && ok "11. ADMIN thấy sensitive-unassigned emergency (STAFF thì không)" || no "11. ADMIN KHÔNG thấy sensitive-unassigned"
 has "$b_admin" "$EM_OPEN_2" && ok "11. ADMIN thấy EM_OPEN_2" || no "11. ADMIN KHÔNG thấy EM_OPEN_2"
 

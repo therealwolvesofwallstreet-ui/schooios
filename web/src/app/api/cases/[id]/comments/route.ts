@@ -18,7 +18,7 @@ import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUser, clientMeta } from "@/lib/auth";
 import { createCommentSchema } from "@/lib/validation";
-import { caseWhereForRole } from "@/lib/cases";
+import { caseWhereForRole, maskCommentAuthors } from "@/lib/cases";
 import { createNotification } from "@/lib/notifications";
 import { classifyMutationError } from "@/lib/http-errors";
 import { AuditAction, NotificationType, Role } from "@/generated/prisma/client";
@@ -147,9 +147,10 @@ export async function GET(
 
     const { id } = await params;
 
+    // Update C: kèm isAnonymous + createdById để mask author do CHÍNH creator viết (chống de-anon).
     const found = await prisma.case.findFirst({
       where: { id, ...caseWhereForRole({ sub: user.id, role: user.role }) },
-      select: { id: true },
+      select: { id: true, isAnonymous: true, createdById: true },
     });
     if (!found) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
@@ -168,7 +169,14 @@ export async function GET(
       },
     });
 
-    return NextResponse.json({ comments });
+    // Update C: mask author của comment do người tạo case ẩn danh viết (viewer ∉ {admin,auditor,creator}).
+    const maskedComments = maskCommentAuthors(
+      comments,
+      { isAnonymous: found.isAnonymous, createdById: found.createdById },
+      { sub: user.id, role: user.role },
+    );
+
+    return NextResponse.json({ comments: maskedComments });
   } catch (err) {
     console.error("cases [id] comments GET error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

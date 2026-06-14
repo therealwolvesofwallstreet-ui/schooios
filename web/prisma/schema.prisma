@@ -136,6 +136,8 @@ model Case {
   priority                CasePriority @default(MEDIUM)
   status                  CaseStatus   @default(NEW)
   isSensitive             Boolean      @default(false) @map("is_sensitive")
+  // Update C: đăng ẩn danh — che danh tính người tạo ở tầng serialize (createdById vẫn lưu thật).
+  isAnonymous             Boolean      @default(false) @map("is_anonymous")
   isEmergency             Boolean      @default(false) @map("is_emergency")
   studentFlaggedEmergency Boolean      @default(false) @map("student_flagged_emergency")
   createdById             String       @map("created_by")

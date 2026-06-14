@@ -27,6 +27,8 @@ export const createCaseSchema = z.object({
   priority: z.nativeEnum(CasePriority).optional(),
   emergency: z.boolean().optional(),
   sensitive: z.boolean().optional(),
+  // Update C: đăng ẩn danh (che danh tính người tạo ở serialize). default false ở route.
+  anonymous: z.boolean().optional(),
 });
 
 // Query string → coerce sang số; isEmergency là chuỗi "true"/"false" → bool.

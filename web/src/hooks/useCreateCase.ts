@@ -21,8 +21,10 @@ export interface CreateCaseInput {
   priority?: CasePriority;
   /** Ý chí "cần xử lý ngay" của người báo (KHÔNG phải cờ isEmergency chính thức). */
   emergency?: boolean;
-  /** Riêng tư theo loại (server escalate-only). KHÔNG phải isSensitive. */
+  /** Đánh dấu nhạy cảm (server escalate-only). KHÔNG phải isSensitive. */
   sensitive?: boolean;
+  /** Update C: đăng ẩn danh — che danh tính người tạo (server mask ở serialize). */
+  anonymous?: boolean;
 }
 
 export function useCreateCase(opts: { onCreated: (created: CaseListItem) => void }) {

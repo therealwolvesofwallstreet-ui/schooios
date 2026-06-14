@@ -91,6 +91,9 @@ export interface CaseListItem {
   priority: CasePriority;
   status: CaseStatus;
   isSensitive: boolean;
+  // Update C: đăng ẩn danh. Khi true + viewer ∉ {admin,auditor,creator} → server MASK
+  // createdById="anonymous" + createdBy={id:"anonymous",name:"Ẩn danh",role:"STUDENT"}.
+  isAnonymous: boolean;
   isEmergency: boolean;
   studentFlaggedEmergency: boolean;
   createdById: string;
