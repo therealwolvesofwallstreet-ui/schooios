@@ -40,6 +40,11 @@
 - **STAFF**: xem case được giao + status NEW/TRIAGED. Self-assign NEW/TRIAGED. Comment nội bộ. Flip emergency (trong tầm).
 - **ADMIN**: toàn quyền. **AUDITOR**: read-only (mọi mutation → 403). Dashboard chỉ ADMIN/AUDITOR.
 
+### Update C — Nhạy cảm (siết) + Ẩn danh (mask danh tính)
+
+- **Nhạy cảm (`isSensitive`)** — chính sách MỚI: case nhạy cảm CHỈ hiện với **ADMIN + AUDITOR + chính người tạo** (`createdById==viewer`). **STAFF KHÔNG còn thấy case nhạy cảm dù được giao** (siết so với trước; áp dụng list/detail/comments/emergency-lane). Bật bằng request `anonymous`? không — bằng `sensitive` lúc tạo (escalate-only: `sensitive=true` HOẶC `category.defaultSensitive`; user KHÔNG hạ được nếu category buộc). Dashboard chỉ ADMIN/AUDITOR nên count vẫn gồm nhạy cảm (đúng tầm 2 vai này).
+- **Ẩn danh (`isAnonymous`)** — gửi `anonymous:true` lúc tạo. Che HIỂN THỊ danh tính người tạo (⟂ độc lập nhạy cảm, KHÔNG đổi quyền-xem-case). Viewer ∉ {ADMIN, AUDITOR, creator} nhận **`createdById="anonymous"`** + **`createdBy={id:"anonymous",name:"Ẩn danh",role:"STUDENT"}`** + `isAnonymous=true`. ADMIN/AUDITOR/creator nhận `createdBy` THẬT + `isAnonymous=true`. `createdById` thật GIỮ trong DB (quyền "của tôi" + audit). Comment do CHÍNH người tạo viết trên case ẩn danh cũng bị mask author tương tự (chống de-anon). **FE KHÔNG tự suy/unmask** — render đúng giá trị server trả.
+
 ---
 
 ## Contract Freeze Rules
@@ -88,7 +93,7 @@ này TRƯỚC): **tên field** trong shape, **giá trị enum** (chuỗi), **ng�
 
 | Method · Path | Auth/Role | Request | OK | Lỗi |
 |---|---|---|---|---|
-| POST `/api/cases` | mọi role trừ AUDITOR | `{ title(5–200), description(10–5000), categoryId, locationId?, priority?, emergency?, sensitive? }` | 201 `{ case }` | 400 (json/zod/category·location sai) · 401 · 403 (AUDITOR) |
+| POST `/api/cases` | mọi role trừ AUDITOR | `{ title(5–200), description(10–5000), categoryId, locationId?, priority?, emergency?, sensitive?, anonymous? }` | 201 `{ case }` | 400 (json/zod/category·location sai) · 401 · 403 (AUDITOR) |
 | GET `/api/cases` | mọi role | query `?status&isEmergency(true/false)&mine(true)&page(≥1)&limit(1–100,def20)` — `status` nhận **1 giá trị** (`NEW`) **hoặc danh sách phẩy** (`NEW,TRIAGED`); `mine=true` → CHỈ case do chính user tạo (`createdById`, **AND** tầm-nhìn role → KHÔNG nới quyền); tương thích ngược (thiếu param = như cũ) | 200 `{ cases[], total, page, totalPages }` | 400 (query/status rác) · 401 |
 | GET `/api/cases/[id]` | mọi role (lọc theo tầm nhìn) | – | 200 `{ case }` (detail đầy đủ) | 401 · 404 |
 | PATCH `/api/cases/[id]/assign` | ADMIN / STAFF(self, NEW·TRIAGED) | `{ assignedToId }` | 200 `{ case }` | 400 · 401 · 403 · 404 · 409 · 503 |
@@ -218,7 +223,7 @@ này TRƯỚC): **tên field** trong shape, **giá trị enum** (chuỗi), **ng�
 `{ id, email|null, sbd|null, name, role, dob|null, gender|null, admissionYear|null, isActive, mustChangePassword, createdAt, updatedAt }`
 > ⚠ Đây là dữ liệu **của chính người gọi** (PII riêng) — hợp lệ. KHÔNG có endpoint trả PII của user khác (mọi quan hệ chỉ phơi `{id,name,role}`).
 
-**Case (list item)** — `{ ...scalars, category{id,name}, locationRef{id,code,name}|null, createdBy{id,name,role}, assignedTo{id,name}|null }`. Scalars: `id, caseCode, title, description, location|null, locationId|null, categoryId, priority, status, isSensitive, isEmergency, studentFlaggedEmergency, createdById, assignedToId|null, resolvedAt|null, closedAt|null, createdAt, updatedAt` (KHÔNG `deletedAt` — case xóa mềm không bao giờ ra ngoài).
+**Case (list item)** — `{ ...scalars, category{id,name}, locationRef{id,code,name}|null, createdBy{id,name,role}, assignedTo{id,name}|null }`. Scalars: `id, caseCode, title, description, location|null, locationId|null, categoryId, priority, status, isSensitive, isAnonymous, isEmergency, studentFlaggedEmergency, createdById, assignedToId|null, resolvedAt|null, closedAt|null, createdAt, updatedAt` (KHÔNG `deletedAt` — case xóa mềm không bao giờ ra ngoài). **Update C:** `isAnonymous` (bool) ở MỌI shape; khi `isAnonymous=true` ∧ viewer ∉ {ADMIN,AUDITOR,creator} → `createdById="anonymous"` + `createdBy={id:"anonymous",name:"Ẩn danh",role:"STUDENT"}` (mask danh tính). `comments[].author` cũng mask nếu author là người tạo case ẩn danh.
 
 **Case (detail, GET [id])** — như trên + `category`(đầy đủ), `attachments[]{id,fileName,fileSize,mimeType,createdAt,uploadedBy{id,name}}` (**KHÔNG `filePath`** — Signed URL qua `GET /api/attachments/[id]/view`), `statusHistory[]{...,changedBy{id,name,role}}`, `comments[]{...,author{id,name,role}}` (STUDENT lọc internal).
 

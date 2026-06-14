@@ -6,7 +6,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
-import { caseWhereForRole, caseDetailInclude } from "@/lib/cases";
+import { caseWhereForRole, caseDetailInclude, maskCaseDetail } from "@/lib/cases";
 
 export async function GET(
   request: NextRequest,
@@ -62,7 +62,10 @@ export async function GET(
       myVote: (myVoteRow?.value ?? null) as 1 | -1 | null,
     };
 
-    return NextResponse.json({ case: enriched });
+    // Update C: mask danh tính người tạo + comment do creator viết (chống de-anon) khi viewer
+    // ∉ {ADMIN, AUDITOR, creator}. createdById THẬT giữ trong DB — chỉ che ở serialize.
+    const masked = maskCaseDetail(enriched, { sub: user.id, role: user.role });
+    return NextResponse.json({ case: masked });
   } catch (err) {
     console.error("cases [id] GET error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

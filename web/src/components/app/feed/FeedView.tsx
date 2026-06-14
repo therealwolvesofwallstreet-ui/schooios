@@ -12,6 +12,7 @@ import { useCaseList } from "@/hooks/useCaseList";
 import { SignalDot, type SignalTone } from "@/components/ui/SignalDot";
 import { StatusPill } from "@/components/ui/StatusPill";
 import { AgingBadge } from "@/components/ui/AgingBadge";
+import { CaseFlags } from "@/components/ui/CaseFlags";
 import { Hairline } from "@/components/ui/Hairline";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -87,6 +88,7 @@ function FeedRow({ c }: { c: CaseListItem }) {
         </span>
         <StatusPill status={c.status} className="shrink-0" />
         <AgingBadge createdAt={c.createdAt} status={c.status} />
+        <CaseFlags isAnonymous={c.isAnonymous} isSensitive={c.isSensitive} />
       </span>
       <span className="text-ink font-serif text-base leading-snug line-clamp-1">{c.title}</span>
       <span className="text-ink-3 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">

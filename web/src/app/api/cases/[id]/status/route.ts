@@ -16,7 +16,7 @@ import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUser, clientMeta } from "@/lib/auth";
 import { changeStatusSchema } from "@/lib/validation";
-import { caseWhereForRole, caseMutationInclude } from "@/lib/cases";
+import { caseWhereForRole, caseMutationInclude, maskCaseIdentity } from "@/lib/cases";
 import { ConflictError, canTransition, statusSideEffects } from "@/lib/workflow";
 import { classifyMutationError } from "@/lib/http-errors";
 import { maybeTestDelay } from "@/lib/test-hooks";
@@ -121,7 +121,8 @@ export async function PATCH(
     });
 
     const updated = await prisma.case.findUnique({ where: { id }, include: caseMutationInclude });
-    return NextResponse.json({ case: updated });
+    const masked = updated ? maskCaseIdentity(updated, { sub: user.id, role: user.role }) : updated;
+    return NextResponse.json({ case: masked });
   } catch (err) {
     // 409 (thua optimistic-lock / xung đột) · 503 (cạn pool/timeout, retry sau) · 500 (bất ngờ).
     const mapped = classifyMutationError(err);

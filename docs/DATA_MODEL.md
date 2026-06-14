@@ -7,7 +7,7 @@
 | Model | Vai trò | Field đáng chú ý |
 |---|---|---|
 | `User` | Tài khoản 4 role | `email?` unique (STAFF/ADMIN), `sbd?` unique (STUDENT đăng nhập bằng SBD), `passwordHash` (không bao giờ trả về), `role`, `dob?`, `gender?`, `admissionYear?`, `isActive` |
-| `Case` | Sự vụ (trung tâm) | `caseCode` (auto `CASE-YYYY-00001`), `title`, `description`, `location?` (ghi chú text), `locationId?`→Location, `categoryId`, `priority`, `status`, `isSensitive`, `isEmergency`, `studentFlaggedEmergency`, `createdById`, `assignedToId?`, `resolvedAt?`, `closedAt?`, `deletedAt?` (soft delete) |
+| `Case` | Sự vụ (trung tâm) | `caseCode` (auto `CASE-YYYY-00001`), `title`, `description`, `location?` (ghi chú text), `locationId?`→Location, `categoryId`, `priority`, `status`, `isSensitive`, `isAnonymous` (Update C — đăng ẩn danh; default false; che danh tính người tạo ở tầng serialize), `isEmergency`, `studentFlaggedEmergency`, `createdById`, `assignedToId?`, `resolvedAt?`, `closedAt?`, `deletedAt?` (soft delete) |
 | `Category` | Lookup loại sự vụ | `name` unique, `defaultPriority?`, `defaultSensitive`, `isActive` |
 | `Comment` | Trao đổi trong case | `body`, `isInternal` (ẩn với STUDENT), `parentId?` (self-ref 2 tầng, reply CHỈ ADMIN), `deletedAt?` (soft-delete; cascade replies khi xoá gốc) |
 | `Vote` | Vote up/down trên case (Update A) | `value` Int (1=up, -1=down), `userId`→User, `caseId`→Case; `@@unique([userId,caseId])` → chỉ 1 vote/user/case; đổi value = upsert; bỏ = DELETE; FK Restrict |
@@ -42,7 +42,8 @@
 - **Comment thread 2 tầng**: `parentId` nullable (null = gốc, non-null = reply). Reply CHỈ ADMIN tạo; `parent.parentId` phải null (chống lồng >2). Xoá gốc cascade soft-delete replies trong cùng `$transaction`. GET lọc `deletedAt IS NULL`. AuditAction DELETE entityType "Comment" kèm `cascadedReplyIds`.
 - **Immutable ở tầng DB**: `audit_logs`, `case_status_history` có trigger chặn UPDATE/DELETE (xem `web/prisma/migrations/README.md`).
 - **Emergency Hybrid**: `studentFlaggedEmergency` (ý định học sinh) tách `isEmergency` (xác nhận hệ thống/AI).
-- **Sensitivity**: `isSensitive` thủ công (STAFF/ADMIN bật); STUDENT không thấy case sensitive (enforce ở service layer).
+- **Sensitivity (Update C — chính sách MỚI)**: `isSensitive` bật được bởi **người tạo** (checkbox lúc tạo) HOẶC tự escalate từ `category.defaultSensitive` (escalate-only: user KHÔNG hạ được nếu category buộc). Case nhạy cảm **CHỈ hiện với ADMIN + AUDITOR + chính người tạo (`createdById==viewer`)** — ẩn HOÀN TOÀN khỏi học sinh khác VÀ staff (kể cả staff được giao). Áp dụng MỌI endpoint (list/detail/feed/emergency-lane/dashboard-count). Tập trung ở `caseWhereForRole` + align lane/dashboard (KHÔNG rải logic ra route).
+- **Anonymous (Update C — `isAnonymous`)**: che HIỂN THỊ danh tính người tạo (⟂ độc lập với sensitivity, KHÔNG đổi quyền-xem-case). `createdById` trong DB **GIỮ NGUYÊN** (quyền "của tôi" + audit dùng nó) — chỉ MASK ở tầng serialize: viewer ∉ {ADMIN, AUDITOR, creator} nhận `createdById="anonymous"` + `createdBy={id:"anonymous",name:"Ẩn danh",role:"STUDENT"}` + `isAnonymous=true`. Comment do CHÍNH người tạo viết trên case ẩn danh cũng mask author (chống de-anon). Mask tập trung ở 1 hàm trong `lib/cases.ts`; FE KHÔNG tự suy/unmask.
 - **Search**: GIN trigram (`pg_trgm`) trên `cases.title`/`description` cho ILIKE.
 - **Index**: composite bám query path (status/assignedTo/createdBy + createdAt; notifications unread; timeline; audit theo actor/action).
 - **Audit payload**: `metadata` JSON theo convention `{ before, after, ...context }`, ghi qua **một** helper `recordAudit()` + Zod (P3+).

@@ -149,7 +149,7 @@ matrix POST  "/api/cases"                       "$CREATE_BODY" 201 201 201 403 4
 echo "  → A. ASSIGN (mutating-200 trên case riêng; 403 reachable; 403/401 role-gate)"
 cell "A. assign ADMIN→staff1 (C_ASSIGN_ADMIN)"  "$JAR_ADMIN"  PATCH "/api/cases/$C_ASSIGN_ADMIN/assign" "{\"assignedToId\":\"$STAFF1\"}" 200
 cell "A. assign STAFF self (C_ASSIGN_STAFF)"    "$JAR_STAFF1" PATCH "/api/cases/$C_ASSIGN_STAFF/assign" "{\"assignedToId\":\"$STAFF1\"}" 200
-cell "A. assign STAFF owns non-NEW → 403 (C_EMERG)" "$JAR_STAFF1" PATCH "/api/cases/$C_EMERG/assign" "{\"assignedToId\":\"$STAFF1\"}" 403
+cell "A. assign STAFF case nhạy cảm KHÔNG thấy → 404 (Update C, C_EMERG)" "$JAR_STAFF1" PATCH "/api/cases/$C_EMERG/assign" "{\"assignedToId\":\"$STAFF1\"}" 404
 cell "A. assign STUDENT → 403 (role-gate)"      "$JAR_STU1"   PATCH "/api/cases/$C_PUBLIC/assign"   "{\"assignedToId\":\"$STAFF1\"}" 403
 cell "A. assign AUDITOR → 403 (role-gate)"      "$JAR_AUD"    PATCH "/api/cases/$C_PUBLIC/assign"   "{\"assignedToId\":\"$STAFF1\"}" 403
 cell "A. assign ANON → 401"                     "$JAR_EMPTY"  PATCH "/api/cases/$C_PUBLIC/assign"   "{\"assignedToId\":\"$STAFF1\"}" 401
@@ -164,7 +164,7 @@ cell "A. status ANON → 401"                     "$JAR_EMPTY"  PATCH "/api/case
 
 echo "  → A. EMERGENCY (no-op 200; STAFF ngoài-scope → 404; 403/401 role-gate)"
 cell "A. emergency ADMIN no-op (C_EMERG)"       "$JAR_ADMIN"  PATCH "/api/cases/$C_EMERG/emergency"  "{\"isEmergency\":true}" 200
-cell "A. emergency STAFF no-op (C_EMERG owner)" "$JAR_STAFF1" PATCH "/api/cases/$C_EMERG/emergency"  "{\"isEmergency\":true}" 200
+cell "A. emergency STAFF case nhạy cảm KHÔNG thấy → 404 (Update C, C_EMERG)" "$JAR_STAFF1" PATCH "/api/cases/$C_EMERG/emergency"  "{\"isEmergency\":true}" 404
 cell "A. emergency STAFF ngoài-scope → 404 (C_STAFF2)" "$JAR_STAFF1" PATCH "/api/cases/$C_STAFF2/emergency" "{\"isEmergency\":true}" 404
 cell "A. emergency STUDENT → 403 (role-gate)"   "$JAR_STU1"   PATCH "/api/cases/$C_PUBLIC/emergency" "{\"isEmergency\":true}" 403
 cell "A. emergency AUDITOR → 403 (role-gate)"   "$JAR_AUD"    PATCH "/api/cases/$C_PUBLIC/emergency" "{\"isEmergency\":true}" 403
@@ -321,7 +321,7 @@ echo "  → H. EMERGENCY LANE (sort desc + sensitivity gate — không chỉ sta
 r=$(api "$JAR_STAFF1" GET "/api/cases/emergency"); s=$(_split_status "$r"); b_staff=$(_split_body "$r"); trk "$b_staff"
 expect_status "H. STAFF GET lane" 200 "$s"
 has "$b_staff" "$C_EMERG_PUB" && ok "H. STAFF thấy emergency CÔNG KHAI (lane bỏ scope)" || no "H. STAFF KHÔNG thấy C_EMERG_PUB"
-has "$b_staff" "$C_EMERG" && ok "H. STAFF thấy emergency NHẠY CẢM ĐƯỢC GIAO mình" || no "H. STAFF KHÔNG thấy C_EMERG (assignee)"
+has "$b_staff" "$C_EMERG" && no "H. STAFF LỌT emergency NHẠY CẢM dù được giao (RÒ — Update C siết)" || ok "H. STAFF KHÔNG thấy emergency nhạy cảm dù được giao (Update C: bỏ ngoại lệ assignee)"
 has "$b_staff" "$C_EMERG_SENS_UN" && no "H. STAFF LỌT sensitive-unassigned (RÒ RỈ)" || ok "H. STAFF KHÔNG thấy sensitive-unassigned (gate đúng)"
 printf '%s' "$b_staff" | node -e 'const d=JSON.parse(require("fs").readFileSync(0,"utf8"));const t=d.cases.map(c=>new Date(c.createdAt).getTime());for(let i=1;i<t.length;i++){if(t[i]>t[i-1]){console.error("không desc tại "+i);process.exit(1)}}' \
   && ok "H. lane sort createdAt desc (tất định)" || no "H. lane KHÔNG sort desc"

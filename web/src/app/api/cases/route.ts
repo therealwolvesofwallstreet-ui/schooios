@@ -8,7 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser, clientMeta } from "@/lib/auth";
 import { recordAudit } from "@/lib/audit";
 import { createCaseSchema, listCasesQuery } from "@/lib/validation";
-import { caseWhereForRole } from "@/lib/cases";
+import { caseWhereForRole, maskCaseIdentity, maskCases } from "@/lib/cases";
 import { classifyMutationError } from "@/lib/http-errors";
 import { AuditAction, CasePriority, CaseStatus } from "@/generated/prisma/client";
 import type { Prisma } from "@/generated/prisma/client";
@@ -72,6 +72,7 @@ export async function POST(request: NextRequest) {
 
     const priority = body.priority ?? category.defaultPriority ?? CasePriority.MEDIUM;
     const isSensitive = body.sensitive === true || category.defaultSensitive; // escalate-only
+    const isAnonymous = body.anonymous === true; // Update C: đăng ẩn danh (mask ở serialize)
     const studentFlaggedEmergency = body.emergency === true;
 
     const created = await prisma.case.create({
@@ -83,6 +84,7 @@ export async function POST(request: NextRequest) {
         priority,
         status: CaseStatus.NEW,
         isSensitive,
+        isAnonymous,
         studentFlaggedEmergency,
         isEmergency: false, // cờ chính thức do STAFF/ADMIN/AI duyệt ở P7 — luôn false khi tạo
         createdById: user.id,
@@ -111,6 +113,7 @@ export async function POST(request: NextRequest) {
           status: created.status,
           priority: created.priority,
           isSensitive: created.isSensitive,
+          isAnonymous: created.isAnonymous,
           studentFlaggedEmergency: created.studentFlaggedEmergency,
           categoryId: created.categoryId,
           locationId: created.locationId ?? null,
@@ -120,7 +123,9 @@ export async function POST(request: NextRequest) {
     });
 
     const [enrichedCreated] = await enrichWithVotes([created], user.id);
-    return NextResponse.json({ case: enrichedCreated }, { status: 201 });
+    // Update C: mask danh tính (no-op cho creator — luôn thấy của mình; pipe để nhất quán).
+    const maskedCreated = maskCaseIdentity(enrichedCreated, { sub: user.id, role: user.role });
+    return NextResponse.json({ case: maskedCreated }, { status: 201 });
   } catch (err) {
     // DB bận/timeout → 503 + Retry-After (parity với status/assign/emergency; FE đã có nhánh 503).
     const mapped = classifyMutationError(err);
@@ -184,8 +189,10 @@ export async function GET(request: NextRequest) {
     ]);
 
     const enrichedCases = await enrichWithVotes(cases, user.id);
+    // Update C: mask danh tính người tạo cho case ẩn danh (viewer ∉ {admin,auditor,creator}).
+    const maskedCases = maskCases(enrichedCases, { sub: user.id, role: user.role });
     return NextResponse.json({
-      cases: enrichedCases,
+      cases: maskedCases,
       total,
       page,
       totalPages: Math.max(1, Math.ceil(total / limit)),
