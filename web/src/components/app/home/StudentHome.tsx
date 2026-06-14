@@ -86,7 +86,7 @@ export function StudentHome({ user }: { user: SessionUser }) {
         ) : mine.length === 0 ? (
           <Card>
             <EmptyState
-              message="Chưa có hoạt động gần đây."
+              message="Chưa có hoạt động gần đây"
               action={
                 <Link href="/report/new">
                   <Button variant="secondary" size="sm">

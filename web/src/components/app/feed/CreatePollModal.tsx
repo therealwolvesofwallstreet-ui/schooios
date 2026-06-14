@@ -55,18 +55,18 @@ export function CreatePollModal({ open, onClose }: { open: boolean; onClose: () 
     const q = question.trim();
     const opts = options.map((o) => o.text.trim()).filter(Boolean);
     if (!q) {
-      setErr("Câu hỏi không được để trống.");
+      setErr("Câu hỏi không được để trống");
       return;
     }
     if (opts.length < MIN_OPTIONS) {
-      setErr("Cần ít nhất 2 phương án (không trống).");
+      setErr("Cần ít nhất 2 phương án (không trống)");
       return;
     }
     let closesIso: string | undefined;
     if (closesAt) {
       const d = new Date(closesAt);
       if (Number.isNaN(d.getTime())) {
-        setErr("Thời gian đóng không hợp lệ.");
+        setErr("Thời gian đóng không hợp lệ");
         return;
       }
       closesIso = d.toISOString();
@@ -80,7 +80,7 @@ export function CreatePollModal({ open, onClose }: { open: boolean; onClose: () 
         },
         onError: (e) => {
           if (e instanceof ApiError && e.status === 400)
-            setErr("Dữ liệu không hợp lệ (câu hỏi 1–500, 2–8 phương án mỗi cái ≤200 ký tự).");
+            setErr("Dữ liệu không hợp lệ (câu hỏi 1-500, 2-8 phương án mỗi cái ≤200 ký tự)");
         },
       },
     );

@@ -141,9 +141,9 @@ export function LocationPicker({
           ))}
         </div>
       ) : isError ? (
-        <ErrorState compact onRetry={onRetry} message="Không tải được danh sách địa điểm." />
+        <ErrorState compact onRetry={onRetry} message="Không tải được danh sách địa điểm" />
       ) : locations.length === 0 ? (
-        <EmptyState message="Chưa có địa điểm nào." className="py-10" />
+        <EmptyState message="Chưa có địa điểm nào" className="py-10" />
       ) : mode === "list" ? (
         <ListMode
           groups={groups}

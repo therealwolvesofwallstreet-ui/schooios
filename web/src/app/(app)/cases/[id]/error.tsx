@@ -6,7 +6,7 @@
 export default function CaseDetailError({ reset }: { error: Error; reset: () => void }) {
   return (
     <div className="mx-auto flex max-w-xl flex-col items-start gap-3 py-24">
-      <p className="text-ink-3 font-mono text-xs">Không hiển thị được hồ sơ này.</p>
+      <p className="text-ink-3 font-mono text-xs">Không hiển thị được hồ sơ này</p>
       <button
         type="button"
         onClick={reset}

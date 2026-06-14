@@ -25,11 +25,11 @@ export function CreatePostModal({ open, onClose }: { open: boolean; onClose: () 
     setErr(undefined);
     const trimmed = body.trim();
     if (!trimmed) {
-      setErr("Nội dung không được để trống.");
+      setErr("Nội dung không được để trống");
       return;
     }
     if (trimmed.length > 5000) {
-      setErr("Tối đa 5000 ký tự.");
+      setErr("Tối đa 5000 ký tự");
       return;
     }
     create.mutate(
@@ -41,7 +41,7 @@ export function CreatePostModal({ open, onClose }: { open: boolean; onClose: () 
         },
         onError: (e) => {
           if (e instanceof ApiError && e.status === 400)
-            setErr("Nội dung không hợp lệ (1–5000 ký tự).");
+            setErr("Nội dung không hợp lệ (1-5000 ký tự)");
         },
       },
     );

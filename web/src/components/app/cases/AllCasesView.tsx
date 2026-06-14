@@ -111,12 +111,12 @@ export function AllCasesView({ initial = {} }: { initial?: AllCasesInitial }) {
     .map(toBulkItem);
 
   const emptyMessage = facetActive
-    ? "Không có vụ nào thuộc loại này trên trang hiện tại."
+    ? "Không có vụ nào thuộc loại này trên trang hiện tại"
     : emergencyOnly
-      ? "Không có vụ khẩn nào ở lát này."
+      ? "Không có vụ khẩn nào ở lát này"
       : status
-        ? `Không có vụ nào ở trạng thái "${STATUS_LABEL[status]}".`
-        : "Chưa có vụ việc nào.";
+        ? `Không có vụ nào ở trạng thái "${STATUS_LABEL[status]}"`
+        : "Chưa có vụ việc nào";
 
   const chip =
     "focus-visible:outline-ink inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs transition-colors duration-150 ease-quiet focus-visible:outline-2 focus-visible:outline-offset-2";
@@ -175,7 +175,7 @@ export function AllCasesView({ initial = {} }: { initial?: AllCasesInitial }) {
               data-testid="facet-category"
               className={cn(chip, "border-line text-ink-2 hover:text-ink")}
             >
-              Loại: {catName ?? "—"}
+              Loại: {catName ?? "-"}
               <X size={11} weight="bold" />
             </button>
           )}
@@ -232,7 +232,7 @@ export function AllCasesView({ initial = {} }: { initial?: AllCasesInitial }) {
       {isLoading ? (
         <ListSkeleton />
       ) : isError ? (
-        <ErrorState onRetry={() => void refetch()} message="Không tải được danh sách vụ việc." />
+        <ErrorState onRetry={() => void refetch()} message="Không tải được danh sách vụ việc" />
       ) : visible.length === 0 ? (
         <EmptyState message={emptyMessage} />
       ) : (

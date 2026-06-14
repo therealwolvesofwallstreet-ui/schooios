@@ -212,9 +212,9 @@ export function CaseActionPanel({ detail }: { detail: CaseDetail }) {
             {[0, 1, 2].map((i) => <Skeleton key={i} className="h-9 w-full rounded" />)}
           </div>
         ) : staffError ? (
-          <ErrorState compact message="Không tải được danh sách nhân sự." />
+          <ErrorState compact message="Không tải được danh sách nhân sự" />
         ) : staff.length === 0 ? (
-          <p className="text-ink-3 py-4 text-center text-sm">Không có nhân sự nào đang hoạt động.</p>
+          <p className="text-ink-3 py-4 text-center text-sm">Không có nhân sự nào đang hoạt động</p>
         ) : (
           <>
             {openCasesOverCap && (
@@ -269,7 +269,7 @@ function MODAL_COPY(a: PendingAction): { title: string; body: string } {
     case "selfAssign":
       return {
         title: "Nhận xử lý",
-        body: "Bạn sẽ là người phụ trách hồ sơ này.",
+        body: "Bạn sẽ là người phụ trách hồ sơ này",
       };
     case "assign":
       return {
@@ -280,11 +280,11 @@ function MODAL_COPY(a: PendingAction): { title: string; body: string } {
       return a.next
         ? {
             title: "Gắn khẩn cấp",
-            body: "Đánh dấu hồ sơ là KHẨN CẤP chính thức — quản trị sẽ được thông báo.",
+            body: "Đánh dấu hồ sơ là KHẨN CẤP chính thức - quản trị sẽ được thông báo",
           }
         : {
             title: "Gỡ khẩn cấp",
-            body: "Bỏ đánh dấu khẩn cấp chính thức của hồ sơ.",
+            body: "Bỏ đánh dấu khẩn cấp chính thức của hồ sơ",
           };
   }
 }

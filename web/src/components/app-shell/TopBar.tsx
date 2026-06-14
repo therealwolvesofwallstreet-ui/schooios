@@ -92,7 +92,7 @@ export function TopBar({
       )}
 
       <Modal open={confirmOpen} onClose={() => setConfirmOpen(false)} title="Đăng xuất?">
-        <p className="text-ink-2 mb-6 text-sm">Bạn sẽ cần đăng nhập lại để tiếp tục.</p>
+        <p className="text-ink-2 mb-6 text-sm">Bạn sẽ cần đăng nhập lại để tiếp tục</p>
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={() => setConfirmOpen(false)}>
             Ở lại

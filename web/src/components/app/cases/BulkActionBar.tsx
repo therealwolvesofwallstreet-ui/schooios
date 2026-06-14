@@ -101,9 +101,9 @@ export function BulkActionBar({
             {[0, 1, 2].map((i) => <Skeleton key={i} className="h-9 w-full rounded" />)}
           </div>
         ) : staffError ? (
-          <ErrorState compact message="Không tải được danh sách nhân sự." />
+          <ErrorState compact message="Không tải được danh sách nhân sự" />
         ) : staff.length === 0 ? (
-          <p className="text-ink-3 py-4 text-center text-sm">Không có nhân sự nào đang hoạt động.</p>
+          <p className="text-ink-3 py-4 text-center text-sm">Không có nhân sự nào đang hoạt động</p>
         ) : (
           <ul className="flex max-h-72 flex-col gap-1 overflow-y-auto">
             {staff.map((m) => (
@@ -148,7 +148,7 @@ export function BulkActionBar({
 
       {/* Xác nhận đóng */}
       <Modal open={closeConfirmOpen} onClose={() => setCloseConfirmOpen(false)} title={`Đóng ${n} vụ`}>
-        <p className="text-ink-2 text-sm">Xác nhận đóng {n} vụ việc đã chọn? Chỉ vụ đang ở trạng thái RESOLVED mới đóng được; vụ khác sẽ bị bỏ qua và báo lý do.</p>
+        <p className="text-ink-2 text-sm">Xác nhận đóng {n} vụ việc đã chọn? Chỉ vụ đang ở trạng thái RESOLVED mới đóng được; vụ khác sẽ bị bỏ qua và báo lý do</p>
         <div className="mt-6 flex justify-end gap-3">
           <Button variant="ghost" size="sm" onClick={() => setCloseConfirmOpen(false)} disabled={running}>Huỷ</Button>
           <Button size="sm" onClick={() => { void run({ type: "status", status: "CLOSED" }); }} disabled={running}>

@@ -75,10 +75,10 @@ export function BroadcastLane() {
                 <ErrorState
                   compact
                   onRetry={() => void posts.refetch()}
-                  message="Không tải được thông báo."
+                  message="Không tải được thông báo"
                 />
               ) : posts.posts.length === 0 ? (
-                <p className="text-ink-3 text-sm">Chưa có thông báo nào.</p>
+                <p className="text-ink-3 text-sm">Chưa có thông báo nào</p>
               ) : (
                 <>
                   <div className="flex flex-col gap-3">
@@ -101,10 +101,10 @@ export function BroadcastLane() {
                 <ErrorState
                   compact
                   onRetry={() => void polls.refetch()}
-                  message="Không tải được bình chọn."
+                  message="Không tải được bình chọn"
                 />
               ) : polls.polls.length === 0 ? (
-                <p className="text-ink-3 text-sm">Chưa có bình chọn nào.</p>
+                <p className="text-ink-3 text-sm">Chưa có bình chọn nào</p>
               ) : (
                 <>
                   <div className="flex flex-col gap-3">

@@ -42,9 +42,9 @@ export function AttachmentGallery({ attachments, caseId, canMutate, canDelete, c
       await queryClient.invalidateQueries({ queryKey: caseDetailKey(caseId) });
     }
     if (failCount > 0) {
-      push(`${failCount} ảnh chưa tải lên — thử lại.`, "error");
+      push(`${failCount} ảnh chưa tải lên - thử lại`, "error");
     } else if (done.length > 0) {
-      push(`Đã thêm ${done.length} ảnh.`, "success");
+      push(`Đã thêm ${done.length} ảnh`, "success");
       setShowUploader(false);
       uploadHook.clearDone();
     }
@@ -55,10 +55,10 @@ export function AttachmentGallery({ attachments, caseId, canMutate, canDelete, c
     try {
       await api.del(`/api/cases/${caseId}/attachments/${attId}`);
       await queryClient.invalidateQueries({ queryKey: caseDetailKey(caseId) });
-      push("Đã xóa ảnh.", "success");
+      push("Đã xóa ảnh", "success");
       if (lightboxId === attId) setLightboxId(null);
     } catch (e) {
-      push(e instanceof ApiError ? e.message : "Xóa thất bại.", "error");
+      push(e instanceof ApiError ? e.message : "Xóa thất bại", "error");
     } finally {
       setDeleting(null);
     }
@@ -104,7 +104,7 @@ export function AttachmentGallery({ attachments, caseId, canMutate, canDelete, c
 
       {/* Thumbnail grid */}
       {attachments.length === 0 ? (
-        <EmptyState message="Chưa có ảnh đính kèm." />
+        <EmptyState message="Chưa có ảnh đính kèm" />
       ) : (
         <div className="flex flex-wrap gap-2">
           {attachments.map((att) => (

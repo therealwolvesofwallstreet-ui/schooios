@@ -45,7 +45,7 @@ export function NotificationsView() {
         <div className="flex flex-col gap-2">
           <h1 className="text-ink font-serif text-3xl leading-snug">Thông báo</h1>
           <p className="text-ink-3 text-sm" data-testid="unread-summary">
-            {unreadCount > 0 ? `${unreadCount} thông báo chưa đọc.` : "Bạn đã đọc hết."}
+            {unreadCount > 0 ? `${unreadCount} thông báo chưa đọc` : "Bạn đã đọc hết"}
           </p>
         </div>
         <button
@@ -62,9 +62,9 @@ export function NotificationsView() {
       {isLoading ? (
         <ListSkeleton />
       ) : isError ? (
-        <ErrorState onRetry={() => void refetch()} message="Không tải được thông báo." />
+        <ErrorState onRetry={() => void refetch()} message="Không tải được thông báo" />
       ) : notifications.length === 0 ? (
-        <EmptyState message="Chưa có thông báo nào." />
+        <EmptyState message="Chưa có thông báo nào" />
       ) : (
         <>
           <ul data-testid="notification-list" className="flex flex-col">

@@ -51,9 +51,9 @@ export function FeedView() {
         {isLoading ? (
           <FeedSkeleton />
         ) : isError ? (
-          <ErrorState onRetry={() => void refetch()} message="Không tải được bảng tin." />
+          <ErrorState onRetry={() => void refetch()} message="Không tải được bảng tin" />
         ) : cases.length === 0 ? (
-          <EmptyState message="Chưa có tiếng nói nào được chia sẻ." />
+          <EmptyState message="Chưa có tiếng nói nào được chia sẻ" />
         ) : (
           <>
             <p className="text-ink-3 font-mono text-[11px] tracking-[0.12em] tabular-nums">{total} tin</p>

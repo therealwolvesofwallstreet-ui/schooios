@@ -34,7 +34,7 @@ export function ChoiceList({
   onChange,
   isLoading,
   isError,
-  emptyMessage = "Chưa có lựa chọn nào.",
+  emptyMessage = "Chưa có lựa chọn nào",
   onRetry,
   "aria-label": ariaLabel,
 }: ChoiceListProps) {
@@ -54,7 +54,7 @@ export function ChoiceList({
 
   if (isError) {
     // SSOT: cùng giọng lỗi với mọi màn (states.tsx) — `compact` cho ngữ cảnh nội tuyến giữa form.
-    return <ErrorState compact onRetry={onRetry} message="Không tải được danh sách." />;
+    return <ErrorState compact onRetry={onRetry} message="Không tải được danh sách" />;
   }
 
   if (items.length === 0) {

@@ -19,18 +19,18 @@ const MSG_ID = "change-password-msg";
 
 // Mirror hợp đồng change-password (newPassword ≥ 6) — inline, không kéo @/generated/prisma.
 const schema = z.object({
-  currentPassword: z.string().min(1, "Nhập mật khẩu hiện tại."),
-  newPassword: z.string().min(6, "Mật khẩu mới tối thiểu 6 ký tự."),
+  currentPassword: z.string().min(1, "Nhập mật khẩu hiện tại"),
+  newPassword: z.string().min(6, "Mật khẩu mới tối thiểu 6 ký tự"),
 });
 type FormValues = z.infer<typeof schema>;
 
 function cpMessage(err: ApiError | null): string | null {
   if (!err) return null;
   if (err.status === 429)
-    return err.retryAfter ? `Thử lại sau ${err.retryAfter}s.` : "Thử lại sau giây lát.";
-  if (err.status === 401) return "Mật khẩu hiện tại chưa đúng. Thử lại.";
-  if (err.status === 400) return "Mật khẩu mới cần khác mật khẩu hiện tại.";
-  return "Không thể đổi mật khẩu lúc này. Thử lại.";
+    return err.retryAfter ? `Thử lại sau ${err.retryAfter}s` : "Thử lại sau giây lát";
+  if (err.status === 401) return "Mật khẩu hiện tại chưa đúng. Thử lại";
+  if (err.status === 400) return "Mật khẩu mới cần khác mật khẩu hiện tại";
+  return "Không thể đổi mật khẩu lúc này. Thử lại";
 }
 
 export default function ChangePasswordPage() {
@@ -62,10 +62,10 @@ export default function ChangePasswordPage() {
       <div className="flex flex-col gap-8">
         <header className="flex flex-col gap-2">
           <h1 className="text-ink font-serif text-3xl leading-snug">
-            Đây là lần đầu. Đặt mật khẩu của riêng bạn.
+            Đây là lần đầu. Đặt mật khẩu của riêng bạn
           </h1>
           <p className="text-ink-2 text-sm leading-relaxed">
-            Mật khẩu tạm thời chỉ là tấm vé. Chọn một mật khẩu mới để bước vào.
+            Mật khẩu tạm thời chỉ là tấm vé. Chọn một mật khẩu mới để bước vào
           </p>
         </header>
 

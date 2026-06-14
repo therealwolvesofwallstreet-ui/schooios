@@ -19,7 +19,7 @@ export { Skeleton } from "@/components/ui/Skeleton";
  *  ngay khi lỗi hiện. `onRetry` optional: thiếu → chỉ thông điệp, không nút (hiếm). */
 export function ErrorState({
   onRetry,
-  message = "Không tải được dữ liệu.",
+  message = "Không tải được dữ liệu",
   compact = false,
 }: {
   onRetry?: () => void;
@@ -68,8 +68,8 @@ export function DetailSkeleton() {
 /** 403 ĐIỀM TĨNH — mục ngoài quyền (serif 1 dòng, KHÔNG đỏ). Server là nguồn quyền duy nhất; đây chỉ
  *  là mặt UX (nav đã ẩn mục theo role; đây là lưới chắn khi vào thẳng URL). */
 export function PermissionDenied({
-  message = "Mục này nằm ngoài quyền của bạn.",
-  detail = "Nếu bạn cho rằng đây là nhầm lẫn, hãy liên hệ quản trị viên.",
+  message = "Mục này nằm ngoài quyền của bạn",
+  detail = "Nếu bạn cho rằng đây là nhầm lẫn, hãy liên hệ quản trị viên",
 }: {
   message?: string;
   /** Dòng giải thích contextual (vd "Vai trò kiểm toán chỉ lắng nghe…"). Mặc định = câu chung. */
@@ -93,9 +93,9 @@ export function PermissionDenied({
 export function NotFoundState() {
   return (
     <div className="mx-auto flex max-w-xl flex-col items-start gap-4 py-24">
-      <h1 className="text-ink font-serif text-2xl leading-snug">Không tìm thấy hồ sơ này.</h1>
+      <h1 className="text-ink font-serif text-2xl leading-snug">Không tìm thấy hồ sơ này</h1>
       <p className="text-ink-3 text-sm">
-        Có thể hồ sơ không tồn tại, hoặc nằm ngoài tầm bạn được xem.
+        Có thể hồ sơ không tồn tại, hoặc nằm ngoài tầm bạn được xem
       </p>
       <Link
         href="/"
