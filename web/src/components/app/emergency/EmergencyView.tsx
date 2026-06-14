@@ -65,11 +65,11 @@ export function EmergencyView() {
       {isLoading ? (
         <LaneSkeleton />
       ) : isError ? (
-        <ErrorState onRetry={() => void refetch()} message="Không tải được tuyến khẩn cấp." />
+        <ErrorState onRetry={() => void refetch()} message="Không tải được tuyến khẩn cấp" />
       ) : cases.length === 0 ? (
         <EmptyState
           message={
-            activeOnly ? "Không có vụ khẩn cấp nào đang mở." : "Chưa có vụ khẩn cấp nào."
+            activeOnly ? "Không có vụ khẩn cấp nào đang mở" : "Chưa có vụ khẩn cấp nào"
           }
         />
       ) : (

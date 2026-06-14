@@ -52,7 +52,7 @@ function parse400(err: unknown): { fields: FieldErrors; message: string | null }
   for (const issue of body?.details ?? []) {
     const key = issue.path?.[0];
     if (key === "title" || key === "description" || key === "categoryId" || key === "locationId") {
-      fields[key] = issue.message ?? "Giá trị không hợp lệ.";
+      fields[key] = issue.message ?? "Giá trị không hợp lệ";
     }
   }
   return { fields, message: typeof body?.error === "string" ? body.error : null };
@@ -124,14 +124,14 @@ export default function ReportNewPage() {
   // /me lỗi KHÔNG-401 (503/mạng): api.ts CHỈ tự điều hướng khi 401 → ở đây phải hiện lỗi điềm tĩnh
   // + "Thử lại", KHÔNG để màn trắng câm. UX-only (không nới quyền — server vẫn là nguồn quyền).
   if (sessionError) {
-    return <ErrorState onRetry={() => void sessionRefetch()} message="Không tải được phiên làm việc." />;
+    return <ErrorState onRetry={() => void sessionRefetch()} message="Không tải được phiên làm việc" />;
   }
   if (!user) return null; // api.ts đã điều hướng /login khi 401
   if (role === "AUDITOR") {
     return (
       <PermissionDenied
-        message="Mục này dành cho người cất tiếng nói."
-        detail="Vai trò kiểm toán chỉ lắng nghe và lưu khố — không tạo báo cáo."
+        message="Mục này dành cho người cất tiếng nói"
+        detail="Vai trò kiểm toán chỉ lắng nghe và lưu khố - không tạo báo cáo"
       />
     );
   }
@@ -192,7 +192,7 @@ export default function ReportNewPage() {
         setUploadingAfterCreate(false);
         if (failCount > 0) {
           pushToast(
-            `Đã tạo ${theCase.caseCode}; ${failCount} ảnh chưa tải lên — mở hồ sơ để thử lại.`,
+            `Đã tạo ${theCase.caseCode}; ${failCount} ảnh chưa tải lên - mở hồ sơ để thử lại`,
             "info",
           );
         }
@@ -213,7 +213,7 @@ export default function ReportNewPage() {
           else if (fields.locationId) setStep(2);
         } else {
           // 400 không gắn field → message server verbatim (không nuốt thành câu chung mơ hồ).
-          setFormError(message ?? "Thông tin chưa hợp lệ. Kiểm tra lại giúp mình.");
+          setFormError(message ?? "Thông tin chưa hợp lệ. Kiểm tra lại giúp mình");
         }
       }
       // lỗi khác (403/409/429/503/network): useOptimisticMutation đã toast.
@@ -276,7 +276,7 @@ export default function ReportNewPage() {
               isLoading={cats.isLoading}
               isError={cats.isError}
               onRetry={cats.refetch}
-              emptyMessage="Chưa có nhóm sự vụ nào."
+              emptyMessage="Chưa có nhóm sự vụ nào"
             />
             {fieldErrors.categoryId && (
               <span role="alert" className="text-signal font-mono text-xs">
@@ -288,7 +288,7 @@ export default function ReportNewPage() {
 
         {step === 2 && (
           <div className="flex flex-col gap-3">
-            <p className="text-ink-3 text-xs">Không bắt buộc — chọn nơi gần nhất hoặc bỏ qua.</p>
+            <p className="text-ink-3 text-xs">Không bắt buộc - chọn nơi gần nhất hoặc bỏ qua</p>
             <LocationPicker
               value={locationId}
               onChange={(id) => {
@@ -302,7 +302,7 @@ export default function ReportNewPage() {
             />
             {fieldErrors.locationId && (
               <span role="alert" className="text-signal font-mono text-xs">
-                {fieldErrors.locationId} — chọn lại hoặc bỏ chọn để tiếp tục.
+                {fieldErrors.locationId} - chọn lại hoặc bỏ chọn để tiếp tục
               </span>
             )}
           </div>
@@ -313,8 +313,8 @@ export default function ReportNewPage() {
             <ChoiceList
               aria-label="Mức độ khẩn"
               items={[
-                { id: "normal", label: "Bình thường", hint: "Trường sẽ tiếp nhận và sắp xếp xử lý." },
-                { id: "now", label: "Cần xử lý ngay", hint: "Đánh dấu để được ưu tiên xem xét." },
+                { id: "normal", label: "Bình thường", hint: "Trường sẽ tiếp nhận và sắp xếp xử lý" },
+                { id: "now", label: "Cần xử lý ngay", hint: "Đánh dấu để được ưu tiên xem xét" },
               ]}
               value={emergency ? "now" : "normal"}
               onChange={(id) => setEmergency(id === "now")}
@@ -335,7 +335,7 @@ export default function ReportNewPage() {
                 checked={anonymous}
                 onChange={setAnonymous}
                 label="Đăng ẩn danh"
-                hint="Tên bạn sẽ ẩn với học sinh và cán bộ; ban giám hiệu vẫn biết để hỗ trợ."
+                hint="Tên bạn sẽ ẩn với học sinh và cán bộ; ban giám hiệu vẫn biết để hỗ trợ"
               />
               <ToggleRow
                 checked={userSensitive || (selectedCategory?.defaultSensitive ?? false)}
@@ -343,8 +343,8 @@ export default function ReportNewPage() {
                 label="Đánh dấu nhạy cảm"
                 hint={
                   selectedCategory?.defaultSensitive
-                    ? "Nhóm này luôn nhạy cảm — chỉ ban giám hiệu xem được."
-                    : "Chỉ ban giám hiệu xem được báo cáo này."
+                    ? "Nhóm này luôn nhạy cảm - chỉ ban giám hiệu xem được"
+                    : "Chỉ ban giám hiệu xem được báo cáo này"
                 }
                 locked={selectedCategory?.defaultSensitive ?? false}
               />

@@ -84,7 +84,7 @@ export function CampusMap({
   return (
     <div className="flex flex-col gap-3">
       <p className="text-ink-3 text-xs">
-        Chạm một khu để chọn. Khu nhiều phòng (Dãy A–D, Thư viện, Nhà thi đấu) sẽ mở danh sách phòng.
+        Chạm một khu để chọn. Khu nhiều phòng (Dãy A-D, Thư viện, Nhà thi đấu) sẽ mở danh sách phòng
       </p>
 
       <div className="border-line bg-paper-raised relative aspect-[16/11] w-full overflow-hidden rounded-lg border">
@@ -171,7 +171,9 @@ function AreaButton({
         {area.type === "landmark" ? (
           <span className="bg-ink-2/70 h-3/4 w-[2px] rounded-full" />
         ) : (
-          <area.Icon size={14} className="opacity-70" />
+          <span className="px-0.5 text-[8px] leading-[1.1] break-words text-center sm:text-[10px]">
+            {area.refLabel}
+          </span>
         )}
       </div>
     );
@@ -179,7 +181,11 @@ function AreaButton({
 
   const realName = resolved.status === "location" ? resolved.loc.name : resolved.name;
   const ariaLabel =
-    resolved.status === "building" ? `${realName} — mở danh sách phòng` : realName;
+    resolved.status === "building" ? `${realName} - mở danh sách phòng` : realName;
+  // YÊU CẦU: KHÔNG icon trên bản đồ — TRỪ duy nhất cổng trường (entrance). Mọi khu khác chỉ hiện
+  // NHÃN, cho chữ XUỐNG DÒNG (break-words, không truncate) + thu nhỏ font để chữ dài (vd "Nhà thi
+  // đấu đa năng") luôn vừa trong ô, không tràn/biến mất.
+  const isGate = area.type === "entrance";
 
   return (
     <button
@@ -202,10 +208,13 @@ function AreaButton({
         isSelected && tk.fill === "bg-transparent" && "bg-sunken",
       )}
     >
-      <area.Icon size={15} weight={isSelected ? "fill" : "regular"} className="shrink-0" />
-      <span className="hidden truncate px-0.5 text-[10px] leading-tight font-medium sm:block">
-        {realName}
-      </span>
+      {isGate ? (
+        <area.Icon size={15} weight={isSelected ? "fill" : "regular"} className="shrink-0" />
+      ) : (
+        <span className="w-full px-0.5 text-[8px] leading-[1.1] font-medium break-words text-center sm:text-[10px]">
+          {realName}
+        </span>
+      )}
     </button>
   );
 }

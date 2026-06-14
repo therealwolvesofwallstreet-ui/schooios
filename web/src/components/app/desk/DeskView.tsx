@@ -40,41 +40,41 @@ export function DeskView() {
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-12 py-6">
       <header className="flex flex-col gap-2">
-        <h1 className="text-ink font-serif text-3xl leading-snug">Bàn làm việc</h1>
-        <p className="text-ink-3 text-sm">Việc bạn đang gánh, theo từng lăng kính.</p>
+        <h1 className="text-ink font-serif text-3xl leading-snug">Công việc</h1>
+        <p className="text-ink-3 text-sm">Công việc được giao cho bạn</p>
       </header>
 
       {sessionLoading || isLoading ? (
         <DeskSkeleton />
       ) : isError ? (
-        <ErrorState onRetry={() => void refetch()} message="Không tải được bàn làm việc." />
+        <ErrorState onRetry={() => void refetch()} message="Không tải được bàn làm việc" />
       ) : (
         <>
           <Bucket
             k="assigned"
             title="Được giao cho tôi"
             cases={assigned}
-            empty="Bạn chưa được giao vụ nào đang mở."
+            empty="Bạn chưa được giao vụ nào đang mở"
           />
           <Bucket
             k="waiting"
             title="Chờ phản hồi"
             cases={waiting}
-            empty="Không có vụ nào đang chờ phản hồi."
+            empty="Không có vụ nào đang chờ phản hồi"
           />
           <Bucket
             k="priority"
             title="Ưu tiên cao"
             cases={priority}
-            empty="Không có vụ ưu tiên cao nào của bạn."
+            empty="Không có vụ ưu tiên cao nào của bạn"
           />
-          <Bucket k="emergency" title="Khẩn" cases={emergency} empty="Không có vụ khẩn nào của bạn." />
-          <Bucket k="stale" title="Tồn đọng" cases={stale} empty="Không có vụ tồn đọng nào." />
+          <Bucket k="emergency" title="Khẩn" cases={emergency} empty="Không có vụ khẩn nào của bạn" />
+          <Bucket k="stale" title="Tồn đọng" cases={stale} empty="Không có vụ tồn đọng nào" />
           <Bucket
             k="unclaimed"
             title="Đang chờ nhận"
             cases={unclaimed}
-            empty="Không có vụ nào đang chờ nhận."
+            empty="Không có vụ nào đang chờ nhận"
           />
         </>
       )}

@@ -120,10 +120,10 @@ export function AuditView() {
       {isLoading ? (
         <LedgerSkeleton />
       ) : isError ? (
-        <ErrorState onRetry={() => void refetch()} message="Không tải được nhật ký." />
+        <ErrorState onRetry={() => void refetch()} message="Không tải được nhật ký" />
       ) : logs.length === 0 ? (
         <EmptyState
-          message={hasFilter ? "Không có bản ghi khớp bộ lọc." : "Chưa có bản ghi nào."}
+          message={hasFilter ? "Không có bản ghi khớp bộ lọc" : "Chưa có bản ghi nào"}
         />
       ) : (
         <section className="flex flex-col gap-4">

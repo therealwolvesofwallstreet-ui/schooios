@@ -254,7 +254,7 @@ export default function ReleaseBurst({ caseCode, onDone, forceTier }: ReleaseBur
           transition={{ duration: 0.4, ease: EASE, delay: 0.12 }}
           className="text-ink-3 mt-3 max-w-sm text-sm"
         >
-          Hồ sơ đã được mở. Trường sẽ tiếp nhận và phản hồi.
+          Hồ sơ đã được mở. Trường sẽ tiếp nhận và phản hồi
         </motion.p>
 
         {onDone && showCard && (

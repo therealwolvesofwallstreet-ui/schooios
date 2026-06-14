@@ -116,7 +116,7 @@ function ReplyComposer({
     } catch (e) {
       if (e instanceof ApiError && e.status === 400) {
         const b = e.body as { error?: string; details?: { message?: string }[] } | null;
-        setError(b?.details?.[0]?.message ?? b?.error ?? "Nội dung chưa hợp lệ.");
+        setError(b?.details?.[0]?.message ?? b?.error ?? "Nội dung chưa hợp lệ");
       }
     } finally {
       inFlight.current = false;
@@ -173,7 +173,7 @@ export function CommentThread({ caseId, comments }: { caseId: string; comments: 
     } catch (e) {
       if (e instanceof ApiError && e.status === 400) {
         const b = e.body as { error?: string; details?: { message?: string }[] } | null;
-        setError(b?.details?.[0]?.message ?? b?.error ?? "Nội dung chưa hợp lệ.");
+        setError(b?.details?.[0]?.message ?? b?.error ?? "Nội dung chưa hợp lệ");
       }
     } finally {
       inFlight.current = false;
@@ -185,7 +185,7 @@ export function CommentThread({ caseId, comments }: { caseId: string; comments: 
   return (
     <div className="border-line flex flex-col gap-5 border-t pt-6 pl-4">
       {roots.length === 0 && (
-        <p className="text-ink-3 text-sm">Chưa có bình luận nào.</p>
+        <p className="text-ink-3 text-sm">Chưa có bình luận nào</p>
       )}
       {roots.map((root) => {
         const replies = repliesOf(root.id);

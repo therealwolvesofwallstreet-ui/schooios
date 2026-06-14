@@ -69,18 +69,18 @@ export function QueueView() {
   }
 
   const emptyMessage = emergencyOnly
-    ? "Không có vụ khẩn nào ở bước này."
+    ? "Không có vụ khẩn nào ở bước này"
     : filter === "NEW"
-      ? "Không có vụ nào đang chờ tiếp nhận."
+      ? "Không có vụ nào đang chờ tiếp nhận"
       : filter === "TRIAGED"
-        ? "Không có vụ nào đã phân loại."
-        : "Không có vụ nào đang chờ.";
+        ? "Không có vụ nào đã phân loại"
+        : "Không có vụ nào đang chờ";
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-8 py-6">
       <header className="flex flex-col gap-2">
         <h1 className="text-ink font-serif text-3xl leading-snug">Hàng chờ</h1>
-        <p className="text-ink-3 text-sm">Tiếp nhận và phân loại những vụ việc đang chờ.</p>
+        <p className="text-ink-3 text-sm">Tiếp nhận và phân loại những vụ việc đang chờ</p>
       </header>
 
       {/* Lọc SERVER-DRIVEN — tab status + chip khẩn (gạch-chân / tô đậm = active). */}
@@ -123,7 +123,7 @@ export function QueueView() {
       {isLoading ? (
         <QueueSkeleton />
       ) : isError ? (
-        <ErrorState onRetry={() => void refetch()} message="Không tải được hàng chờ." />
+        <ErrorState onRetry={() => void refetch()} message="Không tải được hàng chờ" />
       ) : cases.length === 0 ? (
         <EmptyState message={emptyMessage} />
       ) : (

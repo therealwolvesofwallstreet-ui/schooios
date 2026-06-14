@@ -38,7 +38,7 @@ export function StaffHome({ user }: { user: SessionUser }) {
         transition={{ duration: 0.28, ease: EASE_EMERGE_BEZIER }}
       >
         <h1 className="text-ink font-serif text-3xl leading-snug">Bàn điều phối của bạn</h1>
-        <p className="text-ink-3 text-sm">Tiếp nhận, phân loại và theo dấu vụ việc.</p>
+        <p className="text-ink-3 text-sm">Tiếp nhận, phân loại và theo dấu vụ việc</p>
       </motion.header>
 
       {isLoading ? (
@@ -51,13 +51,13 @@ export function StaffHome({ user }: { user: SessionUser }) {
             title="Vụ của tôi"
             testid="bucket-mine"
             cases={mine}
-            emptyMessage="Bạn chưa nhận vụ nào."
+            emptyMessage="Bạn chưa nhận vụ nào"
           />
           <Bucket
             title="Đang chờ nhận"
             testid="bucket-waiting"
             cases={waiting}
-            emptyMessage="Không có vụ nào đang chờ."
+            emptyMessage="Không có vụ nào đang chờ"
           />
         </>
       )}

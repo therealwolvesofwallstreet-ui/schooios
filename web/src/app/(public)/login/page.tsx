@@ -22,8 +22,8 @@ const MSG_ID = "login-msg";
 // Mirror hợp đồng login (lib/validation.loginSchema) — inline để giữ bundle (public) nhẹ,
 // KHÔNG kéo @/generated/prisma vào client như khi import @/lib/validation.
 const schema = z.object({
-  identifier: z.string().min(1, "Nhập số báo danh hoặc email."),
-  password: z.string().min(1, "Nhập mật khẩu."),
+  identifier: z.string().min(1, "Nhập số báo danh hoặc email"),
+  password: z.string().min(1, "Nhập mật khẩu"),
 });
 type FormValues = z.infer<typeof schema>;
 
@@ -31,10 +31,10 @@ type FormValues = z.infer<typeof schema>;
 function authMessage(err: ApiError | null): string | null {
   if (!err) return null;
   if (err.status === 429)
-    return err.retryAfter ? `Thử lại sau ${err.retryAfter}s.` : "Thử lại sau giây lát.";
-  if (err.status === 403) return "Tài khoản đã bị vô hiệu hóa.";
-  if (err.status === 401 || err.status === 400) return "Không khớp. Thử lại.";
-  return "Không thể đăng nhập lúc này. Thử lại.";
+    return err.retryAfter ? `Thử lại sau ${err.retryAfter}s` : "Thử lại sau giây lát";
+  if (err.status === 403) return "Tài khoản đã bị vô hiệu hóa";
+  if (err.status === 401 || err.status === 400) return "Không khớp. Thử lại";
+  return "Không thể đăng nhập lúc này. Thử lại";
 }
 
 export default function LoginPage() {

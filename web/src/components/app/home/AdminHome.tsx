@@ -49,7 +49,7 @@ export function AdminHome({ readOnly = false }: { readOnly?: boolean }) {
       <header className="flex flex-col gap-2">
         <h1 className="text-ink font-serif text-3xl leading-snug">TỔNG QUAN</h1>
         <p className="text-ink-3 text-sm">
-          {readOnly ? "Chế độ chỉ xem — toàn cảnh hệ thống." : "Toàn cảnh hệ thống sự vụ."}
+          {readOnly ? "Chế độ chỉ xem - toàn cảnh hệ thống" : "Toàn cảnh hệ thống sự vụ"}
         </p>
       </header>
 
@@ -164,7 +164,7 @@ function Ledger({
     <Card>
       <h2 className="text-ink-3 mb-4 font-mono text-[11px] tracking-[0.18em] uppercase">{title}</h2>
       {empty ? (
-        <EmptyState message="Chưa có dữ liệu." className="py-8" />
+        <EmptyState message="Chưa có dữ liệu" className="py-8" />
       ) : (
         <ul className="flex flex-col">
           {rows.map((r, i) => (
@@ -198,7 +198,7 @@ function Rail({
     <Card>
       <h2 className="text-ink-3 mb-4 font-mono text-[11px] tracking-[0.18em] uppercase">{title}</h2>
       {items.length === 0 ? (
-        <EmptyState message="Chưa có dữ liệu." className="py-8" />
+        <EmptyState message="Chưa có dữ liệu" className="py-8" />
       ) : (
         <ul className="flex flex-col gap-2.5">
           {items.map((it) => (
@@ -263,12 +263,12 @@ function StatusBar({ byStatus }: { byStatus: { status: CaseStatus; _count: numbe
         Phân bố trạng thái
       </h2>
       {total === 0 ? (
-        <EmptyState message="Chưa có dữ liệu." className="py-8" />
+        <EmptyState message="Chưa có dữ liệu" className="py-8" />
       ) : (
         <div
           data-testid="chart-status"
           role="group"
-          aria-label="Phân bố trạng thái — chọn một đoạn để mở danh sách"
+          aria-label="Phân bố trạng thái - chọn một đoạn để mở danh sách"
           className="bg-sunken flex h-8 w-full overflow-hidden rounded-md"
         >
           {segments.map(({ s, count }, i) => (
@@ -306,7 +306,7 @@ function CategoryBars({ items }: { items: { id: string; name: string; count: num
     <Card>
       <h2 className="text-ink-3 mb-4 font-mono text-[11px] tracking-[0.18em] uppercase">Theo loại</h2>
       {items.length === 0 ? (
-        <EmptyState message="Chưa có dữ liệu." className="py-8" />
+        <EmptyState message="Chưa có dữ liệu" className="py-8" />
       ) : (
         <ul data-testid="chart-category" className="flex flex-col gap-3">
           {items.map((it, i) => (

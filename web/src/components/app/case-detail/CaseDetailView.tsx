@@ -35,7 +35,7 @@ export function CaseDetailView({ caseId }: { caseId: string }) {
   if (isLoading) return <DetailSkeleton />;
   if (notFound) return <NotFoundState />;
   if (isError || !detail)
-    return <ErrorState onRetry={() => void refetch()} message="Không tải được hồ sơ." />;
+    return <ErrorState onRetry={() => void refetch()} message="Không tải được hồ sơ" />;
 
   // Quyền upload/xem/xóa ảnh (gate server là chân lý; FE chỉ ẩn nút — không giảm bảo mật).
   const canMutate =
@@ -93,7 +93,7 @@ export function CaseDetailView({ caseId }: { caseId: string }) {
 function CaseMeta({ detail }: { detail: CaseDetail }) {
   const rows: Array<[string, string]> = [
     ["Loại", detail.category.name],
-    ["Nơi", detail.locationRef ? `${detail.locationRef.code} · ${detail.locationRef.name}` : "—"],
+    ["Nơi", detail.locationRef ? `${detail.locationRef.code} · ${detail.locationRef.name}` : "-"],
     ["Người báo", detail.createdBy.name],
     ["Phụ trách", detail.assignedTo?.name ?? "Chưa giao"],
     ["Tạo lúc", formatDateTime(detail.createdAt)],

@@ -41,7 +41,7 @@ export function CommentComposer({ caseId }: { caseId: string }) {
     } catch (e) {
       if (e instanceof ApiError && e.status === 400) {
         const b = e.body as { error?: string; details?: { message?: string }[] } | null;
-        setError(b?.details?.[0]?.message ?? b?.error ?? "Nội dung chưa hợp lệ.");
+        setError(b?.details?.[0]?.message ?? b?.error ?? "Nội dung chưa hợp lệ");
       }
       // 403/409/429/503/network → đã toast ở useOptimisticMutation.
     } finally {
