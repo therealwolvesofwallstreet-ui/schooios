@@ -141,7 +141,7 @@ test.describe("C /desk my desk [STAFF]", () => {
     const reqP = page.waitForRequest((r) => isCaseList(r.url()) && r.url().includes("limit=100"));
     await page.goto("/desk");
     await reqP;
-    await expect(page.getByRole("heading", { name: "Bàn làm việc" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Công việc", exact: true })).toBeVisible();
     for (const k of ["assigned", "waiting", "priority", "emergency", "stale", "unclaimed"]) {
       await expect(page.getByTestId(`desk-bucket-${k}`)).toBeVisible();
     }
@@ -205,7 +205,7 @@ test.describe("F matrix — /desk KHÔNG gọi /api/dashboard [STAFF]", () => {
       if (r.url().includes("/api/dashboard")) calls.push(r.url());
     });
     await page.goto("/desk");
-    await page.getByRole("heading", { name: "Bàn làm việc" }).waitFor();
+    await page.getByRole("heading", { name: "Công việc", exact: true }).waitFor();
     await page.waitForTimeout(500);
     expect(calls, "chỉ ADMIN/AUDITOR home gọi /dashboard").toHaveLength(0);
   });

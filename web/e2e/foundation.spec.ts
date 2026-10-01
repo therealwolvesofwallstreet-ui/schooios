@@ -9,7 +9,7 @@ for (const role of ROLES) {
     test("home shell render + screenshot", async ({ page }) => {
       await page.goto("/");
       // Shell sẵn sàng: nav chính (desktop) hoặc topbar (mobile) hiển thị.
-      await expect(page.getByText("LTT SchooIOS").first()).toBeVisible();
+      await expect(page.getByTestId("user-chip")).toBeVisible();
       await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
       await expect(page).toHaveScreenshot(`home-${role}.png`, {
         fullPage: true,
