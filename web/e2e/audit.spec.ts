@@ -42,7 +42,7 @@ test.describe("F4a audit correctness [ADMIN]", () => {
     const filteredP = page.waitForRequest(
       (r) => r.url().includes("/api/audit") && r.url().includes("entityType=Case"),
     );
-    await page.getByTestId("filter-entity-type").fill("Case");
+    await page.getByTestId("filter-entity-type").selectOption("Case");
     await page.getByRole("button", { name: "Áp dụng" }).click();
     await filteredP;
   });

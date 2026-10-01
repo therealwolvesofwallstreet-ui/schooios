@@ -1,7 +1,7 @@
 // F4b EMERGENCY LANE — PERMISSION + SENSITIVITY gate (rủi ro cốt lõi). Auth qua cookie (_fixtures).
 // KHÔNG mock — đánh thẳng backend thật để CHỨNG MINH hợp đồng:
 //   • STUDENT → /api/cases/emergency 403 + màn "ngoài quyền" (KHÔNG render lane).
-//   • ADMIN/STAFF/AUDITOR → 200 + chrome "Tuyến khẩn cấp".
+//   • ADMIN/STAFF/AUDITOR → 200 + tiêu đề "Vụ việc khẩn cấp".
 //   • ?activeOnly SERVER-DRIVEN: tải mặc định mang activeOnly=true; chọn "Tất cả" → request KHÔNG mang.
 // Sensitivity ĐÃ gate ở server (P7: OR[isSensitive=false, assignedToId=me]) — FE chỉ render server trả.
 import { test, expect, authenticate, haveCreds } from "./_fixtures";
@@ -40,13 +40,13 @@ for (const role of ["ADMIN", "STAFF", "AUDITOR"] as RoleKey[]) {
       // Tải mặc định = ĐANG MỞ → query mang activeOnly=true (server-driven).
       expect(resp.url(), "mặc định phải lọc activeOnly=true").toContain("activeOnly=true");
 
-      await expect(page.getByRole("heading", { name: "Tuyến khẩn cấp" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Vụ việc khẩn cấp" })).toBeVisible();
       await expect(page.getByText("ngoài quyền", { exact: false })).toHaveCount(0);
     });
 
     test("toggle 'Tất cả' → request KHÔNG mang activeOnly (server-driven)", async ({ page }) => {
       await page.goto("/emergency");
-      await expect(page.getByRole("heading", { name: "Tuyến khẩn cấp" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Vụ việc khẩn cấp" })).toBeVisible();
 
       const allReqP = page.waitForRequest(
         (r) => r.url().includes("/api/cases/emergency") && !r.url().includes("activeOnly"),

@@ -27,6 +27,8 @@ const SURFACES: { role: RoleKey; name: string; path: string }[] = [
   { role: "ADMIN", name: "home-admin", path: "/" },
   { role: "ADMIN", name: "cases", path: "/cases" },
   { role: "ADMIN", name: "emergency", path: "/emergency" },
+  { role: "STUDENT", name: "notifications", path: "/notifications" },
+  { role: "ADMIN", name: "audit", path: "/audit" },
 ];
 if (process.env.E2E_CASE_ID)
   SURFACES.push({ role: "ADMIN", name: "case-detail", path: `/cases/${process.env.E2E_CASE_ID}` });

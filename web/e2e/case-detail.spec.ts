@@ -20,8 +20,8 @@ const CASE_C = process.env.E2E_CASE_C_ID || "";
 const CAT = process.env.E2E_CAT_NORMAL || "";
 
 const PANEL = "Hành động";
-const INTERNAL_BODY = "[P4FX][Nội bộ] Ghi chú staff.";
-const PUBLIC_BODY = "[P4FX] Bình luận công khai.";
+const INTERNAL_BODY = "Đã báo tổ cơ sở vật chất, dự kiến sửa trong tuần này.";
+const PUBLIC_BODY = "Em bổ sung: quạt bắt đầu hỏng từ sáng thứ Hai.";
 
 // Tạo 1 case TƯƠI (status NEW) bằng quyền của context đã đăng nhập → trả id. Cho test mutation.
 async function freshCase(ctx: BrowserContext, title: string): Promise<string> {
@@ -44,8 +44,8 @@ test.describe("R1 SHAPE — render + Spine + 1 transition [ADMIN]", () => {
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible(); // title serif
     await expect(page.getByText("Chờ tiếp nhận")).toBeVisible(); // StatusPill NEW
     // Spine: origin (mô tả) + comment công khai + comment nội bộ (ADMIN thấy).
-    await expect(page.getByText(PUBLIC_BODY)).toBeVisible();
-    await expect(page.getByText(INTERNAL_BODY)).toBeVisible();
+    await expect(page.getByText(PUBLIC_BODY).first()).toBeVisible();
+    await expect(page.getByText(INTERNAL_BODY).first()).toBeVisible();
     await expect(page.getByText("Nội bộ", { exact: true }).first()).toBeVisible(); // tag NỘI BỘ (không phải tiêu đề)
   });
 
@@ -79,11 +79,11 @@ test.describe("R2 — 404 đồng nhất (không phân biệt không-tồn-tại
 
   test("STUDENT xem case NHẠY CẢM của người khác → 404", async ({ page }) => {
     await page.goto(`/cases/${CASE_A}`);
-    await expect(page.getByText("Không tìm thấy hồ sơ này.")).toBeVisible();
+    await expect(page.getByText("Không tìm thấy hồ sơ này")).toBeVisible();
   });
   test("STUDENT xem case đã xoá mềm → 404", async ({ page }) => {
     await page.goto(`/cases/${CASE_C}`);
-    await expect(page.getByText("Không tìm thấy hồ sơ này.")).toBeVisible();
+    await expect(page.getByText("Không tìm thấy hồ sơ này")).toBeVisible();
   });
 });
 
@@ -94,7 +94,7 @@ test.describe("R2 — STUDENT thấy 0 node nội bộ (server lọc)", () => {
 
   test("STUDENT (chủ case) thấy comment công khai, KHÔNG thấy nội bộ", async ({ page }) => {
     await page.goto(`/cases/${CASE_B}`);
-    await expect(page.getByText(PUBLIC_BODY)).toBeVisible();
+    await expect(page.getByText(PUBLIC_BODY).first()).toBeVisible();
     await expect(page.getByText(INTERNAL_BODY)).toHaveCount(0);
     // exact:true → KHÔNG dính tiêu đề fixture ("…có comment nội bộ"); chỉ đếm tag/toggle thật.
     await expect(page.getByText("Nội bộ", { exact: true })).toHaveCount(0); // 0 tag + 0 toggle (STUDENT)
@@ -106,14 +106,14 @@ test.describe("R2 — STUDENT thấy 0 node nội bộ (server lọc)", () => {
 type Expect = {
   panel: boolean; // CaseActionPanel render?
   statusBtns: number; // số nút "→ ..." = |ALLOWED_NEXT[NEW] ∩ changeStatus|
-  assign: boolean; // nút "Nhận xử lý"
+  assign: boolean; // nút "Nhận xử lý" (self-assign, CHỈ STAFF — ADMIN dùng "Giao cho…" từ F6 1.5)
   emergency: boolean; // nút "Gắn khẩn cấp"
   composer: boolean; // soạn bình luận (comment:public)
 };
 const MATRIX: Record<Exclude<RoleKey, never>, Expect> = {
   STUDENT: { panel: false, statusBtns: 0, assign: false, emergency: false, composer: true },
   STAFF: { panel: true, statusBtns: 1, assign: true, emergency: true, composer: true },
-  ADMIN: { panel: true, statusBtns: 1, assign: true, emergency: true, composer: true },
+  ADMIN: { panel: true, statusBtns: 1, assign: false, emergency: true, composer: true },
   AUDITOR: { panel: false, statusBtns: 0, assign: false, emergency: false, composer: false },
 };
 

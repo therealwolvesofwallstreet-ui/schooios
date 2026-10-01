@@ -6,7 +6,7 @@ import type { BrowserContext } from "@playwright/test";
 
 const CASE_B = process.env.E2E_CASE_B_ID || "";
 const CAT = process.env.E2E_CAT_NORMAL || "";
-const INTERNAL_BODY = "[P4FX][Nội bộ] Ghi chú staff.";
+const INTERNAL_BODY = "Đã báo tổ cơ sở vật chất, dự kiến sửa trong tuần này.";
 
 async function freshCase(ctx: BrowserContext, title: string): Promise<string> {
   const res = await ctx.request.post("/api/cases", {
@@ -82,7 +82,7 @@ test.describe("RT-3 STAFF scope", () => {
     await authenticate(staff, "STAFF");
     const page = await staff.newPage();
     await page.goto(`/cases/${id}`);
-    await expect(page.getByText("Không tìm thấy hồ sơ này.")).toBeVisible();
+    await expect(page.getByText("Không tìm thấy hồ sơ này")).toBeVisible();
     await staff.close();
   });
 });
@@ -95,7 +95,7 @@ test.describe("RT-4 capture states [ADMIN]", () => {
   test("404", async ({ page }) => {
     const w = page.viewportSize()?.width ?? 0;
     await page.goto(`/cases/zzz-nonexistent-id`);
-    await page.getByText("Không tìm thấy hồ sơ này.").waitFor();
+    await page.getByText("Không tìm thấy hồ sơ này").waitFor();
     await page.screenshot({ path: `.verify/shots/state-404-${w}.png` });
   });
 
@@ -106,7 +106,7 @@ test.describe("RT-4 capture states [ADMIN]", () => {
       route.fulfill({ status: 500, contentType: "application/json", body: '{"error":"boom"}' }),
     );
     await page.goto(`/cases/${id}`);
-    await page.getByText("Không tải được hồ sơ.").waitFor();
+    await page.getByText("Không tải được hồ sơ").waitFor();
     await page.screenshot({ path: `.verify/shots/state-error-${w}.png` });
   });
 
