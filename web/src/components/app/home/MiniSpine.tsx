@@ -3,7 +3,7 @@
 // MINI-SPINE — biến thể GỌN của THE SPINE cho trang chủ: danh sách case dọc theo xương 1px, mỗi node
 // là 1 case (link → hồ sơ). First-paint stagger (index×0.04, cap 0.4) gate theo HYDRATE (KHÔNG
 // prefers-reduced-motion — owner "immersive cho mọi người"): SSR tĩnh, sau hydrate stagger cho MỌI
-// người. Dot theo VAI TRÒ: khẩn = emergency (oxblood, HIẾM), còn lại theo STATUS_TONE. KHÔNG chart.
+// người. Dot theo VAI TRÒ: khẩn = emergency (đỏ LTT, HIẾM), còn lại theo STATUS_TONE. KHÔNG chart.
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useHydrated } from "@/hooks/useHydrated";

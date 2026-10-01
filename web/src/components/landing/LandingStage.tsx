@@ -1,6 +1,6 @@
 "use client";
 // LANDING · HIGH tier [ONE-OFF] — nền Landing bằng R3F: fullscreen quad chạy shader (landing-shaders.ts)
-// = phù điêu thạch cao FBM + GỜ CHỮ "Schoo·IOS" khắc nổi + chiếu sáng Lambert trên-trái + hạt giấy.
+// = phù điêu thạch cao FBM + GỜ CHỮ "LTT Schoo·IOS" khắc nổi + chiếu sáng Lambert trên-trái + hạt giấy.
 // frameloop="always": drift RẤT KHẼ (trôi domain khối + đảo nhẹ góc sáng) cho bề mặt "sống" (chữ NEO cố
 // định theo uv). Lớp TRANG TRÍ (Stage bọc aria-hidden) — KHÔNG mang nghĩa; nav/CTA là F2a-2. Màu đọc từ
 // tokens (SSOT) → uniform; KHÔNG dùng signal/accent ở relief. three/R3F SỐNG DUY NHẤT trong chunk lazy

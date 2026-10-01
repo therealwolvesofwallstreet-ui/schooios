@@ -34,7 +34,7 @@ export function useAssignCase(caseId: string) {
   });
 }
 
-// PATCH /emergency — flip cờ CHÍNH THỨC `isEmergency` (KHÁC studentFlaggedEmergency). Edge oxblood
+// PATCH /emergency — flip cờ CHÍNH THỨC `isEmergency` (KHÁC studentFlaggedEmergency). Edge đỏ LTT
 // đổi tại chỗ chính là xác nhận → không cần successMessage.
 export function useFlagEmergency(caseId: string) {
   return useOptimisticMutation<CaseResponse, { isEmergency: boolean; reason?: string }>({

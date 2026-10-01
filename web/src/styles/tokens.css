@@ -1,4 +1,4 @@
-/* SchooIOS design tokens — "Warm Immersive Archive".
+/* LTT SchooIOS design tokens — "Warm Immersive Archive" + accent theo logo trường Lý Tự Trọng.
  * NGUỒN DUY NHẤT cho màu/typeface/radius/easing. Tailwind v4 @theme → sinh utility
  * (bg-paper, text-ink, bg-depth, text-on-depth, font-display, rounded-lg, ease-quiet…).
  * CẤM hardcode hex ngoài file này. SSOT palette: design-vision/DIRECTION-WARM.md.
@@ -6,8 +6,8 @@
  * DUAL SURFACE (xem web/FRONTEND.md):
  *   • Paper — bề mặt vôi-giấy ấm cho ĐỌC/VẬN HÀNH (queue, detail, audit, form).
  *   • Depth — bề mặt nâu sẫm Cowhide cho HERO/SÂN KHẤU/NGƯỠNG CỬA (login, dashboard hero, emergency).
- * Vai trò màu: signal Spiced Wine = THE VOICE / primary action · link Toasted Caramel = hệ thống/tương tác ·
- *   gold Golden Batter = đã ghi nhận/resolved · emergency oxblood = takeover · rare Olive = milestone hiếm ·
+ * Vai trò màu: signal Xanh LTT = THE VOICE / primary action · link Xanh navy = hệ thống/tương tác ·
+ *   gold Golden Batter = đã ghi nhận/resolved · emergency Đỏ LTT = takeover · rare Olive = milestone hiếm ·
  *   authority Cowhide = nền chrome quyền lực · mute Camel = trang trí (KHÔNG body). */
 
 @theme {
@@ -33,13 +33,14 @@
   --color-line-depth-2: rgba(245, 241, 234, 0.24);
 
   /* ---- ACCENTS (theo VAI TRÒ) ---- */
-  --color-signal: #743014; /* THE VOICE / primary action — Spiced Wine (accent DUY NHẤT) */
-  --color-signal-hot: #9e3a1a; /* signal trên depth (nhấc nhẹ) */
-  --color-link: #84592b; /* hệ thống / tương tác / link / focus — Toasted Caramel */
-  --color-link-lift: #a87a3e; /* link trên depth */
+  --color-signal: #00699a; /* THE VOICE / primary action — Xanh LTT (logo #0096d6 hạ sáng → paper-on-signal 5.35:1 AA) */
+  --color-signal-deep: #00547c; /* hover/pressed của signal (paper-on 7.5:1) */
+  --color-signal-hot: #3bb0e6; /* signal trên depth (5.2:1 trên depth) */
+  --color-link: #0a5c8a; /* hệ thống / tương tác / link / focus — Xanh navy (6.4:1 trên paper) */
+  --color-link-lift: #7ccbf0; /* link trên depth (7.1:1) */
   --color-gold: #c99a4a; /* đã ghi nhận / resolved */
   --color-gold-fill: #e8d1a7; /* nền nhạt resolved/acknowledge (Golden Batter) */
-  --color-emergency: #8a2b14; /* oxblood — CHỈ emergency takeover */
+  --color-emergency: #b81d14; /* Đỏ LTT (logo #d62018 hạ sáng, 5.8:1 trên paper) — CHỈ emergency takeover */
   --color-rare: #9d9167; /* milestone / delight hiếm — Olive Harvest */
   --color-authority: #442d1c; /* nền chrome quyền lực (sidebar) — Cowhide */
 

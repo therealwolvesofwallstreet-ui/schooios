@@ -1,11 +1,12 @@
 "use client";
 
-// Sidebar = surface quyền lực (authority = Cowhide #442d1c, KHÔNG navy). Nav theo role; active = signal + mực sáng.
+// Sidebar = surface quyền lực (authority = Cowhide). Nav theo role; active = signal + mực sáng.
 // Icon Phosphor weight "light" (~1.5px). Dùng chung cho rail desktop & drawer mobile.
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { NavItem } from "./nav";
 import { SignalDot } from "@/components/ui/SignalDot";
+import { BrandMark } from "@/components/ui/BrandMark";
 import { cn } from "@/lib/cn";
 
 function isActive(pathname: string, href: string): boolean {
@@ -27,7 +28,7 @@ export function Sidebar({
       className="bg-authority flex h-full w-60 shrink-0 flex-col gap-1 p-4"
     >
       <div className="px-2 py-4">
-        <span className="text-paper text-base font-semibold tracking-tight">SchooIOS</span>
+        <BrandMark size={32} className="text-paper text-base font-semibold tracking-tight" />
         <p className="text-[11px] tracking-wider text-white/60 uppercase">VÌ MỘT NGÔI TRƯỜNG TỐT ĐẸP HƠN</p>
       </div>
 

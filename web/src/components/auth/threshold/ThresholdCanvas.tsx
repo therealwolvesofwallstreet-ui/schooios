@@ -15,9 +15,9 @@ export default function ThresholdCanvas() {
     if (!ctx) return;
 
     const root = getComputedStyle(document.documentElement);
-    const sig = root.getPropertyValue("--color-signal").trim() || "#743014";
+    const sig = root.getPropertyValue("--color-signal").trim() || "#00699a";
     const glow = root.getPropertyValue("--color-on-depth").trim() || "#f5f1ea";
-    const link = root.getPropertyValue("--color-link-lift").trim() || "#a87a3e";
+    const link = root.getPropertyValue("--color-link-lift").trim() || "#7ccbf0";
     // WARM: nền DEPTH Cowhide (thay near-black cũ) + wordmark Cormorant (thay Fraunces) — từ tokens.
     const depth = root.getPropertyValue("--color-depth").trim() || "#442d1c";
     const depthSunken = root.getPropertyValue("--color-depth-sunken").trim() || "#36210f";
@@ -43,7 +43,7 @@ export default function ThresholdCanvas() {
       ctx.fillRect(0, 0, W, H);
 
       // wordmark hai giọng — căn giữa, dưới dấu đỏ
-      const fs = Math.min(W * 0.13, 132);
+      const fs = Math.min(W * 0.11, 120); // chừa chỗ tiền tố "LTT"
       const y = H * 0.56;
       ctx.textBaseline = "middle";
       ctx.textAlign = "left";
@@ -56,8 +56,11 @@ export default function ThresholdCanvas() {
       const wDot = ctx.measureText("·").width;
       ctx.font = sans;
       const wB = ctx.measureText("IOS").width;
+      const wP = ctx.measureText("LTT").width;
       const gap = fs * 0.05;
-      const x0 = (W - (wA + gap + wDot + gap + wB)) / 2;
+      const gapP = fs * 0.22;
+      const xP = (W - (wP + gapP + wA + gap + wDot + gap + wB)) / 2;
+      const x0 = xP + wP + gapP;
       const xDot = x0 + wA + gap;
       const xB = xDot + wDot + gap;
 
@@ -68,7 +71,8 @@ export default function ThresholdCanvas() {
       ctx.fillStyle = onDepth3; // dấu · — camel nối hai giọng
       ctx.fillText("·", xDot, y - fs * 0.04);
       ctx.font = sans;
-      ctx.fillStyle = link; // "IOS" mang accent hệ thống
+      ctx.fillStyle = link; // "LTT" + "IOS" mang accent hệ thống
+      ctx.fillText("LTT", xP, y - fs * 0.02);
       ctx.fillText("IOS", xB, y - fs * 0.02);
     };
     let alive = true;

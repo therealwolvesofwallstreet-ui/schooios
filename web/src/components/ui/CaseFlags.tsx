@@ -1,5 +1,5 @@
 // Update C — badge "Nhạy cảm" (isSensitive) + "Ẩn danh" (isAnonymous). Pill hairline mono, token-only
-// (gold-fill cho nhạy cảm = cần-chú-ý; ink-3 cho ẩn danh = trung tính). KHÔNG đỏ (oxblood để dành khẩn).
+// (gold-fill cho nhạy cảm = cần-chú-ý; ink-3 cho ẩn danh = trung tính). KHÔNG đỏ (đỏ LTT để dành khẩn).
 // Badge nhạy cảm CHỈ hiện cho người ĐÃ thấy case (server đã gate tầm-nhìn); FE chỉ render cờ server trả.
 import { cn } from "@/lib/cn";
 

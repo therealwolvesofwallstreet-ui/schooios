@@ -1,5 +1,5 @@
 // Hàng hồ sơ GỌN dùng chung cho LỚP VẬN HÀNH (AllCasesView /cases + DeskView /desk). Clone QueueRow:
-// signal-gutter theo VAI TRÒ (khẩn = emergency oxblood pulse · NEW = signal pulse · còn lại STATUS_TONE)
+// signal-gutter theo VAI TRÒ (khẩn = emergency đỏ LTT pulse · NEW = signal pulse · còn lại STATUS_TONE)
 // + caseCode mono + StatusPill + title line-clamp + AgingBadge (tuổi client, KHÔNG SLA server) → hồ sơ.
 // KHÔNG reduced-motion. Server là nguồn thứ tự/tầm-nhìn — hàng chỉ trình bày, KHÔNG tự lọc/sort.
 import Link from "next/link";

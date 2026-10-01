@@ -25,7 +25,7 @@ const SWATCHES: { name: string; cls: string; role: string }[] = [
   { name: "line-2", cls: "bg-line-2", role: "hairline đậm" },
   { name: "mute", cls: "bg-mute", role: "trang trí (Camel)" },
   // Accents — theo vai trò
-  { name: "signal", cls: "bg-signal", role: "voice/now (Spiced Wine, hiếm)" },
+  { name: "signal", cls: "bg-signal", role: "voice/now (Xanh LTT, hiếm)" },
   { name: "signal-hot", cls: "bg-signal-hot", role: "signal trên depth" },
   { name: "link", cls: "bg-link", role: "hệ thống/link (Caramel)" },
   { name: "gold", cls: "bg-gold", role: "resolved" },
@@ -79,7 +79,7 @@ export default function StyleguidePage() {
 
       <Section title="Bề mặt tối · Depth (Cowhide)">
         <div className="bg-depth flex flex-col gap-3 rounded-lg p-6">
-          <p className="text-on-depth font-display text-3xl italic">SchooIOS</p>
+          <p className="text-on-depth font-display text-3xl italic">LTT SchooIOS</p>
           <p className="text-on-depth-2 text-sm">
             Văn bản phụ trên nền depth (on-depth-2 · Golden Batter) — đọc rõ, ấm.
           </p>

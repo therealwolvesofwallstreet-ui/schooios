@@ -1,12 +1,12 @@
 // LANDING RELIEF — GLSL cho nền Landing (HIGH tier). Bề mặt THẠCH CAO (plaster) đắp nổi như phù điêu:
-// heightmap = FBM hữu cơ (khối lớn + chi tiết vừa) + GỜ CHỮ "Schoo·IOS" khắc nổi đọc từ texture (R=serif
+// heightmap = FBM hữu cơ (khối lớn + chi tiết vừa) + GỜ CHỮ "LTT Schoo·IOS" khắc nổi đọc từ texture (R=serif
 // Cormorant, G=sans Plex). Pháp tuyến tính từ gradient chiều cao (finite-diff) → CHIẾU SÁNG Lambert một
 // nguồn KEY từ trên-trái (azimuth ~228°, elevation ~58° — khớp design-vision/landing-warm.html), thêm
 // fill mềm. Chất MATTE thuần (KHÔNG specular/glow/neon). Hạt giấy (grain) tinh + drift rất khẽ (trôi
 // domain khối lớn + đảo nhẹ góc sáng theo uTime) cho bề mặt "sống" mà CHỮ vẫn neo cố định (đọc theo vUv).
 //
 // Màu KHÔNG hardcode: bơm qua uniform đọc --color-* từ tokens (SSOT) — KHÔNG dùng signal/accent ở đây
-// (accent #743014 chỉ dành CTA, F2a-2). ShaderMaterial KHÔNG color-managed → truyền thẳng sRGB bytes.
+// (accent signal chỉ dành CTA, F2a-2). ShaderMaterial KHÔNG color-managed → truyền thẳng sRGB bytes.
 // Fullscreen quad: position/uv là attribute three cấp mặc định; vert chỉ chiếu phẳng (bỏ qua camera).
 
 export const LANDING_VERT = /* glsl */ `
@@ -61,7 +61,7 @@ export const LANDING_FRAG = /* glsl */ `
   // dưới, độc lập surfaceScale). Wordmark là phần TẦN-SỐ-CAO duy nhất → gờ chữ sắc nét HERO.
   float heightAt(vec2 uv, float asp){
     // F5d parallax: dịch NỀN phù điêu theo con trỏ (uMouse) ~vài % domain → khối lớn trôi nhẹ = CHIỀU SÂU.
-    // GỜ CHỮ đọc theo uv GỐC (dưới) → neo cố định ⇒ "Schoo·IOS" nổi trên nền trôi (KHÔNG say). uMouse=0 →
+    // GỜ CHỮ đọc theo uv GỐC (dưới) → neo cố định ⇒ "LTT Schoo·IOS" nổi trên nền trôi (KHÔNG say). uMouse=0 →
     // y hệt trước (tĩnh/touch/không pointer KHÔNG đổi gì).
     vec2 p = vec2(uv.x*asp, uv.y) + uMouse * 0.035;
     vec2 drift = vec2(uTime*0.010, uTime*0.005);

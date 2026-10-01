@@ -78,12 +78,13 @@ export default function LandingStatic() {
       {/* wordmark HAI GIỌNG — khắc nhẹ (echo high). Trang trí (aria-hidden); nav children mới mang nghĩa. */}
       <div className="absolute inset-0 flex items-center justify-center" aria-hidden="true">
         <p
-          className="font-display text-mute text-[clamp(44px,13vw,150px)] leading-none"
+          className="font-display text-mute text-[clamp(36px,11vw,130px)] leading-none"
           style={{
             textShadow:
               "-1px -1px 0 var(--color-paper-raised), 1px 1px 2px color-mix(in srgb, var(--color-ink-2) 45%, transparent)",
           }}
         >
+          <span className="mr-[0.2em] font-sans font-semibold">LTT</span>
           <span className="italic">Schoo</span>
           <span className="text-line-2">·</span>
           <span className="font-sans font-semibold">IOS</span>

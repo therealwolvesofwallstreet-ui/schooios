@@ -124,7 +124,7 @@ function readVar(name: string, fallback: string): Swatch {
   return { hex, rgb: hexToRgb(hex) };
 }
 export interface Palette {
-  signal: Swatch; // Spiced Wine — tiếng nói/khẩn
+  signal: Swatch; // Xanh LTT — tiếng nói/khẩn
   link: Swatch; // Toasted Caramel — hệ thống
   gold: Swatch; // Golden Batter idx — đã ghi nhận
   mute: Swatch; // Camel — sợi mạng
@@ -132,8 +132,8 @@ export interface Palette {
 }
 export function readPalette(): Palette {
   return {
-    signal: readVar("--color-signal", "#743014"),
-    link: readVar("--color-link", "#84592B"),
+    signal: readVar("--color-signal", "#00699a"),
+    link: readVar("--color-link", "#0a5c8a"),
     gold: readVar("--color-gold", "#C99A4A"),
     mute: readVar("--color-mute", "#B2967D"),
     line: readVar("--color-line", "#E2D9C8"),

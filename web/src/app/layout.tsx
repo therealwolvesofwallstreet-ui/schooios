@@ -36,7 +36,7 @@ const newsreader = Newsreader({
 });
 
 export const metadata: Metadata = {
-  title: "SchooIOS",
+  title: "LTT SchooIOS",
   description: "Hệ thống vận hành sự vụ học đường số",
 };
 

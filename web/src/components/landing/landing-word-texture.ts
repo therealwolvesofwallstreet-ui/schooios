@@ -1,7 +1,7 @@
-// LANDING WORD TEXTURE — wordmark HAI GIỌNG "Schoo·IOS" đóng vào 1 texture để shader KHẮC NỔI thành gờ
+// LANDING WORD TEXTURE — wordmark HAI GIỌNG "LTT Schoo·IOS" đóng vào 1 texture để shader KHẮC NỔI thành gờ
 // chữ trên thạch cao (KHÁC threshold: ở đây mặt nạ là CHIỀU CAO gờ chữ, không phải reveal):
 //   • R channel = "Schoo" (Cormorant Garamond italic — giọng con người, serif HERO warm)
-//   • G channel = "IOS"   (IBM Plex Sans semibold — giọng hệ thống, sans)
+//   • G channel = "LTT" + "IOS" (IBM Plex Sans semibold — giọng hệ thống, sans)
 // Họ font lấy từ biến next/font (--font-cormorant / --font-plex-sans) ở runtime (next/font sinh tên
 // family băm → KHÔNG hardcode "Cormorant Garamond" literal vì sẽ KHÔNG khớp instance). PHẢI await
 // document.fonts.load trước khi đo/vẽ (fallback đo sai → wordmark lệch khi font về). flipY mặc định của
@@ -36,7 +36,7 @@ export function drawLandingWord(canvas: HTMLCanvasElement, w: number, h: number)
   ctx.fillStyle = "#000";
   ctx.fillRect(0, 0, w, h);
 
-  const fs = Math.min(w * 0.155, 260); // HERO: lớn hơn threshold (chiếm thân màn)
+  const fs = Math.min(w * 0.13, 220); // HERO: lớn hơn threshold (chiếm thân màn); chừa chỗ "LTT"
   const fsB = fs * 0.8;
   const y = h * 0.5;
   ctx.textBaseline = "middle";
@@ -54,11 +54,14 @@ export function drawLandingWord(canvas: HTMLCanvasElement, w: number, h: number)
   ctx.font = sansSpec(fsB);
   if (hasLS) ls.letterSpacing = `${fsB * 0.05}px`;
   const wB = ctx.measureText("IOS").width + fsB * 0.05 * 2;
+  const wP = ctx.measureText("LTT").width + fsB * 0.05 * 2;
   if (hasLS) ls.letterSpacing = "0px";
 
   const gap = fs * 0.06;
-  const total = wA + gap + wDot + gap + wB;
-  const x0 = (w - total) / 2;
+  const gapP = fs * 0.2;
+  const total = wP + gapP + wA + gap + wDot + gap + wB;
+  const xP = (w - total) / 2;
+  const x0 = xP + wP + gapP;
 
   // R = serif "Schoo" (con người) · gờ chữ → đỏ thuần (255,0,0)
   ctx.font = serifSpec(fs);
@@ -71,6 +74,7 @@ export function drawLandingWord(canvas: HTMLCanvasElement, w: number, h: number)
   ctx.font = sansSpec(fsB);
   ctx.fillStyle = "#00ff00";
   if (hasLS) ls.letterSpacing = `${fsB * 0.05}px`;
+  ctx.fillText("LTT", xP, y - fs * 0.02);
   ctx.fillText("IOS", x0 + wA + gap + wDot + gap, y - fs * 0.02);
   if (hasLS) ls.letterSpacing = "0px";
 }

@@ -72,7 +72,7 @@ function ThresholdField({ wordTex }: { wordTex: Texture }) {
         uRes: { value: new Vector2(size.width, size.height) },
         uMouse: { value: new Vector2(0.5, 0.5) },
         uWord: { value: wordTex },
-        uSignal: { value: tokenColor("--color-signal", "#743014") },
+        uSignal: { value: tokenColor("--color-signal", "#00699a") },
         // Nền ngưỡng cửa = DEPTH Cowhide warm (token-only) — thay near-black cũ.
         uVoid: { value: tokenColor("--color-depth", "#442d1c") },
         uDeep: { value: tokenColor("--color-depth-sunken", "#36210f") },

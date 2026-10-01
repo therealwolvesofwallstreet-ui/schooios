@@ -1,9 +1,9 @@
 "use client";
 
 // /emergency — TUYẾN KHẨN (ADMIN/STAFF/AUDITOR; STUDENT → 403 → PermissionDenied, KHÔNG render lane).
-// Giọng "takeover" GỌN cho vận hành: chrome khẩn THƯỜNG TRỰC trên bề mặt Depth (Cowhide) + nhịp oxblood
+// Giọng "takeover" GỌN cho vận hành: chrome khẩn THƯỜNG TRỰC trên bề mặt Depth (Cowhide) + nhịp đỏ LTT
 // "thở" (SignalDot pulse — opt-out duy nhất = globals.css reduced-motion; KHÔNG gate runtime). Danh sách
-// tái dùng MiniSpine (mọi case isEmergency → dot oxblood pulse) → điều hướng hồ sơ. Toggle ?activeOnly
+// tái dùng MiniSpine (mọi case isEmergency → dot đỏ LTT pulse) → điều hướng hồ sơ. Toggle ?activeOnly
 // SERVER-DRIVEN (loại RESOLVED/CLOSED). Sensitivity ĐÃ gate ở server — FE KHÔNG tự lọc. States dùng chung.
 import { useState } from "react";
 import { useEmergencyQueue } from "@/hooks/useEmergencyQueue";
@@ -24,9 +24,9 @@ export function EmergencyView() {
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-8 py-6">
-      {/* CHROME KHẨN thường trực — bề mặt Depth + nhịp oxblood "thở" (pulse luôn chạy). */}
+      {/* CHROME KHẨN thường trực — bề mặt Depth + nhịp đỏ LTT "thở" (pulse luôn chạy). */}
       <header className="bg-depth relative overflow-hidden rounded-lg px-6 py-6 sm:px-8 sm:py-7">
-        {/* Lằn oxblood mép trái — dấu khẩn thường trực. */}
+        {/* Lằn đỏ LTT mép trái — dấu khẩn thường trực. */}
         <span aria-hidden="true" className="bg-emergency absolute inset-y-0 left-0 w-1" />
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-col gap-2">

@@ -1,6 +1,6 @@
 // THE SIGNAL — motif lõi. Một dấu nhỏ mang nghĩa theo VAI TRÒ màu:
 //  signal = voice/now/cần-chú-ý (HIẾM) · gold = resolved/đã-ghi-nhận · running = đang-chạy (ink) ·
-//  dormant = ngủ (viền rỗng) · emergency = khẩn (oxblood). pulse = "thở" (opacity, KHÔNG shimmer).
+//  dormant = ngủ (viền rỗng) · emergency = khẩn (đỏ LTT). pulse = "thở" (opacity, KHÔNG shimmer).
 import { cn } from "@/lib/cn";
 
 export type SignalTone = "signal" | "gold" | "running" | "dormant" | "emergency";

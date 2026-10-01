@@ -12,7 +12,7 @@ import { z } from "zod";
 import { ThresholdScene } from "@/components/motion/landing/ThresholdScene";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { SignalDot } from "@/components/ui/SignalDot";
+import { BrandEmblem } from "@/components/ui/BrandMark";
 import { useLogin } from "@/hooks/useLogin";
 import { useHydrated } from "@/hooks/useHydrated";
 import type { ApiError } from "@/lib/api";
@@ -69,7 +69,7 @@ export default function LoginPage() {
       {/* Đầu thẻ TỐI GIẢN — wordmark + ink-field NỀN gánh khoảnh khắc; card chỉ là cổng vào.
        * (KHÔNG nhồi manifesto vào thẻ — để hero immersive thở.) */}
       <div className="mb-9 flex items-center gap-3">
-        <SignalDot tone="signal" size="md" pulse />
+        <BrandEmblem size={36} priority />
         <span className="text-on-depth-2 font-mono text-[11px] tracking-[0.22em] uppercase">
           Bước vào lưu khố
         </span>

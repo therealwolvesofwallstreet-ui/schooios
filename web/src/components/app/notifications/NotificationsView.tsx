@@ -21,7 +21,7 @@ import type { NotificationDTO, NotificationType } from "@/lib/api-types";
 
 const PAGE_SIZE = 20;
 
-// Dấu theo LOẠI: khẩn xác nhận = emergency (oxblood, pulse — HIẾM) · resolved = gold (đã ghi nhận) ·
+// Dấu theo LOẠI: khẩn xác nhận = emergency (đỏ LTT, pulse — HIẾM) · resolved = gold (đã ghi nhận) ·
 // còn lại = signal (tiếng nói). Chỉ hiện khi CHƯA đọc.
 const TYPE_TONE: Record<NotificationType, SignalTone> = {
   EMERGENCY_CONFIRMED: "emergency",

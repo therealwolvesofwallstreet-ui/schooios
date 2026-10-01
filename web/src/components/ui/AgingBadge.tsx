@@ -2,7 +2,7 @@
 
 // AGING BADGE — pill mono chỉ-báo TỒN-ĐỌNG (tuổi tính client từ createdAt; xem lib/case-aging.ts).
 // CHỈ hiện khi vụ còn MỞ ∧ tier≠fresh. Thang màu trong họ GOLD (đã-ghi-nhận/cần-chú-ý) — KHÔNG đỏ
-// (đỏ = oxblood emergency dành cho khẩn thật): aging = gold-fill nhạt · stale = gold đậm (đầy, nhấn).
+// (đỏ = đỏ LTT emergency dành cho khẩn thật): aging = gold-fill nhạt · stale = gold đậm (đầy, nhấn).
 // 0 hex hardcode (token gold/gold-fill/ink). RESOLVED/CLOSED → KHÔNG render.
 import { caseAge } from "@/lib/case-aging";
 import type { CaseStatus } from "@/lib/api-types";

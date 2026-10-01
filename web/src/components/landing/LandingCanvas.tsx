@@ -1,6 +1,6 @@
 "use client";
 // LANDING · MID tier [PATTERN] — Canvas 2D cho mobile/máy yếu/không-WebGL2: nền THẠCH CAO ấm (gradient
-// định hướng góc trên-trái, khớp ánh sáng az~228°) + wordmark HAI GIỌNG "Schoo·IOS" khắc nổi GIẢ-relief
+// định hướng góc trên-trái, khớp ánh sáng az~228°) + wordmark HAI GIỌNG "LTT Schoo·IOS" khắc nổi GIẢ-relief
 // (shadow cocoa lệch dưới-phải + highlight raised lệch trên-trái + thân plaster) → giữ ĐÚNG centerpiece
 // như high tier, rẻ. Vẽ MỘT lần (tĩnh — calm, KHÔNG đốt pin); repaint khi resize. Màu/họ-font đọc từ
 // tokens (SSOT). Lớp TRANG TRÍ (Stage bọc aria-hidden) — nav/tagline là children z-10. KHÔNG three.
@@ -61,7 +61,7 @@ export default function LandingCanvas() {
       ctx.globalAlpha = 1;
 
       // wordmark hai giọng — căn giữa, khắc nổi giả-relief (shadow + highlight + thân plaster).
-      const fs = Math.min(W * 0.13, 150);
+      const fs = Math.min(W * 0.11, 130); // chừa chỗ tiền tố "LTT"
       const fsB = fs * 0.8;
       const y = H * 0.5;
       ctx.textBaseline = "middle";
@@ -76,8 +76,11 @@ export default function LandingCanvas() {
       const wDot = ctx.measureText("·").width;
       ctx.font = sans(fsB);
       const wB = ctx.measureText("IOS").width;
+      const wP = ctx.measureText("LTT").width;
       const gap = fs * 0.06;
-      const x0 = (W - (wA + gap + wDot + gap + wB)) / 2;
+      const gapP = fs * 0.2;
+      const xP = (W - (wP + gapP + wA + gap + wDot + gap + wB)) / 2;
+      const x0 = xP + wP + gapP;
       const xDot = x0 + wA + gap;
       const xB = xDot + wDot + gap;
 
@@ -90,6 +93,7 @@ export default function LandingCanvas() {
         ctx.font = serif(fs * 0.62);
         ctx.fillText("·", xDot + dx, y - fs * 0.04 + dy);
         ctx.font = sans(fsB);
+        ctx.fillText("LTT", xP + dx, y - fs * 0.02 + dy);
         ctx.fillText("IOS", xB + dx, y - fs * 0.02 + dy);
       };
 

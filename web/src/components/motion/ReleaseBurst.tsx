@@ -5,7 +5,7 @@
 // particle; bản particle cũ "nhanh/kì/xấu" đã bỏ):
 //   ① chấm xuất hiện · ② vòng sóng lan tỏa · ③ các node (đúng người) hiện · ④ đường kết nối hình thành ·
 //   ⑤ hành trình xử lý hé lộ · ⑥ tín hiệu xác nhận ✓ · ⑦ thẻ "đã ghi nhận" + Case ID + nút Mở hồ sơ.
-// Tông ẤM: --color-signal (Spiced Wine, KHÔNG đỏ tươi) · --color-mute (camel) · --color-ink*. Ease-out only
+// Tông ẤM: --color-signal (Xanh LTT) · --color-mute (camel) · --color-ink*. Ease-out only
 // (EASE_EMERGE). DỪNG ở nhịp ⑦ + nút "Mở hồ sơ" — caller điều hướng /cases/[id] (KHÔNG tự nhảy về home).
 // 3-tier: reduced → thẻ TĨNH tức thì (KHÔNG narrative). A11y: vùng role=status (Case ID + lời xác nhận)
 // render TỪ MOUNT + focus tiêu đề lúc mount → SR/keyboard đáp xuống xác nhận NGAY (không đợi ~5s); lớp SVG
