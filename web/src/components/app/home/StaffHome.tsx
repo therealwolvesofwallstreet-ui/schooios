@@ -37,7 +37,7 @@ export function StaffHome({ user }: { user: SessionUser }) {
         animate={staticFirst ? undefined : { opacity: 1, y: 0 }}
         transition={{ duration: 0.28, ease: EASE_EMERGE_BEZIER }}
       >
-        <h1 className="text-ink font-serif text-3xl leading-snug">Bàn điều phối của bạn</h1>
+        <h1 className="text-ink font-serif text-3xl leading-snug">Tổng quan các công việc của bạn</h1>
         <p className="text-ink-3 text-sm">Tiếp nhận, phân loại và theo dấu vụ việc</p>
       </motion.header>
 
@@ -48,7 +48,7 @@ export function StaffHome({ user }: { user: SessionUser }) {
       ) : (
         <>
           <Bucket
-            title="Vụ của tôi"
+            title="Các vụ việc cần được giải quyết"
             testid="bucket-mine"
             cases={mine}
             emptyMessage="Bạn chưa nhận vụ nào"
@@ -78,9 +78,9 @@ function Bucket({
 }) {
   return (
     <section className="flex flex-col gap-4" data-testid={testid}>
-      <h2 className="text-ink-3 flex items-center gap-2 font-mono text-[11px] tracking-[0.18em] uppercase">
+      <h2 className="text-ink-3 flex items-center gap-2 font-mono text-xs">
         {title}
-        <span className="text-ink-3/70">· {cases.length}</span>
+        <span className="bg-sunken text-ink-2 rounded-md px-1.5 py-0.5 text-xs tabular-nums">{cases.length}</span>
       </h2>
       {cases.length === 0 ? (
         <Card>

@@ -7,29 +7,24 @@
 // Mono ID/timestamp. KHÔNG reduced-motion (immersive cho mọi người — gate motion KHÔNG có).
 import { useState } from "react";
 import Link from "next/link";
-import { AnimatePresence, motion } from "framer-motion";
 import { useNotifications, useReadAll } from "@/hooks/useNotifications";
-import { formatDateTime } from "@/lib/case-display";
-import { SignalDot, type SignalTone } from "@/components/ui/SignalDot";
+import { formatDateTime, STATUS_LABEL } from "@/lib/case-display";
 import { Hairline } from "@/components/ui/Hairline";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Pager } from "@/components/ui/Pager";
 import { ErrorState } from "@/components/app/states";
 import { cn } from "@/lib/cn";
-import type { NotificationDTO, NotificationType } from "@/lib/api-types";
+import type { CaseStatus, NotificationDTO } from "@/lib/api-types";
 
 const PAGE_SIZE = 20;
 
-// Dấu theo LOẠI: khẩn xác nhận = emergency (đỏ LTT, pulse — HIẾM) · resolved = gold (đã ghi nhận) ·
-// còn lại = signal (tiếng nói). Chỉ hiện khi CHƯA đọc.
-const TYPE_TONE: Record<NotificationType, SignalTone> = {
-  EMERGENCY_CONFIRMED: "emergency",
-  CASE_RESOLVED: "gold",
-  CASE_ASSIGNED: "signal",
-  STATUS_CHANGED: "signal",
-  COMMENT_ADDED: "signal",
-};
+// Server ghi message đổi-trạng-thái dạng "CASE-…: RESOLVED → CLOSED" (enum tiếng Anh, đã lưu sẵn trong DB).
+// Dịch lúc HIỂN THỊ sang nhãn Việt: "CASE-…: Đã giải quyết → Đã đóng" (cả thông báo cũ lẫn mới).
+const STATUS_TOKEN = new RegExp("(?<![A-Z_])(" + Object.keys(STATUS_LABEL).join("|") + ")(?![A-Z_])", "g");
+function localizeMessage(message: string): string {
+  return message.replace(STATUS_TOKEN, (m) => STATUS_LABEL[m as CaseStatus]);
+}
 
 export function NotificationsView() {
   const [page, setPage] = useState(1);
@@ -83,33 +78,28 @@ export function NotificationsView() {
 }
 
 function NotificationRow({ n }: { n: NotificationDTO }) {
-  const tone = TYPE_TONE[n.type] ?? "signal";
+  // Chưa đọc = nền xanh nhạt + chữ đậm + nhãn "Mới" (KHÔNG dấu chấm). Đã đọc = nền trong, chữ thường.
   const inner = (
-    <div className="flex items-start gap-3 py-3.5">
-      {/* cột dấu cố định 8px: dấu "tiếng nói" chưa-đọc → TAN khi đọc (exit fade/scale) */}
-      <span className="mt-1.5 flex w-2 shrink-0 justify-center">
-        <AnimatePresence initial={false}>
-          {!n.isRead && (
-            <motion.span
-              key="dot"
-              exit={{ opacity: 0, scale: 0.5 }}
-              transition={{ duration: 0.3, ease: [0.22, 0.61, 0.36, 1] }}
-            >
-              <SignalDot tone={tone} size="sm" pulse={tone === "emergency"} />
-            </motion.span>
-          )}
-        </AnimatePresence>
-      </span>
+    <div
+      className={cn(
+        "flex items-start justify-between gap-3 rounded-md px-3 py-3.5 transition-colors duration-300 ease-quiet",
+        !n.isRead && "bg-gold-fill/60",
+      )}
+    >
       <div className="flex min-w-0 flex-col gap-1">
         <p className={cn("text-sm leading-snug", n.isRead ? "text-ink-2" : "text-ink font-medium")}>
-          {n.message}
+          {localizeMessage(n.message)}
         </p>
-        <span className="text-ink-3 flex items-center gap-2 font-mono text-[11px] tracking-[0.08em]">
-          {n.case && <span className="tracking-[0.12em]">{n.case.caseCode}</span>}
-          {n.case && <span aria-hidden="true">·</span>}
+        <span className="text-ink-3 flex flex-wrap items-center gap-x-4 font-mono text-xs">
+          {n.case && <span>{n.case.caseCode}</span>}
           <time dateTime={n.createdAt}>{formatDateTime(n.createdAt)}</time>
         </span>
       </div>
+      {!n.isRead && (
+        <span className="bg-signal text-paper-raised shrink-0 rounded-md px-2 py-0.5 text-xs font-medium">
+          Mới
+        </span>
+      )}
     </div>
   );
 
@@ -117,13 +107,13 @@ function NotificationRow({ n }: { n: NotificationDTO }) {
     return (
       <Link
         href={`/cases/${n.case.id}`}
-        className="focus-visible:outline-ink -mx-2 rounded-md px-2 transition-colors duration-150 ease-quiet hover:bg-sunken focus-visible:outline-2 focus-visible:outline-offset-2"
+        className="focus-visible:outline-ink -mx-3 block rounded-md transition-colors duration-150 ease-quiet hover:bg-sunken focus-visible:outline-2 focus-visible:outline-offset-2"
       >
         {inner}
       </Link>
     );
   }
-  return inner;
+  return <div className="-mx-3">{inner}</div>;
 }
 
 function ListSkeleton() {
@@ -131,7 +121,6 @@ function ListSkeleton() {
     <div className="flex flex-col gap-5" data-testid="notifications-skeleton">
       {[0, 1, 2, 3].map((i) => (
         <div key={i} className="flex items-start gap-3">
-          <Skeleton className="mt-1.5 h-2 w-2 rounded-full" />
           <div className="flex flex-1 flex-col gap-2">
             <Skeleton className="h-4 w-3/4" />
             <Skeleton className="h-3 w-40" />

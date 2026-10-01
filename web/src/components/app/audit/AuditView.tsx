@@ -30,6 +30,19 @@ const ACTION_LABEL: Record<AuditAction, string> = {
   SENSITIVE_FLAG: "Cờ nhạy cảm",
 };
 
+// entityType do server ghi bằng tên model (tiếng Anh) → hiển thị nhãn Việt.
+const ENTITY_LABEL: Record<string, string> = {
+  Case: "Vụ việc",
+  Comment: "Bình luận",
+  Attachment: "Ảnh đính kèm",
+  Vote: "Đánh giá vụ việc",
+  Post: "Thông báo",
+  PostVote: "Lượt thích thông báo",
+  Poll: "Bình chọn",
+  PollVote: "Phiếu bình chọn",
+  User: "Tài khoản",
+};
+
 const ROLE_LABEL: Record<Role, string> = {
   STUDENT: "HS",
   STAFF: "Nhân sự",
@@ -88,18 +101,27 @@ export function AuditView() {
         className="flex flex-col gap-4 sm:flex-row sm:items-end"
       >
         <div className="flex-1">
-          <Input
-            label="Loại thực thể"
-            placeholder="vd: Case, Comment, User"
-            value={draftType}
-            onChange={(e) => setDraftType(e.target.value)}
-            data-testid="filter-entity-type"
-          />
+          <label className="flex flex-col gap-1.5">
+            <span className="text-ink-3 text-xs font-medium">Loại đối tượng</span>
+            <select
+              value={draftType}
+              onChange={(e) => setDraftType(e.target.value)}
+              data-testid="filter-entity-type"
+              className="border-line text-ink focus:border-ink w-full border-0 border-b bg-transparent px-0 py-2 text-sm outline-none"
+            >
+              <option value="">Tất cả</option>
+              {Object.entries(ENTITY_LABEL).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
         <div className="flex-1">
           <Input
-            label="Mã thực thể"
-            placeholder="ID cuid (tuỳ chọn)"
+            label="Mã đối tượng"
+            placeholder="Mã (tuỳ chọn)"
             value={draftId}
             onChange={(e) => setDraftId(e.target.value)}
             data-testid="filter-entity-id"
@@ -127,7 +149,7 @@ export function AuditView() {
         />
       ) : (
         <section className="flex flex-col gap-4">
-          <p className="text-ink-3 font-mono text-[11px] tracking-[0.12em] tabular-nums">
+          <p className="text-ink-3 font-mono text-xs tabular-nums">
             {total} bản ghi
           </p>
           <ul data-testid="audit-list" className="flex flex-col">
@@ -151,7 +173,7 @@ function AuditRow({ log }: { log: AuditLogDTO }) {
       {/* timestamp — mono khắc */}
       <time
         dateTime={log.createdAt}
-        className="text-ink-3 font-mono text-[11px] tracking-[0.06em] tabular-nums"
+        className="text-ink-3 font-mono text-xs tabular-nums"
       >
         {formatDateTime(log.createdAt)}
       </time>
@@ -160,10 +182,10 @@ function AuditRow({ log }: { log: AuditLogDTO }) {
       <div className="flex min-w-0 flex-col gap-0.5">
         <span className="text-ink text-sm font-medium">{ACTION_LABEL[log.action] ?? log.action}</span>
         <span
-          className="text-ink-3 truncate font-mono text-[11px] tracking-[0.04em]"
+          className="text-ink-3 truncate font-mono text-xs"
           title={`${log.entityType}:${log.entityId}`}
         >
-          {log.entityType} · {log.entityId}
+          {ENTITY_LABEL[log.entityType] ?? log.entityType} {log.entityId}
         </span>
       </div>
 
@@ -171,7 +193,7 @@ function AuditRow({ log }: { log: AuditLogDTO }) {
       <div className="flex items-baseline gap-2 sm:flex-col sm:items-end sm:gap-0.5">
         <span className="text-ink-2 text-sm">{log.actor?.name ?? "Hệ thống"}</span>
         {log.actor && (
-          <span className="text-ink-3 font-mono text-[10px] tracking-[0.14em] uppercase">
+          <span className="text-ink-3 font-mono text-xs">
             {ROLE_LABEL[log.actor.role]}
           </span>
         )}

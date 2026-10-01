@@ -5,7 +5,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { NavItem } from "./nav";
-import { SignalDot } from "@/components/ui/SignalDot";
 import { BrandMark } from "@/components/ui/BrandMark";
 import { cn } from "@/lib/cn";
 
@@ -29,7 +28,7 @@ export function Sidebar({
     >
       <div className="px-2 py-4">
         <BrandMark size={32} className="text-paper text-base font-semibold tracking-tight" />
-        <p className="text-[11px] tracking-wider text-white/60 uppercase">VÌ MỘT NGÔI TRƯỜNG TỐT ĐẸP HƠN</p>
+        <p className="text-on-depth-2 text-xs">Vì một ngôi trường tốt đẹp hơn</p>
       </div>
 
       <ul className="flex flex-col gap-0.5">
@@ -50,7 +49,6 @@ export function Sidebar({
               >
                 <Icon size={18} weight="light" className="shrink-0" />
                 <span className="flex-1">{item.label}</span>
-                {active && <SignalDot tone="signal" size="sm" />}
               </Link>
             </li>
           );

@@ -54,7 +54,7 @@ export function PostCard({
         <div className="flex flex-col gap-0.5">
           <span className="text-ink-2 text-sm font-medium">{post.author.name}</span>
           <span
-            className="text-ink-3 font-mono text-[11px] tracking-[0.1em]"
+            className="text-ink-3 font-mono text-xs"
             title={formatDateTime(post.createdAt)}
           >
             {relativeTime(post.createdAt)}

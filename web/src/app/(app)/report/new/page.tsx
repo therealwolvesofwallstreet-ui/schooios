@@ -222,7 +222,7 @@ export default function ReportNewPage() {
 
   return (
     <div className="mx-auto flex min-h-[70vh] max-w-xl flex-col py-12">
-      <p className="text-ink-3 font-mono text-[11px] tracking-[0.18em] uppercase">
+      <p className="text-ink-3 font-mono text-xs">
         {String(step + 1).padStart(2, "0")} / {String(STEP_PROMPTS.length).padStart(2, "0")}
       </p>
       <h1
@@ -322,13 +322,13 @@ export default function ReportNewPage() {
 
             {selectedCategory && (
               <p className="text-ink-3 font-mono text-xs">
-                Theo nhóm “{selectedCategory.name}” · ưu tiên {PRIORITY_LABEL[derivedPriority]}
+                Theo nhóm “{selectedCategory.name}”, mức ưu tiên {PRIORITY_LABEL[derivedPriority]}
               </p>
             )}
 
             {/* Update C: quyền riêng tư của người báo (ẩn danh ⟂ nhạy cảm). */}
             <div className="flex flex-col gap-2">
-              <p className="text-ink-3 font-mono text-[11px] tracking-[0.18em] uppercase">
+              <p className="text-ink-3 font-mono text-xs">
                 Quyền riêng tư
               </p>
               <ToggleRow
@@ -413,7 +413,7 @@ function ToggleRow({
         <span className={cn("text-sm", checked ? "text-ink font-medium" : "text-ink-2")}>
           {label}
           {locked && (
-            <span className="text-ink-3 ml-2 font-mono text-[10px] tracking-wider uppercase">
+            <span className="text-ink-3 ml-2 font-mono text-xs">
               bắt buộc
             </span>
           )}

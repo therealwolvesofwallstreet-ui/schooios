@@ -16,13 +16,13 @@ export function CaseHeader({ detail }: { detail: CaseDetail }) {
       )}
     >
       <div className="flex flex-wrap items-center gap-3">
-        <span className="text-ink-3 font-mono text-xs tracking-wider">{detail.caseCode}</span>
+        <span className="text-ink-3 font-mono text-xs">{detail.caseCode}</span>
         <StatusPill status={detail.status} />
-        <span className="text-ink-3 font-mono text-[11px] tracking-wider uppercase">
+        <span className="text-ink-3 font-mono text-xs">
           {PRIORITY_LABEL[detail.priority]}
         </span>
         {detail.isEmergency && (
-          <span className="text-emergency font-mono text-[11px] tracking-wider uppercase">
+          <span className="text-emergency font-mono text-xs">
             Khẩn cấp
           </span>
         )}

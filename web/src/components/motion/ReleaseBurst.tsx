@@ -231,7 +231,7 @@ export default function ReleaseBurst({ caseCode, onDone, forceTier }: ReleaseBur
           initial={false}
           animate={{ opacity: showCard ? 1 : 0, y: showCard ? 0 : 8 }}
           transition={{ duration: 0.4, ease: EASE }}
-          className="text-ink-3 font-mono text-xs tracking-[0.18em] uppercase"
+          className="text-ink-3 font-mono text-xs"
         >
           {caseCode}
         </motion.p>

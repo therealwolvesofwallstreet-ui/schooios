@@ -7,7 +7,6 @@
 // SERVER-DRIVEN (loại RESOLVED/CLOSED). Sensitivity ĐÃ gate ở server — FE KHÔNG tự lọc. States dùng chung.
 import { useState } from "react";
 import { useEmergencyQueue } from "@/hooks/useEmergencyQueue";
-import { SignalDot } from "@/components/ui/SignalDot";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState, PermissionDenied } from "@/components/app/states";
@@ -24,33 +23,29 @@ export function EmergencyView() {
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-8 py-6">
-      {/* CHROME KHẨN thường trực — bề mặt Depth + nhịp đỏ LTT "thở" (pulse luôn chạy). */}
-      <header className="bg-depth relative overflow-hidden rounded-lg px-6 py-6 sm:px-8 sm:py-7">
-        {/* Lằn đỏ LTT mép trái — dấu khẩn thường trực. */}
-        <span aria-hidden="true" className="bg-emergency absolute inset-y-0 left-0 w-1" />
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-3">
-              <SignalDot tone="emergency" size="md" pulse />
-              <h1 className="text-on-depth font-serif text-3xl leading-snug">Tuyến khẩn cấp</h1>
-            </div>
-            <p className="text-on-depth-3 text-sm">
-              Những vụ việc được ưu tiên khẩn cấp xử lý
-            </p>
-          </div>
-          <p
-            data-testid="emergency-count"
-            className="text-on-depth-2 shrink-0 font-mono text-[11px] tracking-[0.16em] tabular-nums uppercase"
-          >
-            {cases.length} vụ
-          </p>
+      {/* Đầu trang cùng ngữ pháp các trang khác (tiêu đề + mô tả); số vụ là điểm nhấn đỏ DUY NHẤT. */}
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-ink font-serif text-3xl leading-snug">Vụ việc khẩn cấp</h1>
+          <p className="text-ink-3 text-sm">Những vụ việc được ưu tiên khẩn cấp xử lý</p>
         </div>
+        <p data-testid="emergency-count" className="flex shrink-0 items-baseline gap-2">
+          <span
+            className={cn(
+              "font-display text-4xl font-semibold tabular-nums",
+              cases.length > 0 ? "text-emergency" : "text-ink-3",
+            )}
+          >
+            {cases.length}
+          </span>
+          <span className="text-ink-3 text-sm">vụ</span>
+        </p>
       </header>
 
       {/* Toggle ?activeOnly — SERVER-DRIVEN (không tự lọc FE). */}
       <div
         role="group"
-        aria-label="Lọc tuyến khẩn"
+        aria-label="Lọc vụ việc khẩn cấp"
         data-testid="emergency-filter"
         className="flex items-center gap-5"
       >
@@ -65,7 +60,7 @@ export function EmergencyView() {
       {isLoading ? (
         <LaneSkeleton />
       ) : isError ? (
-        <ErrorState onRetry={() => void refetch()} message="Không tải được tuyến khẩn cấp" />
+        <ErrorState onRetry={() => void refetch()} message="Không tải được vụ việc khẩn cấp" />
       ) : cases.length === 0 ? (
         <EmptyState
           message={

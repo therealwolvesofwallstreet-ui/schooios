@@ -51,7 +51,7 @@ export function PollCard({
         <div className="flex flex-col gap-0.5">
           <span className="text-ink-2 text-sm font-medium">{poll.author.name}</span>
           <span
-            className="text-ink-3 font-mono text-[11px] tracking-[0.1em]"
+            className="text-ink-3 font-mono text-xs"
             title={formatDateTime(poll.createdAt)}
           >
             {relativeTime(poll.createdAt)}
@@ -122,7 +122,7 @@ export function PollCard({
                     {o.text}
                   </span>
                   <span className="text-ink-2 shrink-0 font-mono text-xs tabular-nums">
-                    {o.percent}% · {o.count}
+                    {o.percent}% ({o.count})
                   </span>
                 </span>
               </button>
@@ -131,19 +131,13 @@ export function PollCard({
         })}
       </ul>
 
-      <div className="text-ink-3 flex items-center gap-2 font-mono text-[11px] tracking-[0.1em] tabular-nums">
+      <div className="text-ink-3 flex items-center gap-4 text-xs tabular-nums">
         <span>{poll.totalVotes} lượt bình chọn</span>
         {poll.isClosed && (
-          <>
-            <span aria-hidden="true">·</span>
-            <span className="text-ink-2">Đã đóng</span>
-          </>
+          <span className="text-ink-2">Đã đóng</span>
         )}
         {pendingOpt && (
-          <>
-            <span aria-hidden="true">·</span>
-            <span>đang gửi…</span>
-          </>
+          <span>đang gửi…</span>
         )}
       </div>
     </article>

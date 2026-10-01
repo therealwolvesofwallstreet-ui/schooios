@@ -98,7 +98,7 @@ export function CreatePollModal({ open, onClose }: { open: boolean; onClose: () 
           autoFocus
         />
         <div className="flex flex-col gap-2">
-          <span className="text-ink-3 text-[11px] font-medium tracking-wider uppercase">
+          <span className="text-ink-3 text-xs font-medium">
             Phương án
           </span>
           {options.map((o, i) => (

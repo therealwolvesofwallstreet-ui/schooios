@@ -20,7 +20,6 @@ import { CaseRow } from "./CaseRow";
 import { BulkActionBar } from "./BulkActionBar";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { Hairline } from "@/components/ui/Hairline";
-import { SignalDot } from "@/components/ui/SignalDot";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Pager } from "@/components/ui/Pager";
@@ -165,7 +164,6 @@ export function AllCasesView({ initial = {} }: { initial?: AllCasesInitial }) {
                 : "border-line text-ink-3 hover:text-ink-2",
             )}
           >
-            <SignalDot tone="emergency" size="sm" pulse={emergencyOnly} />
             Chỉ khẩn
           </button>
           {facetActive && (
@@ -207,12 +205,12 @@ export function AllCasesView({ initial = {} }: { initial?: AllCasesInitial }) {
             <button
               type="button"
               onClick={selectedIds.size === visible.length && visible.length > 0 ? clearAll : selectAll}
-              className="text-ink-3 hover:text-ink-2 font-mono text-[11px] underline underline-offset-2"
+              className="text-ink-3 hover:text-ink-2 font-mono text-xs underline underline-offset-2"
             >
               {selectedIds.size === visible.length && visible.length > 0 ? "Bỏ chọn tất cả" : "Chọn tất cả trang này"}
             </button>
             {selectedIds.size > 0 && (
-              <span className="text-ink-3 font-mono text-[11px] tabular-nums">
+              <span className="text-ink-3 font-mono text-xs tabular-nums">
                 {selectedIds.size} đã chọn
               </span>
             )}
@@ -224,7 +222,7 @@ export function AllCasesView({ initial = {} }: { initial?: AllCasesInitial }) {
       )}
 
       {facetActive && (
-        <p className="text-ink-3 font-mono text-[11px] tracking-[0.12em]">
+        <p className="text-ink-3 font-mono text-xs">
           Lọc theo loại trên trang hiện tại
         </p>
       )}
@@ -237,8 +235,8 @@ export function AllCasesView({ initial = {} }: { initial?: AllCasesInitial }) {
         <EmptyState message={emptyMessage} />
       ) : (
         <section className="flex flex-col gap-4">
-          <p className="text-ink-3 font-mono text-[11px] tracking-[0.12em] tabular-nums">
-            {facetActive ? `${visible.length} vụ · lát hiện tại` : `${total} vụ`}
+          <p className="text-ink-3 font-mono text-xs tabular-nums">
+            {facetActive ? `${visible.length} vụ trong trang này` : `${total} vụ`}
           </p>
           <ul data-testid="all-cases-list" className="flex flex-col">
             {visible.map((c, i) => (

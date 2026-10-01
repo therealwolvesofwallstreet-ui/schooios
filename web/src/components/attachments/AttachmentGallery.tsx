@@ -69,10 +69,10 @@ export function AttachmentGallery({ attachments, caseId, canMutate, canDelete, c
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-ink-3 font-mono text-[11px] tracking-[0.18em] uppercase">
+        <h3 className="text-ink-3 font-mono text-xs">
           Ảnh đính kèm
           {attachments.length > 0 && (
-            <span className="ml-1.5 font-mono text-[10px]">({attachments.length})</span>
+            <span className="ml-1.5 font-mono text-xs">({attachments.length})</span>
           )}
         </h3>
         {canMutate && (
@@ -178,7 +178,7 @@ function ThumbnailItem({
           onClick={onDelete}
           disabled={deleting}
           aria-label={`Xóa ${att.fileName}`}
-          className="bg-paper-raised border-line absolute -right-1.5 -top-1.5 hidden h-5 w-5 items-center justify-center rounded-full border text-[10px] text-ink-3 group-hover:flex hover:text-ink disabled:opacity-50"
+          className="bg-paper-raised border-line absolute -right-1.5 -top-1.5 hidden h-5 w-5 items-center justify-center rounded-full border text-xs text-ink-3 group-hover:flex hover:text-ink disabled:opacity-50"
         >
           ×
         </button>

@@ -27,9 +27,9 @@ export function CaseVote({ caseId, upCount, downCount, score, myVote, compact = 
     return (
       <span
         data-testid="case-vote"
-        className="text-ink-3 inline-flex items-center gap-1 font-mono text-[11px] tabular-nums"
+        className="text-ink-3 inline-flex items-center gap-1 font-mono text-xs tabular-nums"
       >
-        <span className="text-[10px]">▲</span>
+        <span className="text-xs">▲</span>
         <span>{score}</span>
       </span>
     );
@@ -45,7 +45,7 @@ export function CaseVote({ caseId, upCount, downCount, score, myVote, compact = 
           disabled={isPending}
           onClick={() => vote(1, myVote)}
           className={cn(
-            "focus-visible:outline-ink inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 font-mono text-[11px] tracking-wide transition-colors duration-150 ease-quiet focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-40",
+            "focus-visible:outline-ink inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 font-mono text-xs transition-colors duration-150 ease-quiet focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-40",
             myVote === 1
               ? "border-line-2 bg-sunken text-ink"
               : "border-line text-ink-3 hover:text-ink",
@@ -73,7 +73,7 @@ export function CaseVote({ caseId, upCount, downCount, score, myVote, compact = 
           disabled={isPending}
           onClick={() => vote(-1, myVote)}
           className={cn(
-            "focus-visible:outline-ink inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 font-mono text-[11px] tracking-wide transition-colors duration-150 ease-quiet focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-40",
+            "focus-visible:outline-ink inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 font-mono text-xs transition-colors duration-150 ease-quiet focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-40",
             myVote === -1
               ? "border-line-2 bg-sunken text-ink"
               : "border-line text-ink-3 hover:text-ink",
@@ -85,8 +85,8 @@ export function CaseVote({ caseId, upCount, downCount, score, myVote, compact = 
       )}
 
       {!canVote && (
-        <span className="text-ink-3 font-mono text-[11px] tabular-nums">
-          ▲{upCount} · ▼{downCount}
+        <span className="text-ink-3 font-mono text-xs whitespace-pre tabular-nums">
+          ▲{upCount}  ▼{downCount}
         </span>
       )}
     </div>

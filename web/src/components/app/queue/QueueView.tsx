@@ -11,8 +11,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { useSession } from "@/hooks/useSession";
 import { useCaseList } from "@/hooks/useCaseList";
-import { SignalDot, type SignalTone } from "@/components/ui/SignalDot";
 import { StatusPill } from "@/components/ui/StatusPill";
+import { CaseFlags } from "@/components/ui/CaseFlags";
 import { Hairline } from "@/components/ui/Hairline";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -36,13 +36,6 @@ const FILTER_LABEL: Record<QueueFilter, string> = {
   TRIAGED: "Đã phân loại",
 };
 const FILTER_ORDER: QueueFilter[] = ["pending", "NEW", "TRIAGED"];
-
-// Signal-gutter: NEW = signal (live, cần tiếp nhận) · TRIAGED = gold (đã phân loại, đã chạm). Khác → dormant.
-function gutterTone(status: CaseStatus): SignalTone {
-  if (status === "NEW") return "signal";
-  if (status === "TRIAGED") return "gold";
-  return "dormant";
-}
 
 export function QueueView() {
   const { user } = useSession();
@@ -115,7 +108,6 @@ export function QueueView() {
               : "border-line text-ink-3 hover:text-ink-2",
           )}
         >
-          <SignalDot tone="emergency" size="sm" pulse={emergencyOnly} />
           Chỉ khẩn
         </button>
       </div>
@@ -128,7 +120,7 @@ export function QueueView() {
         <EmptyState message={emptyMessage} />
       ) : (
         <section className="flex flex-col gap-4">
-          <p className="text-ink-3 font-mono text-[11px] tracking-[0.12em] tabular-nums">
+          <p className="text-ink-3 font-mono text-xs tabular-nums">
             {total} vụ
           </p>
           <ul data-testid="queue-list" className="flex flex-col">
@@ -147,18 +139,17 @@ export function QueueView() {
 }
 
 function QueueRow({ c }: { c: CaseListItem }) {
-  const tone = gutterTone(c.status);
   return (
     <Link
       href={`/cases/${c.id}`}
-      className="focus-visible:outline-ink group hover:bg-sunken -mx-2 flex items-center gap-3 rounded-md px-2 py-3 transition-colors duration-150 ease-quiet focus-visible:outline-2 focus-visible:outline-offset-2"
+      className="focus-visible:outline-ink group hover:bg-sunken -mx-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-md px-2 py-3 transition-colors duration-150 ease-quiet focus-visible:outline-2 focus-visible:outline-offset-2"
     >
-      <SignalDot tone={tone} size="sm" pulse={tone === "signal"} />
-      <span className="text-ink-3 shrink-0 font-mono text-[11px] tracking-[0.12em]">
+      <span className="text-ink-3 shrink-0 font-mono text-xs">
         {c.caseCode}
       </span>
       <StatusPill status={c.status} className="shrink-0" />
-      <span className="text-ink line-clamp-1 min-w-0 flex-1 text-sm">{c.title}</span>
+      <span className="text-ink order-last line-clamp-2 min-w-0 basis-full text-sm sm:order-none sm:line-clamp-1 sm:basis-0 sm:flex-1">{c.title}</span>
+      <CaseFlags isEmergency={c.isEmergency} isAnonymous={c.isAnonymous} isSensitive={c.isSensitive} />
     </Link>
   );
 }

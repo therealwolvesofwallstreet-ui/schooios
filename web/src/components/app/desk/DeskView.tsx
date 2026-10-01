@@ -95,9 +95,9 @@ function Bucket({
 }) {
   return (
     <section className="flex flex-col gap-4" data-testid={`desk-bucket-${k}`}>
-      <h2 className="text-ink-3 flex items-center gap-2 font-mono text-[11px] tracking-[0.18em] uppercase">
+      <h2 className="text-ink-3 flex items-center gap-2 font-mono text-xs">
         {title}
-        <span className="text-ink-3/70 tabular-nums">· {cases.length}</span>
+        <span className="bg-sunken text-ink-2 rounded-md px-1.5 py-0.5 text-xs tabular-nums">{cases.length}</span>
       </h2>
       {cases.length === 0 ? (
         <EmptyState message={empty} className="py-6" />

@@ -15,7 +15,7 @@ import { useHydrated } from "@/hooks/useHydrated";
 import { EASE_EMERGE_BEZIER } from "@/lib/cubic-bezier";
 import { Card } from "@/components/ui/Card";
 import { Hairline } from "@/components/ui/Hairline";
-import { SignalDot, type SignalTone } from "@/components/ui/SignalDot";
+import { type SignalTone } from "@/components/ui/SignalDot";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState } from "@/components/app/states";
@@ -63,7 +63,7 @@ export function AdminHome({ readOnly = false }: { readOnly?: boolean }) {
       {/* Xu hướng — Chart1 = thanh phân-đoạn trạng thái (KHÔNG donut/canvas/lib; thuần SVG/CSS). Mỗi
           đoạn → /cases?status=… (drill-down). Ledger "Theo trạng thái" bên dưới là chú-giải-số. */}
       <section className="flex flex-col gap-3">
-        <h2 className="text-ink-3 font-mono text-[11px] tracking-[0.18em] uppercase">Xu hướng</h2>
+        <h2 className="text-ink-3 font-mono text-xs">Xu hướng</h2>
         <StatusBar byStatus={byStatus} />
       </section>
 
@@ -105,7 +105,7 @@ export function AdminHome({ readOnly = false }: { readOnly?: boolean }) {
           items={[...byLocation]
             .sort((a, b) => (b.count ?? 0) - (a.count ?? 0))
             .slice(0, 6)
-            .map((l) => ({ key: l.locationId, label: `${l.code} · ${l.name}`, count: l.count ?? 0 }))}
+            .map((l) => ({ key: l.locationId, label: `${l.code} ${l.name}`, count: l.count ?? 0 }))}
           footnote={
             (metrics.unlocated ?? 0) > 0 ? `Chưa rõ nơi: ${metrics.unlocated}` : undefined
           }
@@ -129,13 +129,12 @@ function MemorialNumber({
     <div className="flex flex-col gap-1.5">
       <span className="flex items-center gap-2">
         <span
-          className={`font-mono text-4xl tabular-nums md:text-5xl ${hot ? "text-signal" : "text-ink"}`}
+          className={`font-mono text-4xl tabular-nums md:text-5xl ${hot ? "text-emergency" : "text-ink"}`}
         >
           {value}
         </span>
-        {hot && <SignalDot tone="emergency" size="md" pulse />}
       </span>
-      <span className="text-ink-3 text-[11px] tracking-[0.12em] uppercase">{label}</span>
+      <span className="text-ink-3 text-xs">{label}</span>
     </div>
   );
 }
@@ -151,7 +150,7 @@ function Ledger({
 }) {
   return (
     <Card>
-      <h2 className="text-ink-3 mb-4 font-mono text-[11px] tracking-[0.18em] uppercase">{title}</h2>
+      <h2 className="text-ink-3 mb-4 font-mono text-xs">{title}</h2>
       {empty ? (
         <EmptyState message="Chưa có dữ liệu" className="py-8" />
       ) : (
@@ -160,8 +159,7 @@ function Ledger({
             <li key={r.key} className="flex flex-col">
               {i > 0 && <Hairline className="my-2.5" />}
               <div className="flex items-center justify-between gap-4">
-                <span className="text-ink-2 flex items-center gap-2.5 text-sm">
-                  <SignalDot tone={r.tone} size="sm" />
+                <span className="text-ink-2 text-sm">
                   {r.label}
                 </span>
                 <span className="text-ink font-mono text-sm tabular-nums">{r.count}</span>
@@ -185,7 +183,7 @@ function Rail({
 }) {
   return (
     <Card>
-      <h2 className="text-ink-3 mb-4 font-mono text-[11px] tracking-[0.18em] uppercase">{title}</h2>
+      <h2 className="text-ink-3 mb-4 font-mono text-xs">{title}</h2>
       {items.length === 0 ? (
         <EmptyState message="Chưa có dữ liệu" className="py-8" />
       ) : (
@@ -247,7 +245,7 @@ function StatusBar({ byStatus }: { byStatus: { status: CaseStatus; _count: numbe
 
   return (
     <Card>
-      <h2 className="text-ink-3 mb-4 font-mono text-[11px] tracking-[0.18em] uppercase">
+      <h2 className="text-ink-3 mb-4 font-mono text-xs">
         Phân bố trạng thái
       </h2>
       {total === 0 ? (
@@ -292,7 +290,7 @@ function CategoryBars({ items }: { items: { id: string; name: string; count: num
 
   return (
     <Card>
-      <h2 className="text-ink-3 mb-4 font-mono text-[11px] tracking-[0.18em] uppercase">Theo loại</h2>
+      <h2 className="text-ink-3 mb-4 font-mono text-xs">Theo loại</h2>
       {items.length === 0 ? (
         <EmptyState message="Chưa có dữ liệu" className="py-8" />
       ) : (
