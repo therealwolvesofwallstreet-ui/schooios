@@ -35,11 +35,11 @@ async function upsertBySbd(sbd: string, name: string, passwordHash: string) {
 
 async function setup() {
   const passwordHash = await bcrypt.hash(PW, 10);
-  const admin = await upsertByEmail(ADMIN_EMAIL, Role.ADMIN, "Phạm Thanh Tâm", passwordHash);
-  await upsertByEmail(STAFF_EMAIL, Role.STAFF, "Lê Quốc Bảo", passwordHash);
-  await upsertByEmail(AUDITOR_EMAIL, Role.AUDITOR, "Võ Ngọc Lan", passwordHash);
-  const student1 = await upsertBySbd(SBD1, "Nguyễn Minh An", passwordHash);
-  const student2 = await upsertBySbd(SBD2, "Trần Thu Hà", passwordHash);
+  const admin = await upsertByEmail(ADMIN_EMAIL, Role.ADMIN, "P4 Admin", passwordHash);
+  await upsertByEmail(STAFF_EMAIL, Role.STAFF, "P4 Staff", passwordHash);
+  await upsertByEmail(AUDITOR_EMAIL, Role.AUDITOR, "P4 Auditor", passwordHash);
+  const student1 = await upsertBySbd(SBD1, "P4 Student One", passwordHash);
+  const student2 = await upsertBySbd(SBD2, "P4 Student Two", passwordHash);
 
   // Category/location THẬT (findFirst → bền với khác biệt tên dữ liệu bootstrap).
   const catNormal = await prisma.category.findFirst({ where: { defaultSensitive: false, isActive: true } });
