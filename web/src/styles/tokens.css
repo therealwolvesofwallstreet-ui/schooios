@@ -1,36 +1,36 @@
-/* LTT SchooIOS design tokens — "Warm Immersive Archive" + accent theo logo trường Lý Tự Trọng.
+/* LTT SchooIOS design tokens — "LTT Clean": nền trắng, Xanh LTT là màu chính, Đỏ LTT CHỈ cho khẩn cấp.
  * NGUỒN DUY NHẤT cho màu/typeface/radius/easing. Tailwind v4 @theme → sinh utility
  * (bg-paper, text-ink, bg-depth, text-on-depth, font-display, rounded-lg, ease-quiet…).
- * CẤM hardcode hex ngoài file này. SSOT palette: design-vision/DIRECTION-WARM.md.
+ * CẤM hardcode hex ngoài file này. Tên token giữ nguyên từ bản Warm — chỉ đổi GIÁ TRỊ.
  *
- * DUAL SURFACE (xem web/FRONTEND.md):
- *   • Paper — bề mặt vôi-giấy ấm cho ĐỌC/VẬN HÀNH (queue, detail, audit, form).
- *   • Depth — bề mặt nâu sẫm Cowhide cho HERO/SÂN KHẤU/NGƯỠNG CỬA (login, dashboard hero, emergency).
- * Vai trò màu: signal Xanh LTT = THE VOICE / primary action · link Xanh navy = hệ thống/tương tác ·
- *   gold Golden Batter = đã ghi nhận/resolved · emergency Đỏ LTT = takeover · rare Olive = milestone hiếm ·
- *   authority Cowhide = nền chrome quyền lực · mute Camel = trang trí (KHÔNG body). */
+ * DUAL SURFACE:
+ *   • Paper — bề mặt trắng/xám-xanh rất nhạt cho ĐỌC/VẬN HÀNH.
+ *   • Depth — panel xanh navy LTT cho HERO/điểm nhấn.
+ * Vai trò màu: signal Xanh LTT = primary action · link navy = tương tác/focus ·
+ *   gold (nay xanh sáng) = đã ghi nhận/resolved · emergency Đỏ LTT = CHỈ khẩn cấp ·
+ *   rare slate = milestone · authority navy = chrome quyền lực · mute = trang trí (KHÔNG body). */
 
 @theme {
-  /* ---- LIGHT · Paper (đọc / vận hành — Linen/Espresso) ---- */
-  --color-paper: #f5f1ea;
-  --color-paper-raised: #fbf8f1;
-  --color-sunken: #eae3d5;
-  --color-ink: #4a342a;
-  --color-ink-2: #7d5a44;
-  --color-ink-3: #6e5038; /* metadata/caption — WCAG AA trên paper; hierarchy nhờ size/uppercase */
-  --color-line: #e2d9c8;
-  --color-line-2: #cdbfa6;
-  --color-mute: #b2967d; /* Camel — trang trí/ornament; KHÔNG dùng cho body (AA-unsafe) */
+  /* ---- LIGHT · Paper (đọc / vận hành) ---- */
+  --color-paper: #f6f8fb;
+  --color-paper-raised: #ffffff;
+  --color-sunken: #eef2f7;
+  --color-ink: #0f1f2e;
+  --color-ink-2: #34485e;
+  --color-ink-3: #55677c; /* metadata/caption — WCAG AA trên paper; hierarchy nhờ size/uppercase */
+  --color-line: #e3e8ef;
+  --color-line-2: #cbd5e1;
+  --color-mute: #8a9bb0; /* trang trí/ornament; KHÔNG dùng cho body (AA-unsafe) */
 
-  /* ---- DARK · Depth (hero / sân khấu / ngưỡng cửa — Cowhide, KHÔNG đen) ---- */
-  --color-depth: #442d1c; /* nền nâu sẫm điện ảnh */
-  --color-depth-raised: #553a26; /* card/panel trên depth */
-  --color-depth-sunken: #36210f;
-  --color-on-depth: #f5f1ea; /* text chính trên depth (Linen) */
-  --color-on-depth-2: #e8d1a7; /* text phụ trên depth (Golden Batter) */
-  --color-on-depth-3: #b2967d; /* metadata trên depth (Camel) */
-  --color-line-depth: rgba(245, 241, 234, 0.13); /* hairline trên depth */
-  --color-line-depth-2: rgba(245, 241, 234, 0.24);
+  /* ---- DARK · Depth (panel navy LTT) ---- */
+  --color-depth: #0b3a5c; /* nền nâu sẫm điện ảnh */
+  --color-depth-raised: #104a73; /* card/panel trên depth */
+  --color-depth-sunken: #082c46;
+  --color-on-depth: #ffffff; /* text chính trên depth */
+  --color-on-depth-2: #cfe6f5; /* text phụ trên depth */
+  --color-on-depth-3: #8fb3cc; /* metadata trên depth */
+  --color-line-depth: rgba(255, 255, 255, 0.14); /* hairline trên depth */
+  --color-line-depth-2: rgba(255, 255, 255, 0.26);
 
   /* ---- ACCENTS (theo VAI TRÒ) ---- */
   --color-signal: #00699a; /* THE VOICE / primary action — Xanh LTT (logo #0096d6 hạ sáng → paper-on-signal 5.35:1 AA) */
@@ -38,17 +38,17 @@
   --color-signal-hot: #3bb0e6; /* signal trên depth (5.2:1 trên depth) */
   --color-link: #0a5c8a; /* hệ thống / tương tác / link / focus — Xanh navy (6.4:1 trên paper) */
   --color-link-lift: #7ccbf0; /* link trên depth (7.1:1) */
-  --color-gold: #c99a4a; /* đã ghi nhận / resolved */
-  --color-gold-fill: #e8d1a7; /* nền nhạt resolved/acknowledge (Golden Batter) */
+  --color-gold: #3bb0e6; /* đã ghi nhận / resolved */
+  --color-gold-fill: #dbeef9; /* nền nhạt resolved/acknowledge */
   --color-emergency: #b81d14; /* Đỏ LTT (logo #d62018 hạ sáng, 5.8:1 trên paper) — CHỈ emergency takeover */
-  --color-rare: #9d9167; /* milestone / delight hiếm — Olive Harvest */
-  --color-authority: #442d1c; /* nền chrome quyền lực (sidebar) — Cowhide */
+  --color-rare: #6b7f99; /* milestone / delight hiếm */
+  --color-authority: #00547c; /* nền chrome quyền lực (sidebar) */
 
   /* ---- Typeface (biến gốc do next/font gắn lên <html> ở layout.tsx) ---- */
-  --font-display: var(--font-cormorant), var(--font-newsreader), Georgia, serif; /* hero (Cormorant Garamond) */
-  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-plex-mono), ui-monospace, "SFMono-Regular", monospace;
-  --font-serif: var(--font-newsreader), Georgia, "Times New Roman", serif; /* serif VN (khoảnh khắc người) */
+  --font-display: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif; /* Montserrat */
+  --font-sans: var(--font-lexend), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-lexend), "Courier New", monospace;
+  --font-serif: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif; /* Montserrat (thay serif cũ) */
 
   /* ---- Radius ---- */
   --radius-sm: 4px;
@@ -60,7 +60,7 @@
   --ease-emerge: cubic-bezier(0.16, 1, 0.3, 1);
 
   /* ---- Depth / material (immersive — chiều sâu bằng layer/ánh sáng, không bóng nặng) ---- */
-  --depth-scrim: color-mix(in srgb, var(--color-paper) 80%, transparent); /* scrim form trên WebGL */
-  --depth-scrim-depth: color-mix(in srgb, var(--color-depth) 62%, transparent);
-  --material-grain-opacity: 0.02; /* mirror grain shader (DOM echo) */
+  --depth-scrim: color-mix(in srgb, var(--color-paper-raised) 88%, transparent); /* scrim sáng */
+  --depth-scrim-depth: color-mix(in srgb, var(--color-depth) 70%, transparent);
+  --material-grain-opacity: 0; /* mirror grain shader (DOM echo) */
 }

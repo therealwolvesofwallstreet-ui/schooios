@@ -47,8 +47,7 @@ export function CaseDetailView({ caseId }: { caseId: string }) {
 
   const content = (
     <div className="mx-auto max-w-5xl py-10">
-      {/* Đầu hồ sơ "hiện" lên (Rich tier) — gate reduced-motion; tiêu đề GIỮ Newsreader (font-serif):
-          tên case là tiếng Việt tuỳ ý có dấu thanh, Cormorant thiếu glyph → vỡ dấu (quyết định như F3a). */}
+      {/* Đầu hồ sơ "hiện" lên (Rich tier) — gate reduced-motion; tiêu đề dùng font-serif (Montserrat, đủ dấu Việt). */}
       <motion.div
         initial={staticFirst ? false : { opacity: 0, y: 10 }}
         animate={staticFirst ? undefined : { opacity: 1, y: 0 }}

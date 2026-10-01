@@ -61,7 +61,7 @@ export default function StyleguidePage() {
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-12">
       <header className="flex flex-col gap-2">
-        <h1 className="text-ink font-display text-6xl leading-[1.05] italic">Warm Immersive Archive</h1>
+        <h1 className="text-ink font-display text-6xl leading-[1.05]">LTT Clean</h1>
         <p className="text-ink-2 text-sm">Catalog token &amp; primitives — Lưu khố ấm.</p>
       </header>
 
@@ -79,7 +79,7 @@ export default function StyleguidePage() {
 
       <Section title="Bề mặt tối · Depth (Cowhide)">
         <div className="bg-depth flex flex-col gap-3 rounded-lg p-6">
-          <p className="text-on-depth font-display text-3xl italic">LTT SchooIOS</p>
+          <p className="text-on-depth font-display text-3xl">LTT SchooIOS</p>
           <p className="text-on-depth-2 text-sm">
             Văn bản phụ trên nền depth (on-depth-2 · Golden Batter) — đọc rõ, ấm.
           </p>
@@ -94,15 +94,15 @@ export default function StyleguidePage() {
 
       <Section title="Type ramp · 3+ giọng">
         <div className="border-line flex flex-col gap-4 rounded-md border p-6">
-          <p className="text-ink font-display text-5xl leading-[1.05] italic">
-            Display · Cormorant Garamond
+          <p className="text-ink font-display text-5xl leading-[1.05]">
+            Display · Montserrat
           </p>
           <p className="text-ink font-serif text-3xl leading-tight">
-            Serif VN · Newsreader — Lưu khố của những tiếng nói
+            Serif · Montserrat — Tiếng nói học đường
           </p>
-          <p className="text-ink text-[2rem] leading-tight font-medium">Heading · Plex Sans 32</p>
+          <p className="text-ink text-[2rem] leading-tight font-medium">Heading · Lexend 32</p>
           <p className="text-ink-2 text-[15px] leading-relaxed">
-            Body · IBM Plex Sans 15/1.6 — giọng UI mặc định cho mô tả, đoạn văn, nội dung.
+            Body · Lexend 15/1.6 — giọng UI mặc định cho mô tả, đoạn văn, nội dung.
           </p>
           <p className="text-ink-3 text-[11px] tracking-wider uppercase">Label · Sans 11 uppercase</p>
           <p className="text-ink-2 font-mono text-[13px] tracking-[0.02em]">

@@ -1,5 +1,5 @@
 // Empty = khoảnh khắc con người: serif 1 dòng + khoảng trống + 1 dấu signal (ngủ).
-// KHÔNG "No data found". Serif (Newsreader) ĐƯỢC PHÉP ở đây (§4.3).
+// KHÔNG "No data found". Serif (Montserrat) ĐƯỢC PHÉP ở đây (§4.3).
 import { SignalDot } from "./SignalDot";
 import { cn } from "@/lib/cn";
 
