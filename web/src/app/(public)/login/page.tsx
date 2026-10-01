@@ -69,7 +69,7 @@ export default function LoginPage() {
         <div className="login-blob-b bg-signal/20 absolute -right-24 -bottom-40 size-[32rem] rounded-full blur-3xl" />
       </div>
 
-      <div className="login-card-in bg-paper-raised border-line relative w-full max-w-sm rounded-lg border p-8 shadow-[0_12px_40px_-12px_rgb(15_31_46/0.18)]">
+      <div className="login-card-in bg-paper-raised border-line relative w-full max-w-sm rounded-lg border p-8 shadow-xl shadow-ink/10">
         <div className="mb-8 flex items-center gap-3">
           <BrandEmblem size={40} priority />
           <span className="font-display text-ink text-xl font-bold tracking-tight">{BRAND_NAME}</span>
