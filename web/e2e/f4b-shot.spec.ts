@@ -54,7 +54,7 @@ test.describe("F4b shot [ADMIN]", () => {
       });
     });
     await page.goto("/emergency");
-    await page.getByRole("heading", { name: "Tuyến khẩn cấp" }).waitFor();
+    await page.getByRole("heading", { name: "Vụ việc khẩn cấp" }).waitFor();
     await page.getByTestId("emergency-list").waitFor({ timeout: 15_000 });
     await page.waitForTimeout(400);
     await page.screenshot({ path: `.verify/f4b-emergency-${info.project.name}.png`, fullPage: true });

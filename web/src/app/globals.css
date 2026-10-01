@@ -15,17 +15,59 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* Grain vôi-giấy ấm (plaster) ~3% — CHỈ trên lớp nền (z-index:-1, dưới mọi nội dung & card).
- * feColorMatrix saturate 0 → hạt TRUNG TÍNH (không ám màu), phủ trên Linen → đọc như mặt vôi ấm.
- * pointer-events:none để không chắn tương tác. */
+/* Grain nền — điều khiển bởi --material-grain-opacity (LTT Clean = 0 → nền trắng phẳng). */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  opacity: 0.03;
+  opacity: var(--material-grain-opacity);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Mã/số liệu: chữ số đều cột (mono = Lexend → cần tabular-nums). */
+.font-mono {
+  font-variant-numeric: tabular-nums;
+}
+
+/* /login — motion thuần CSS (chỉ transform/opacity). Reduced-motion bên dưới gập lại. */
+@keyframes login-drift-a {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(6vw, 4vh, 0) scale(1.08);
+  }
+}
+@keyframes login-drift-b {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(-5vw, -5vh, 0) scale(1.06);
+  }
+}
+@keyframes login-card-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.login-blob-a {
+  animation: login-drift-a 22s var(--ease-quiet) infinite;
+}
+.login-blob-b {
+  animation: login-drift-b 26s var(--ease-quiet) infinite;
+}
+.login-card-in {
+  animation: login-card-in 400ms var(--ease-emerge) both;
 }
 
 /* Tôn trọng reduced-motion: tắt animation/transition (a11y + ổn định screenshot). */

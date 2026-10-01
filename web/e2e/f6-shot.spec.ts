@@ -42,12 +42,12 @@ test.describe("F6 shots [STAFF]", () => {
   test("desk 1280 + 390", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/desk");
-    await page.getByRole("heading", { name: "Bàn làm việc" }).waitFor();
+    await page.getByRole("heading", { name: "Công việc", exact: true }).waitFor();
     await shoot(page, "desk-1280");
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/desk");
-    await page.getByRole("heading", { name: "Bàn làm việc" }).waitFor();
+    await page.getByRole("heading", { name: "Công việc", exact: true }).waitFor();
     await shoot(page, "desk-390");
   });
 });

@@ -1,0 +1,28 @@
+name: keepalive
+
+# Supabase free tier tự PAUSE project sau ~7 ngày không có hoạt động DB.
+# Ping 1 endpoint CÓ chạm DB (login với tài khoản không tồn tại → lookup users → 401).
+# 401 = DB sống; 500 = DB chết → job đỏ để chủ repo nhận email cảnh báo.
+on:
+  schedule:
+    - cron: "17 2 */2 * *" # 02:17 UTC mỗi 2 ngày
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ping DB qua /api/auth/login
+        run: |
+          for i in 1 2 3; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" -m 30 -X POST \
+              https://schooios.vercel.app/api/auth/login \
+              -H "Content-Type: application/json" \
+              -d '{"identifier":"KEEPALIVE-PING","password":"x"}')
+            echo "attempt $i → HTTP $code"
+            [ "$code" = "401" ] && exit 0
+            sleep 20
+          done
+          echo "::error::DB có vẻ không phản hồi (mong đợi 401) — kiểm tra Supabase."
+          exit 1

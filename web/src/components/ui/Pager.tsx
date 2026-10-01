@@ -37,7 +37,7 @@ export function Pager({
         <CaretLeft size={14} weight="light" />
         Trước
       </button>
-      <span className="text-ink-3 font-mono text-[11px] tracking-[0.12em] tabular-nums">
+      <span className="text-ink-3 font-mono text-xs tabular-nums">
         trang {page} / {totalPages}
       </span>
       <button

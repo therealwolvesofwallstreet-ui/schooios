@@ -54,8 +54,8 @@ async function setup() {
   // (a) case nhạy cảm của student2 (test STUDENT1 không thấy). KHÔNG statusHistory.
   const a = await prisma.case.create({
     data: {
-      title: "[P4FX] Vụ nhạy cảm do student2 tạo",
-      description: "Nội dung nhạy cảm chỉ người tạo + STAFF/ADMIN thấy.",
+      title: "Bị bạn cùng lớp trêu chọc sau giờ học",
+      description: "Em bị một nhóm bạn trêu chọc nhiều lần ở hành lang sau giờ học, mong thầy cô hỗ trợ.",
       categoryId: catSensitive.id,
       locationId: loc?.id ?? null,
       isSensitive: true,
@@ -66,15 +66,15 @@ async function setup() {
   // (b) case của student1 + 1 comment nội bộ (admin) + 1 comment công khai (student1).
   const b = await prisma.case.create({
     data: {
-      title: "[P4FX] Case student1 có comment nội bộ",
-      description: "Dùng để test ẩn comment isInternal với STUDENT.",
+      title: "Quạt trần phòng học bị hỏng",
+      description: "Quạt trần kêu to và quay rất chậm, cả lớp học buổi chiều rất nóng.",
       categoryId: catNormal.id,
       locationId: loc?.id ?? null,
       createdById: student1.id,
       comments: {
         create: [
-          { authorId: admin.id, body: "[P4FX][Nội bộ] Ghi chú staff.", isInternal: true },
-          { authorId: student1.id, body: "[P4FX] Bình luận công khai." },
+          { authorId: admin.id, body: "Đã báo tổ cơ sở vật chất, dự kiến sửa trong tuần này.", isInternal: true },
+          { authorId: student1.id, body: "Em bổ sung: quạt bắt đầu hỏng từ sáng thứ Hai." },
         ],
       },
     },
@@ -83,8 +83,8 @@ async function setup() {
   // (c) case đã soft-delete (test không lọt list & detail 404). KHÔNG statusHistory.
   const c = await prisma.case.create({
     data: {
-      title: "[P4FX] Case đã xoá mềm",
-      description: "Không được xuất hiện ở list/detail.",
+      title: "Báo cáo bị trùng",
+      description: "Báo cáo này trùng với một báo cáo khác nên đã được xoá.",
       categoryId: catNormal.id,
       createdById: student1.id,
       deletedAt: new Date(),

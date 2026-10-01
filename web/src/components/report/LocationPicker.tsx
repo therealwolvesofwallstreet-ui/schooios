@@ -105,8 +105,8 @@ export function LocationPicker({
           className="border-line bg-sunken/50 flex items-center justify-between gap-3 rounded-md border px-3 py-2"
         >
           <span className="text-ink min-w-0 truncate text-sm">
-            <span className="text-ink-3 font-mono text-[11px] tracking-wider uppercase">Đã chọn </span>
-            {selected.building ? `${selected.building.name} · ` : ""}
+            <span className="text-ink-3 font-mono text-xs">Đã chọn </span>
+            {selected.building ? `${selected.building.name}, ` : ""}
             <span className="font-medium">{selected.name}</span>
           </span>
           <button

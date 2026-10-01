@@ -105,7 +105,7 @@ export function CampusMap({
         {LEGEND_TYPES.map((t) => {
           const tk = AREA_TOKENS[t];
           return (
-            <li key={t} className="text-ink-3 flex items-center gap-1.5 text-[11px]">
+            <li key={t} className="text-ink-3 flex items-center gap-1.5 text-xs">
               <span
                 className={cn(
                   "size-3 shrink-0 rounded-sm border",
@@ -171,7 +171,7 @@ function AreaButton({
         {area.type === "landmark" ? (
           <span className="bg-ink-2/70 h-3/4 w-[2px] rounded-full" />
         ) : (
-          <span className="px-0.5 text-[8px] leading-[1.1] break-words text-center sm:text-[10px]">
+          <span className="px-0.5 text-[8px] leading-[1.1] break-words text-center sm:text-xs">
             {area.refLabel}
           </span>
         )}
@@ -211,7 +211,7 @@ function AreaButton({
       {isGate ? (
         <area.Icon size={15} weight={isSelected ? "fill" : "regular"} className="shrink-0" />
       ) : (
-        <span className="w-full px-0.5 text-[8px] leading-[1.1] font-medium break-words text-center sm:text-[10px]">
+        <span className="w-full px-0.5 text-[8px] leading-[1.1] font-medium break-words text-center sm:text-xs">
           {realName}
         </span>
       )}

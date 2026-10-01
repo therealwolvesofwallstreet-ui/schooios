@@ -9,7 +9,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { useSession } from "@/hooks/useSession";
 import { useCaseList } from "@/hooks/useCaseList";
-import { SignalDot, type SignalTone } from "@/components/ui/SignalDot";
 import { StatusPill } from "@/components/ui/StatusPill";
 import { AgingBadge } from "@/components/ui/AgingBadge";
 import { CaseFlags } from "@/components/ui/CaseFlags";
@@ -18,7 +17,6 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Pager } from "@/components/ui/Pager";
 import { ErrorState } from "@/components/app/states";
-import { STATUS_TONE } from "@/components/ui/status-theme";
 import { formatDateTime } from "@/lib/case-display";
 import { relativeTime } from "@/lib/relative-time";
 import type { CaseListItem } from "@/lib/api-types";
@@ -56,7 +54,7 @@ export function FeedView() {
           <EmptyState message="Chưa có tiếng nói nào được chia sẻ" />
         ) : (
           <>
-            <p className="text-ink-3 font-mono text-[11px] tracking-[0.12em] tabular-nums">{total} tin</p>
+            <p className="text-ink-3 font-mono text-xs tabular-nums">{total} tin</p>
             <ul data-testid="feed-list" className="flex flex-col">
               {cases.map((c, i) => (
                 <li key={c.id} className="flex flex-col">
@@ -74,7 +72,6 @@ export function FeedView() {
 }
 
 function FeedRow({ c }: { c: CaseListItem }) {
-  const tone: SignalTone = c.isEmergency ? "emergency" : STATUS_TONE[c.status];
   const score = c.score ?? 0;
   return (
     <Link
@@ -82,26 +79,21 @@ function FeedRow({ c }: { c: CaseListItem }) {
       className="focus-visible:outline-ink group hover:bg-sunken -mx-2 flex flex-col gap-1.5 rounded-md px-2 py-3 transition-colors duration-150 ease-quiet focus-visible:outline-2 focus-visible:outline-offset-2"
     >
       <span className="flex flex-wrap items-center gap-2.5">
-        <SignalDot tone={tone} size="sm" pulse={tone === "signal" || tone === "emergency"} />
-        <span className="text-ink-3 shrink-0 font-mono text-[11px] tracking-[0.12em]">
+        <span className="text-ink-3 shrink-0 font-mono text-xs">
           {c.caseCode}
         </span>
         <StatusPill status={c.status} className="shrink-0" />
         <AgingBadge createdAt={c.createdAt} status={c.status} />
-        <CaseFlags isAnonymous={c.isAnonymous} isSensitive={c.isSensitive} />
+        <CaseFlags isEmergency={c.isEmergency} isAnonymous={c.isAnonymous} isSensitive={c.isSensitive} />
       </span>
       <span className="text-ink font-serif text-base leading-snug line-clamp-1">{c.title}</span>
-      <span className="text-ink-3 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
+      <span className="text-ink-3 flex flex-wrap items-center gap-x-4 gap-y-0.5 text-xs">
         <span>{c.category.name}</span>
-        <span aria-hidden="true">·</span>
         <span title={formatDateTime(c.createdAt)}>{relativeTime(c.createdAt)}</span>
         {score !== 0 && (
-          <>
-            <span aria-hidden="true">·</span>
-            <span className="font-mono tabular-nums">
-              {score > 0 ? `▲${score}` : `▼${Math.abs(score)}`}
-            </span>
-          </>
+          <span className="font-mono tabular-nums">
+            {score > 0 ? `▲${score}` : `▼${Math.abs(score)}`}
+          </span>
         )}
       </span>
     </Link>

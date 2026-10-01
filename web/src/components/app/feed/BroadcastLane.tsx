@@ -68,7 +68,7 @@ export function BroadcastLane() {
         <>
           {showPostsGroup && (
             <div className="flex flex-col gap-3">
-              <h3 className="text-ink-3 text-[11px] font-medium tracking-wider uppercase">
+              <h3 className="text-ink-3 text-xs font-medium">
                 Thông báo
               </h3>
               {posts.isError ? (
@@ -94,7 +94,7 @@ export function BroadcastLane() {
 
           {showPollsGroup && (
             <div className="flex flex-col gap-3">
-              <h3 className="text-ink-3 flex items-center gap-1.5 text-[11px] font-medium tracking-wider uppercase">
+              <h3 className="text-ink-3 flex items-center gap-1.5 text-xs font-medium">
                 <ChartBar size={13} weight="light" /> Bình chọn
               </h3>
               {polls.isError ? (

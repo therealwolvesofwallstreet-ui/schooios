@@ -1,6 +1,5 @@
 // Empty = khoảnh khắc con người: serif 1 dòng + khoảng trống + 1 dấu signal (ngủ).
-// KHÔNG "No data found". Serif (Newsreader) ĐƯỢC PHÉP ở đây (§4.3).
-import { SignalDot } from "./SignalDot";
+// KHÔNG "No data found". Serif (Montserrat) ĐƯỢC PHÉP ở đây (§4.3).
 import { cn } from "@/lib/cn";
 
 export function EmptyState({
@@ -19,7 +18,6 @@ export function EmptyState({
         className,
       )}
     >
-      <SignalDot tone="dormant" size="lg" />
       <p className="text-ink-2 max-w-sm font-serif text-lg leading-relaxed">{message}</p>
       {action}
     </div>

@@ -117,7 +117,7 @@ export function CaseActionPanel({ detail }: { detail: CaseDetail }) {
 
   return (
     <Card>
-      <h2 className="text-ink-3 mb-3 font-mono text-[11px] tracking-[0.18em] uppercase">
+      <h2 className="text-ink-3 mb-3 font-mono text-xs">
         Hành động
       </h2>
 
@@ -218,7 +218,7 @@ export function CaseActionPanel({ detail }: { detail: CaseDetail }) {
         ) : (
           <>
             {openCasesOverCap && (
-              <p className="text-ink-3 mb-3 font-mono text-[10px]">
+              <p className="text-ink-3 mb-3 font-mono text-xs">
                 * Cân tải ước lượng trên 100 vụ gần nhất
               </p>
             )}
@@ -236,7 +236,7 @@ export function CaseActionPanel({ detail }: { detail: CaseDetail }) {
                         className="hover:bg-paper-raised focus-visible:outline-ink flex w-full items-center justify-between rounded px-3 py-2 text-left text-sm transition-colors focus-visible:outline-2"
                       >
                         <span className="text-ink">{m.name}</span>
-                        <span className="text-ink-3 font-mono text-[11px]">
+                        <span className="text-ink-3 font-mono text-xs">
                           {load} vụ đang mở
                         </span>
                       </button>

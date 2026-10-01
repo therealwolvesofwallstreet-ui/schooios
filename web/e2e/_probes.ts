@@ -56,7 +56,7 @@ export async function responsiveProbe(page: Page) {
 export async function stateProbe(page: Page) {
   await page.goto("/styleguide");
   await expect(page.getByText("Chưa có tiếng nói nào ở đây", { exact: false })).toBeVisible();
-  await expect(page.getByText("Display · Cormorant Garamond", { exact: false })).toBeVisible();
+  await expect(page.getByText("Display · Montserrat", { exact: false })).toBeVisible();
 }
 
 export async function a11yProbe(page: Page, path = "/") {

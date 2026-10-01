@@ -46,7 +46,7 @@ function CommentBubble({
       <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
         <span className="text-ink font-medium text-sm">{comment.author.name}</span>
         {comment.isInternal && (
-          <span className="font-mono text-[10px] tracking-wider uppercase text-ink-3 bg-sunken border border-line px-1.5 py-0.5 rounded">
+          <span className="font-mono text-xs text-ink-3 bg-sunken border border-line px-1.5 py-0.5 rounded">
             Nội bộ
           </span>
         )}
@@ -58,7 +58,7 @@ function CommentBubble({
           <button
             type="button"
             onClick={() => onReply(comment.id)}
-            className="text-ink-3 hover:text-ink font-mono text-[11px] tracking-wide transition-colors duration-150 ease-quiet"
+            className="text-ink-3 hover:text-ink font-mono text-xs transition-colors duration-150 ease-quiet"
           >
             Trả lời
           </button>
@@ -69,7 +69,7 @@ function CommentBubble({
             onClick={() => void handleDelete()}
             disabled={deleteMutation.isPending}
             className={cn(
-              "font-mono text-[11px] tracking-wide transition-colors duration-150 ease-quiet disabled:opacity-40",
+              "font-mono text-xs transition-colors duration-150 ease-quiet disabled:opacity-40",
               confirming ? "text-red-500" : "text-ink-3 hover:text-ink",
             )}
           >
@@ -80,7 +80,7 @@ function CommentBubble({
           <button
             type="button"
             onClick={() => setConfirming(false)}
-            className="text-ink-3 hover:text-ink font-mono text-[11px] transition-colors duration-150"
+            className="text-ink-3 hover:text-ink font-mono text-xs transition-colors duration-150"
           >
             Huỷ
           </button>
@@ -241,7 +241,7 @@ export function CommentThread({ caseId, comments }: { caseId: string; comments: 
                 aria-pressed={isInternal}
                 onClick={() => setIsInternal((v) => !v)}
                 className={cn(
-                  "focus-visible:outline-ink inline-flex items-center gap-2 rounded-md border px-3 py-1.5 font-mono text-[11px] tracking-wider uppercase transition-colors duration-150 ease-quiet focus-visible:outline-2 focus-visible:outline-offset-2",
+                  "focus-visible:outline-ink inline-flex items-center gap-2 rounded-md border px-3 py-1.5 font-mono text-xs transition-colors duration-150 ease-quiet focus-visible:outline-2 focus-visible:outline-offset-2",
                   isInternal ? "border-line-2 bg-sunken text-ink" : "border-line text-ink-3 hover:text-ink",
                 )}
               >

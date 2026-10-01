@@ -47,8 +47,7 @@ export function CaseDetailView({ caseId }: { caseId: string }) {
 
   const content = (
     <div className="mx-auto max-w-5xl py-10">
-      {/* Đầu hồ sơ "hiện" lên (Rich tier) — gate reduced-motion; tiêu đề GIỮ Newsreader (font-serif):
-          tên case là tiếng Việt tuỳ ý có dấu thanh, Cormorant thiếu glyph → vỡ dấu (quyết định như F3a). */}
+      {/* Đầu hồ sơ "hiện" lên (Rich tier) — gate reduced-motion; tiêu đề dùng font-serif (Montserrat, đủ dấu Việt). */}
       <motion.div
         initial={staticFirst ? false : { opacity: 0, y: 10 }}
         animate={staticFirst ? undefined : { opacity: 1, y: 0 }}
@@ -93,14 +92,14 @@ export function CaseDetailView({ caseId }: { caseId: string }) {
 function CaseMeta({ detail }: { detail: CaseDetail }) {
   const rows: Array<[string, string]> = [
     ["Loại", detail.category.name],
-    ["Nơi", detail.locationRef ? `${detail.locationRef.code} · ${detail.locationRef.name}` : "-"],
+    ["Nơi", detail.locationRef ? `${detail.locationRef.code} ${detail.locationRef.name}` : "-"],
     ["Người báo", detail.createdBy.name],
     ["Phụ trách", detail.assignedTo?.name ?? "Chưa giao"],
     ["Tạo lúc", formatDateTime(detail.createdAt)],
   ];
   return (
     <Card>
-      <h2 className="text-ink-3 mb-3 font-mono text-[11px] tracking-[0.18em] uppercase">Hồ sơ</h2>
+      <h2 className="text-ink-3 mb-3 font-mono text-xs">Hồ sơ</h2>
       <dl className="flex flex-col gap-2.5">
         {rows.map(([label, value]) => (
           <div key={label} className="flex items-baseline justify-between gap-4">

@@ -43,7 +43,7 @@ export function BulkActionBar({
     setRunning(true);
     try {
       const result = await execute(selected, action);
-      const successMsg = `Thành công ${result.ok.length}${result.failed.length > 0 ? ` · Bỏ qua ${result.failed.length}` : ""}`;
+      const successMsg = `Thành công ${result.ok.length}${result.failed.length > 0 ? `, bỏ qua ${result.failed.length}` : ""}`;
       push(successMsg, result.failed.length > 0 ? "info" : "success");
       if (result.failed.length > 0) {
         const detail = result.failed
@@ -75,7 +75,7 @@ export function BulkActionBar({
   return (
     <>
       <div className="bg-paper-raised border-line flex items-center gap-3 rounded border px-4 py-2">
-        <span className="text-ink-2 font-mono text-[11px] tabular-nums">
+        <span className="text-ink-2 font-mono text-xs tabular-nums">
           {n} đã chọn
         </span>
         <div className="flex flex-wrap gap-2">
@@ -90,7 +90,7 @@ export function BulkActionBar({
           </Button>
         </div>
         {running && (
-          <span className="text-ink-3 font-mono text-[10px]">đang xử lý…</span>
+          <span className="text-ink-3 font-mono text-xs">đang xử lý…</span>
         )}
       </div>
 

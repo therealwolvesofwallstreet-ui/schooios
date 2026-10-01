@@ -68,7 +68,7 @@ export function TopBar({
           <span
             data-testid="unread-badge"
             aria-hidden="true"
-            className="bg-signal text-paper absolute top-0 right-0 flex h-4 min-w-4 items-center justify-center rounded-full px-1 font-mono text-[10px] leading-none tabular-nums"
+            className="bg-signal text-paper absolute top-0 right-0 flex h-4 min-w-4 items-center justify-center rounded-full px-1 font-mono text-xs leading-none tabular-nums"
           >
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
@@ -84,7 +84,7 @@ export function TopBar({
         >
           <span className="flex flex-col leading-tight">
             <span className="text-ink text-sm font-medium">{user.name}</span>
-            <span className="text-ink-3 text-[11px] tracking-wider uppercase">
+            <span className="text-ink-3 text-xs">
               {ROLE_LABEL[user.role]}
             </span>
           </span>

@@ -66,10 +66,10 @@ test.describe("R2 staff buckets [STAFF]", () => {
   test.skip(!haveCreds("STAFF"), "Thiếu E2E creds STAFF");
   test.beforeEach(({ context }) => authenticate(context, "STAFF"));
 
-  test("0 call /dashboard · bucket 'Vụ của tôi' + 'Đang chờ nhận'", async ({ page }) => {
+  test("0 call /dashboard · bucket 'Các vụ việc cần được giải quyết' + 'Đang chờ nhận'", async ({ page }) => {
     const calls = trackDashboard(page);
     await page.goto("/");
-    await page.getByRole("heading", { name: "Bàn điều phối của bạn" }).waitFor();
+    await page.getByRole("heading", { name: "Tổng quan các công việc của bạn" }).waitFor();
     await expect(page.getByTestId("bucket-mine")).toBeVisible();
     await expect(page.getByTestId("bucket-waiting")).toBeVisible();
     await expect(page.getByTestId("memorial-numbers")).toHaveCount(0);
@@ -190,7 +190,7 @@ test.describe("R3c partial response [ADMIN]", () => {
     await page.getByTestId("memorial-numbers").waitFor();
     // byStatus thiếu → ledger "Theo trạng thái" ra EmptyState (calm), không sập.
     await expect(page.getByText("Theo trạng thái")).toBeVisible();
-    await expect(page.getByText("Chưa có dữ liệu.").first()).toBeVisible();
+    await expect(page.getByText("Chưa có dữ liệu").first()).toBeVisible();
     // không crash: heading còn nguyên + 0 undefined (byCategory thiếu count → 0).
     await expect(page.getByRole("heading", { name: "TỔNG QUAN" })).toBeVisible();
     const body = await page.locator("body").innerText();
@@ -204,12 +204,12 @@ const EMPTY_LIST = JSON.stringify({ cases: [], total: 0, page: 1, totalPages: 1 
 test.describe("R3d empty student [STUDENT]", () => {
   test.skip(!haveCreds("STUDENT"), "Thiếu creds STUDENT");
   test.beforeEach(({ context }) => authenticate(context, "STUDENT"));
-  test("cases=[] → 'Chưa có hoạt động gần đây.'", async ({ page }) => {
+  test("cases=[] → 'Chưa có hoạt động gần đây'", async ({ page }) => {
     await page.route(/\/api\/cases\?/, (route) =>
       route.fulfill({ status: 200, contentType: "application/json", body: EMPTY_LIST }),
     );
     await page.goto("/");
-    await expect(page.getByText("Chưa có hoạt động gần đây.")).toBeVisible();
+    await expect(page.getByText("Chưa có hoạt động gần đây")).toBeVisible();
   });
 });
 
@@ -221,7 +221,7 @@ test.describe("R3d empty staff [STAFF]", () => {
       route.fulfill({ status: 200, contentType: "application/json", body: EMPTY_LIST }),
     );
     await page.goto("/");
-    await expect(page.getByText("Bạn chưa nhận vụ nào.")).toBeVisible();
-    await expect(page.getByText("Không có vụ nào đang chờ.")).toBeVisible();
+    await expect(page.getByText("Bạn chưa nhận vụ nào")).toBeVisible();
+    await expect(page.getByText("Không có vụ nào đang chờ")).toBeVisible();
   });
 });

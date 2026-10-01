@@ -1,43 +1,30 @@
-import type { Metadata } from "next";
-import { IBM_Plex_Sans, IBM_Plex_Mono, Newsreader, Cormorant_Garamond } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Montserrat, Lexend } from "next/font/google";
 import "./globals.css";
 
-// Giọng chữ (xem FRONTEND.md): Cormorant Garamond = display HERO (warm, latin/latin-ext) ·
-// Plex Sans = UI · Plex Mono = dữ liệu/định danh · Newsreader = serif VN (khoảnh khắc người + fallback
-// glyph tiếng Việt cho display — Cormorant thiếu dấu Việt → tự rớt sang Newsreader theo --font-display).
+// Giọng chữ: Montserrat = display/tiêu đề · Lexend = UI + dữ liệu (mono fallback "Courier New").
 // Biến gắn lên <html>, tokens.css ánh xạ ra font-display/sans/mono/serif.
-const cormorant = Cormorant_Garamond({
-  subsets: ["latin", "latin-ext"],
-  weight: ["400", "500", "600"],
-  style: ["normal", "italic"],
-  variable: "--font-cormorant",
-  display: "swap",
-});
-const plexSans = IBM_Plex_Sans({
+const montserrat = Montserrat({
   subsets: ["latin", "vietnamese"],
-  weight: ["400", "500", "600"],
-  variable: "--font-plex-sans",
+  weight: ["500", "600", "700"],
+  variable: "--font-montserrat",
   display: "swap",
 });
 
-const plexMono = IBM_Plex_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500"],
-  variable: "--font-plex-mono",
-  display: "swap",
-});
-
-const newsreader = Newsreader({
+const lexend = Lexend({
   subsets: ["latin", "vietnamese"],
   weight: ["400", "500", "600"],
-  style: ["normal", "italic"],
-  variable: "--font-newsreader",
+  variable: "--font-lexend",
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "SchooIOS",
+  title: "LTT SchooIOS",
   description: "Hệ thống vận hành sự vụ học đường số",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#ffffff",
 };
 
 export default function RootLayout({
@@ -46,10 +33,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="vi"
-      className={`${cormorant.variable} ${plexSans.variable} ${plexMono.variable} ${newsreader.variable} h-full antialiased`}
-    >
+    <html lang="vi" className={`${montserrat.variable} ${lexend.variable} h-full antialiased`}>
       <body className="min-h-full">{children}</body>
     </html>
   );

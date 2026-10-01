@@ -9,8 +9,6 @@
 import { useId, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useHydrated } from "@/hooks/useHydrated";
-import { SignalDot, type SignalTone } from "@/components/ui/SignalDot";
-import { STATUS_TONE } from "@/components/ui/status-theme";
 import { STATUS_LABEL, formatDateTime } from "@/lib/case-display";
 import { buildSpine, type SpineNode } from "@/lib/spine";
 import { cn } from "@/lib/cn";
@@ -40,14 +38,12 @@ function SpineNodeItem({
   index: number;
   reduced: boolean;
 }) {
-  const tone: SignalTone = node.kind === "status" ? STATUS_TONE[node.to] : "running";
   const meta = (name: string, createdAt: string) => (
-    <div className="text-ink-3 flex flex-wrap items-center gap-2 font-mono text-[11px]">
+    <div className="text-ink-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
       {node.kind === "comment" && node.isInternal && (
-        <span className="text-ink-2 tracking-[0.18em] uppercase">Nội bộ</span>
+        <span className="text-ink-2">Nội bộ</span>
       )}
       <span>{name}</span>
-      <span aria-hidden>·</span>
       <time dateTime={createdAt}>{formatDateTime(createdAt)}</time>
     </div>
   );
@@ -59,9 +55,6 @@ function SpineNodeItem({
       animate={reduced ? undefined : { opacity: 1, y: 0 }}
       transition={{ ...EMERGE, delay: Math.min(index * 0.04, 0.4) }}
     >
-      <span className="absolute top-1 -left-[3px]">
-        <SignalDot tone={tone} size="sm" />
-      </span>
 
       {node.kind === "origin" && (
         <div className="flex flex-col gap-1.5">

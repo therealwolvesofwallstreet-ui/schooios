@@ -1,18 +1,18 @@
 "use client";
 
-// LOGIN — bọc trong ThresholdScene (F2c): full-motion = Landing→cuộn→login; reduced/SSR = login-only
-// (anchor tới form). Form gạch-chân. Tâm điểm = nút "Bước vào" DUY NHẤT. Lỗi = dòng mono ink-dim, KHÔNG đỏ
-// (đỏ chỉ dành cho hành động). Auth bằng cookie httpOnly (api credentials:include) — KHÔNG đọc JWT.
+// LOGIN — trang tĩnh nhẹ: nền paper + 2 khối xanh mờ trôi chậm (CSS @keyframes, chỉ transform/opacity,
+// reduced-motion toàn cục gập lại) + thẻ trắng ở giữa. KHÔNG WebGL/Lenis/GSAP.
+// Auth bằng cookie httpOnly (api credentials:include) — KHÔNG đọc JWT.
 // Hydration gate: nút disabled tới khi mounted → chặn submit GET-tự-nhiên trước hydrate (rò mật khẩu
 // lên URL). 429: tự mở lại sau Retry-After. Lỗi cũ tự xoá khi user gõ lại (trừ 429 — giữ cooldown).
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ThresholdScene } from "@/components/motion/landing/ThresholdScene";
+import { ArrowRight, CircleNotch } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { SignalDot } from "@/components/ui/SignalDot";
+import { BrandEmblem, BRAND_NAME } from "@/components/ui/BrandMark";
 import { useLogin } from "@/hooks/useLogin";
 import { useHydrated } from "@/hooks/useHydrated";
 import type { ApiError } from "@/lib/api";
@@ -27,7 +27,7 @@ const schema = z.object({
 });
 type FormValues = z.infer<typeof schema>;
 
-// Map lỗi auth → câu DỊU (ink-dim), không lộ chi tiết, không đỏ.
+// Map lỗi auth → câu dịu, không lộ chi tiết, không đỏ (đỏ chỉ cho khẩn cấp).
 function authMessage(err: ApiError | null): string | null {
   if (!err) return null;
   if (err.status === 429)
@@ -45,8 +45,6 @@ export default function LoginPage() {
     formState: { errors },
   } = useForm<FormValues>({ resolver: zodResolver(schema) });
 
-  // Hydration gate: SSR render nút disabled → trước khi JS gắn onSubmit, click/Enter KHÔNG thể
-  // submit GET-tự-nhiên (vốn đẩy identifier+password lên URL). Sau hydrate → mở nút.
   // useSyncExternalStore (hooks/useHydrated) → KHÔNG setState-in-effect.
   const hydrated = useHydrated();
 
@@ -59,64 +57,72 @@ export default function LoginPage() {
   }, [error, clearError]);
 
   const rateLimited = error?.status === 429;
-  // Một dòng thông báo dịu: ưu tiên lỗi server, rồi tới lỗi field (đều mono, ink-dim).
+  // Một dòng thông báo: ưu tiên lỗi server, rồi tới lỗi field.
   const message = authMessage(error) ?? errors.identifier?.message ?? errors.password?.message ?? null;
   const describedBy = message ? MSG_ID : undefined;
   const invalid = message ? true : undefined;
 
   return (
-    <ThresholdScene>
-      {/* Đầu thẻ TỐI GIẢN — wordmark + ink-field NỀN gánh khoảnh khắc; card chỉ là cổng vào.
-       * (KHÔNG nhồi manifesto vào thẻ — để hero immersive thở.) */}
-      <div className="mb-9 flex items-center gap-3">
-        <SignalDot tone="signal" size="md" pulse />
-        <span className="text-on-depth-2 font-mono text-[11px] tracking-[0.22em] uppercase">
-          Bước vào lưu khố
-        </span>
+    <main className="bg-paper relative flex h-dvh items-center justify-center overflow-hidden px-4">
+      <div aria-hidden className="pointer-events-none absolute inset-0">
+        <div className="login-blob-a bg-signal-hot/25 absolute -top-32 -left-24 size-[28rem] rounded-full blur-3xl" />
+        <div className="login-blob-b bg-signal/20 absolute -right-24 -bottom-40 size-[32rem] rounded-full blur-3xl" />
       </div>
 
-      {/*
-       * Lớp recolor cho dark scrim card (KHÔNG đổi logic/props của Input/Button — chỉ ghi đè màu qua
-       * descendant utility): label + input mực sáng on-depth, gạch-chân hairline-depth → focus sáng lên.
-       */}
-      <form
-        onSubmit={handleSubmit((v) => login(v))}
-        // Gõ lại → xoá thông báo lỗi cũ (giữ 429 để không huỷ cooldown).
-        onInput={() => {
-          if (error && error.status !== 429) clearError();
-        }}
-        aria-busy={isPending}
-        className="flex flex-col gap-7 [&_input]:border-line-depth [&_input]:text-on-depth [&_input]:placeholder:text-on-depth-3 [&_input:focus]:border-on-depth [&_label]:text-on-depth-2"
-        noValidate
-      >
-        <Input
-          label="Số báo danh / Email"
-          autoComplete="username"
-          autoFocus
-          aria-describedby={describedBy}
-          aria-invalid={invalid}
-          {...register("identifier")}
-        />
-        <Input
-          label="Mật khẩu"
-          type="password"
-          autoComplete="current-password"
-          aria-describedby={describedBy}
-          aria-invalid={invalid}
-          {...register("password")}
-        />
-
-        <div className="mt-1 flex flex-col gap-3">
-          <Button type="submit" disabled={!hydrated || isPending || rateLimited} className="w-full">
-            {isPending ? "Đang vào…" : "Bước vào"}
-          </Button>
-          {message && (
-            <p id={MSG_ID} role="alert" className="text-on-depth-2 font-mono text-xs">
-              {message}
-            </p>
-          )}
+      <div className="login-card-in bg-paper-raised border-line relative w-full max-w-sm rounded-lg border p-8 shadow-xl shadow-ink/10">
+        <div className="mb-8 flex items-center gap-3">
+          <BrandEmblem size={40} priority />
+          <span className="font-display text-ink text-xl font-bold tracking-tight">{BRAND_NAME}</span>
         </div>
-      </form>
-    </ThresholdScene>
+
+        <form
+          onSubmit={handleSubmit((v) => login(v))}
+          // Gõ lại → xoá thông báo lỗi cũ (giữ 429 để không huỷ cooldown).
+          onInput={() => {
+            if (error && error.status !== 429) clearError();
+          }}
+          aria-busy={isPending}
+          className="flex flex-col gap-6"
+          noValidate
+        >
+          <Input
+            label="Số báo danh / Email"
+            autoComplete="username"
+            autoFocus
+            aria-describedby={describedBy}
+            aria-invalid={invalid}
+            {...register("identifier")}
+          />
+          <Input
+            label="Mật khẩu"
+            type="password"
+            autoComplete="current-password"
+            aria-describedby={describedBy}
+            aria-invalid={invalid}
+            {...register("password")}
+          />
+
+          <div className="mt-1 flex flex-col gap-3">
+            <Button
+              type="submit"
+              aria-label="Sign in"
+              disabled={!hydrated || isPending || rateLimited}
+              className="h-11 w-full"
+            >
+              {isPending ? (
+                <CircleNotch size={20} weight="bold" className="animate-spin" aria-hidden />
+              ) : (
+                <ArrowRight size={20} weight="bold" aria-hidden />
+              )}
+            </Button>
+            {message && (
+              <p id={MSG_ID} role="alert" className="text-ink-2 text-xs">
+                {message}
+              </p>
+            )}
+          </div>
+        </form>
+      </div>
+    </main>
   );
 }

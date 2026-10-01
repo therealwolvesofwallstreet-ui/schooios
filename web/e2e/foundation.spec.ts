@@ -9,7 +9,7 @@ for (const role of ROLES) {
     test("home shell render + screenshot", async ({ page }) => {
       await page.goto("/");
       // Shell sẵn sàng: nav chính (desktop) hoặc topbar (mobile) hiển thị.
-      await expect(page.getByText("Lưu khố sống").first()).toBeVisible();
+      await expect(page.getByTestId("user-chip")).toBeVisible();
       await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
       await expect(page).toHaveScreenshot(`home-${role}.png`, {
         fullPage: true,
@@ -27,7 +27,7 @@ test.describe("Styleguide foundation", () => {
   });
   test("styleguide render + screenshot", async ({ page }) => {
     await page.goto("/styleguide");
-    await expect(page.getByRole("heading", { name: "Warm Immersive Archive" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "LTT Clean" })).toBeVisible();
     await expect(page).toHaveScreenshot("styleguide.png", {
       fullPage: true,
       mask: [page.getByTestId("user-chip")],

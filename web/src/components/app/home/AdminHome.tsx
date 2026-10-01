@@ -1,14 +1,13 @@
 "use client";
 
 // TRANG CHỦ ADMIN/AUDITOR — "Đài quan sát": số ĐÀI-KỶ-NIỆM mono lớn + sổ hàng đợi (ledger) + rail
-// loại/nơi + PulseField (placeholder seam, F4 thả bản sống vào). KHÔNG donut/chart-junk (FRONTEND.md
+// loại/nơi. KHÔNG donut/chart-junk (FRONTEND.md
 // Dashboard metric grammar). Đây là FILE DUY NHẤT import useDashboardMetrics ⇒ STAFF/STUDENT 0 call.
 //
 // ⚠ KEY DRIFT (đọc đúng kẻo bug): byStatus/byPriority → `_count`; byCategory/byLocation → `count`.
 // ⚠ ĐỌC PHÒNG THỦ: số ?? 0, mảng ?? [] → thiếu field/mảng (partial response) ra EmptyState ô đó,
 //   KHÔNG sập trang, KHÔNG để undefined lọt DOM. Lỗi tải toàn cục = ErrorState (điềm tĩnh, KHÔNG đỏ).
 // readOnly=true (AUDITOR): KHÔNG affordance hành động (chỉ-xem); ADMIN giữ nguyên ngữ nghĩa điều phối.
-import dynamic from "next/dynamic";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
@@ -16,7 +15,7 @@ import { useHydrated } from "@/hooks/useHydrated";
 import { EASE_EMERGE_BEZIER } from "@/lib/cubic-bezier";
 import { Card } from "@/components/ui/Card";
 import { Hairline } from "@/components/ui/Hairline";
-import { SignalDot, type SignalTone } from "@/components/ui/SignalDot";
+import { type SignalTone } from "@/components/ui/SignalDot";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState } from "@/components/app/states";
@@ -24,10 +23,6 @@ import { STATUS_TONE } from "@/components/ui/status-theme";
 import { STATUS_LABEL, PRIORITY_LABEL, STATUS_ORDER, PRIORITY_ORDER } from "@/lib/case-display";
 import { cn } from "@/lib/cn";
 import type { CaseStatus, CasePriority } from "@/lib/api-types";
-
-// PulseField nạp qua dynamic(ssr:false) — giữ mọi ruột động (canvas/three ở F4) NGOÀI server bundle,
-// mirror ReleaseBurst. Placeholder hiện tại nhẹ, nhưng seam sẵn cho bản sống.
-const PulseField = dynamic(() => import("@/components/motion/PulseField"), { ssr: false });
 
 export function AdminHome({ readOnly = false }: { readOnly?: boolean }) {
   const { metrics, isLoading, isError, refetch } = useDashboardMetrics();
@@ -65,16 +60,10 @@ export function AdminHome({ readOnly = false }: { readOnly?: boolean }) {
         <MemorialNumber label="Tồn đọng" value={metrics.stale ?? 0} />
       </section>
 
-      {/* PulseField — placeholder seam (parent định kích thước qua className). */}
-      <section className="flex flex-col gap-3">
-        <h2 className="text-ink-3 font-mono text-[11px] tracking-[0.18em] uppercase">Mạch hệ thống</h2>
-        <PulseField metrics={metrics} className="border-line h-40 rounded-md border md:h-48" />
-      </section>
-
       {/* Xu hướng — Chart1 = thanh phân-đoạn trạng thái (KHÔNG donut/canvas/lib; thuần SVG/CSS). Mỗi
           đoạn → /cases?status=… (drill-down). Ledger "Theo trạng thái" bên dưới là chú-giải-số. */}
       <section className="flex flex-col gap-3">
-        <h2 className="text-ink-3 font-mono text-[11px] tracking-[0.18em] uppercase">Xu hướng</h2>
+        <h2 className="text-ink-3 font-mono text-xs">Xu hướng</h2>
         <StatusBar byStatus={byStatus} />
       </section>
 
@@ -116,7 +105,7 @@ export function AdminHome({ readOnly = false }: { readOnly?: boolean }) {
           items={[...byLocation]
             .sort((a, b) => (b.count ?? 0) - (a.count ?? 0))
             .slice(0, 6)
-            .map((l) => ({ key: l.locationId, label: `${l.code} · ${l.name}`, count: l.count ?? 0 }))}
+            .map((l) => ({ key: l.locationId, label: `${l.code} ${l.name}`, count: l.count ?? 0 }))}
           footnote={
             (metrics.unlocated ?? 0) > 0 ? `Chưa rõ nơi: ${metrics.unlocated}` : undefined
           }
@@ -140,13 +129,12 @@ function MemorialNumber({
     <div className="flex flex-col gap-1.5">
       <span className="flex items-center gap-2">
         <span
-          className={`font-mono text-4xl tabular-nums md:text-5xl ${hot ? "text-signal" : "text-ink"}`}
+          className={`font-mono text-4xl tabular-nums md:text-5xl ${hot ? "text-emergency" : "text-ink"}`}
         >
           {value}
         </span>
-        {hot && <SignalDot tone="emergency" size="md" pulse />}
       </span>
-      <span className="text-ink-3 text-[11px] tracking-[0.12em] uppercase">{label}</span>
+      <span className="text-ink-3 text-xs">{label}</span>
     </div>
   );
 }
@@ -162,7 +150,7 @@ function Ledger({
 }) {
   return (
     <Card>
-      <h2 className="text-ink-3 mb-4 font-mono text-[11px] tracking-[0.18em] uppercase">{title}</h2>
+      <h2 className="text-ink-3 mb-4 font-mono text-xs">{title}</h2>
       {empty ? (
         <EmptyState message="Chưa có dữ liệu" className="py-8" />
       ) : (
@@ -171,8 +159,7 @@ function Ledger({
             <li key={r.key} className="flex flex-col">
               {i > 0 && <Hairline className="my-2.5" />}
               <div className="flex items-center justify-between gap-4">
-                <span className="text-ink-2 flex items-center gap-2.5 text-sm">
-                  <SignalDot tone={r.tone} size="sm" />
+                <span className="text-ink-2 text-sm">
                   {r.label}
                 </span>
                 <span className="text-ink font-mono text-sm tabular-nums">{r.count}</span>
@@ -196,7 +183,7 @@ function Rail({
 }) {
   return (
     <Card>
-      <h2 className="text-ink-3 mb-4 font-mono text-[11px] tracking-[0.18em] uppercase">{title}</h2>
+      <h2 className="text-ink-3 mb-4 font-mono text-xs">{title}</h2>
       {items.length === 0 ? (
         <EmptyState message="Chưa có dữ liệu" className="py-8" />
       ) : (
@@ -229,7 +216,6 @@ function DashboardSkeleton() {
           </div>
         ))}
       </div>
-      <Skeleton className="h-40 w-full md:h-48" />
       {/* Xu hướng (StatusBar) — giữ skeleton đại diện để skeleton→content KHÔNG nhảy layout. */}
       <Skeleton className="h-28 w-full" />
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
@@ -259,7 +245,7 @@ function StatusBar({ byStatus }: { byStatus: { status: CaseStatus; _count: numbe
 
   return (
     <Card>
-      <h2 className="text-ink-3 mb-4 font-mono text-[11px] tracking-[0.18em] uppercase">
+      <h2 className="text-ink-3 mb-4 font-mono text-xs">
         Phân bố trạng thái
       </h2>
       {total === 0 ? (
@@ -304,7 +290,7 @@ function CategoryBars({ items }: { items: { id: string; name: string; count: num
 
   return (
     <Card>
-      <h2 className="text-ink-3 mb-4 font-mono text-[11px] tracking-[0.18em] uppercase">Theo loại</h2>
+      <h2 className="text-ink-3 mb-4 font-mono text-xs">Theo loại</h2>
       {items.length === 0 ? (
         <EmptyState message="Chưa có dữ liệu" className="py-8" />
       ) : (

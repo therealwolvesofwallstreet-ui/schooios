@@ -100,7 +100,7 @@ export function AttachmentUpload({ hook, disabled, className }: Props) {
                   type="button"
                   onClick={() => removeFile(sf.id)}
                   aria-label={`Xóa ${sf.file.name}`}
-                  className="bg-paper-raised border-line absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full border text-[10px] text-ink-3 hover:text-ink"
+                  className="bg-paper-raised border-line absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full border text-xs text-ink-3 hover:text-ink"
                 >
                   ×
                 </button>
@@ -126,7 +126,7 @@ export function AttachmentUpload({ hook, disabled, className }: Props) {
         <span className="text-ink-3 text-sm">
           {staged.length === 0 ? "Ảnh đính kèm" : "Thêm ảnh"}
         </span>
-        <span className="text-ink-3 font-mono text-[10px] tracking-wider uppercase">
+        <span className="text-ink-3 font-mono text-xs">
           {hook.isUploading ? "Đang tải…" : staged.length === 0 ? "Chọn / Chụp" : `${staged.length} ảnh`}
         </span>
         <input
@@ -142,8 +142,8 @@ export function AttachmentUpload({ hook, disabled, className }: Props) {
         />
       </label>
 
-      <p className="text-ink-3 font-mono text-[10px]">
-        Tối đa 8 MB / ảnh · JPEG · PNG · WebP · HEIC
+      <p className="text-ink-3 font-mono text-xs">
+        Tối đa 8 MB mỗi ảnh (JPEG, PNG, WebP, HEIC)
       </p>
     </div>
   );

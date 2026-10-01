@@ -81,12 +81,12 @@ test.describe("F4a notifications correctness [STUDENT]", () => {
 
     // badge = server-truth (3) ở TopBar + summary.
     await expect(page.getByTestId("unread-badge")).toHaveText("3");
-    await expect(page.getByTestId("unread-summary")).toHaveText("3 thông báo chưa đọc.");
+    await expect(page.getByTestId("unread-summary")).toHaveText("3 thông báo chưa đọc");
 
     // read-all → badge↓ về 0 (server-truth refetch, KHÔNG decrement cục bộ).
     await page.getByTestId("read-all").click();
     await expect(page.getByTestId("unread-badge")).toHaveCount(0);
-    await expect(page.getByTestId("unread-summary")).toHaveText("Bạn đã đọc hết.");
+    await expect(page.getByTestId("unread-summary")).toHaveText("Bạn đã đọc hết");
 
     // điều hướng: dòng có case → /cases/<id>.
     await page.getByTestId("notification-list").getByRole("link").first().click();

@@ -6,14 +6,8 @@
 import { useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useToastQueue, type ToastItem, type ToastTone } from "@/store/toast";
-import { SignalDot, type SignalTone } from "./SignalDot";
 import { cn } from "@/lib/cn";
 
-const TONE_DOT: Record<ToastTone, SignalTone> = {
-  info: "running",
-  success: "gold",
-  error: "signal",
-};
 const TONE_BORDER: Record<ToastTone, string> = {
   info: "border-line",
   success: "border-gold",
@@ -42,7 +36,6 @@ function ToastRow({ toast }: { toast: ToastItem }) {
         TONE_BORDER[toast.tone],
       )}
     >
-      <SignalDot tone={TONE_DOT[toast.tone]} size="sm" />
       <span className="flex-1">{toast.message}</span>
       <button
         type="button"

@@ -20,7 +20,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
       {label && (
         <label
           htmlFor={textareaId}
-          className="text-ink-3 text-[11px] font-medium tracking-wider uppercase"
+          className="text-ink-3 text-xs font-medium"
         >
           {label}
         </label>

@@ -26,8 +26,8 @@ const PREVIEW_LIMIT = 6;
 
 // Hero "cất tiếng nói" — chữ HIỆN theo từng từ (reveal). Gate theo HYDRATE (KHÔNG prefers-reduced-motion
 // — owner "immersive cho mọi người"): SSR/first-paint render TĨNH (hiện rõ, không flash/ẩn), sau hydrate
-// thì reveal cho MỌI người. Chữ Việt GIỮ Newsreader (font-serif) — Cormorant thiếu dấu thanh.
-const HERO_TEXT = "TIẾNG NÓI CỦA BẠN RẤT QUAN TRỌNG";
+// thì reveal cho MỌI người. Chữ Việt dùng font-serif (Montserrat).
+const HERO_TEXT = "Hãy cùng nhau đóng góp để tạo nên một môi trường học tập chất lượng hơn";
 const HERO_WORDS = HERO_TEXT.split(" ");
 
 function KineticHero() {
@@ -76,7 +76,7 @@ export function StudentHome({ user }: { user: SessionUser }) {
       </header>
 
       <section className="flex flex-col gap-4" data-testid="student-recent">
-        <h2 className="text-ink-3 font-mono text-[11px] tracking-[0.18em] uppercase">
+        <h2 className="text-ink-3 font-mono text-xs">
           Hoạt động gần đây của bạn
         </h2>
         {isLoading ? (
