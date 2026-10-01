@@ -31,6 +31,45 @@ body::before {
   font-variant-numeric: tabular-nums;
 }
 
+/* /login — motion thuần CSS (chỉ transform/opacity). Reduced-motion bên dưới gập lại. */
+@keyframes login-drift-a {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(6vw, 4vh, 0) scale(1.08);
+  }
+}
+@keyframes login-drift-b {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(-5vw, -5vh, 0) scale(1.06);
+  }
+}
+@keyframes login-card-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.login-blob-a {
+  animation: login-drift-a 22s var(--ease-quiet) infinite;
+}
+.login-blob-b {
+  animation: login-drift-b 26s var(--ease-quiet) infinite;
+}
+.login-card-in {
+  animation: login-card-in 400ms var(--ease-emerge) both;
+}
+
 /* Tôn trọng reduced-motion: tắt animation/transition (a11y + ổn định screenshot). */
 @media (prefers-reduced-motion: reduce) {
   *,

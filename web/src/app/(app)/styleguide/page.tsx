@@ -62,7 +62,7 @@ export default function StyleguidePage() {
     <div className="mx-auto flex max-w-4xl flex-col gap-12">
       <header className="flex flex-col gap-2">
         <h1 className="text-ink font-display text-6xl leading-[1.05]">LTT Clean</h1>
-        <p className="text-ink-2 text-sm">Catalog token &amp; primitives — Lưu khố ấm.</p>
+        <p className="text-ink-2 text-sm">Catalog token &amp; primitives.</p>
       </header>
 
       <Section title="Bảng màu · vai trò">
